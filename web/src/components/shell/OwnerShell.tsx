@@ -17,12 +17,12 @@ import { UserMenu } from "./UserMenu";
 /* ───────── DebtorTop (60px) ───────── */
 
 export interface DebtorTopProps {
-  title: string;
-  sub?: string;
+  title: ReactNode;
+  sub?: ReactNode;
   /** Shows a back button (arrow_forward in RTL, mirrored in LTR) instead of the symbol logo. */
   back?: { href?: string; onClick?: () => void } | boolean;
   unread?: number;
-  /** Bell target (owner messages). */
+  /** Bell target (owner notifications). */
   bellHref?: string;
   /** Hide the bell before sign-in (invitation / verification steps). */
   showBell?: boolean;
@@ -32,7 +32,7 @@ export interface DebtorTopProps {
 }
 
 /** DebtorTop.dc: symbol or back · title/sub · bell with dot. Touch targets 44px. */
-export function DebtorTop({ title, sub, back, unread = 0, bellHref = "/owner/messages", showBell = true, trailing, className }: DebtorTopProps) {
+export function DebtorTop({ title, sub, back, unread = 0, bellHref = "/owner/notifications", showBell = true, trailing, className }: DebtorTopProps) {
   const { t } = useI18n();
   const router = useRouter();
   const backDef = back === true ? {} : back || null;
@@ -88,7 +88,7 @@ export function DebtorNav({ active, className }: { active?: OwnerNavKey | null; 
 
 /* ───────── OwnerDesktopHeader (≥1024, B6 D02 desktop) ───────── */
 
-export function OwnerDesktopHeader({ userLabel, active }: { userLabel: string; active?: OwnerNavKey | null }) {
+export function OwnerDesktopHeader({ userLabel, active, unread = 0, bellHref = "/owner/notifications" }: { userLabel: string; active?: OwnerNavKey | null; unread?: number; bellHref?: string }) {
   const { t } = useI18n();
   const pathname = usePathname();
   const current = active ?? activeKey(OWNER_NAV, pathname);
@@ -116,6 +116,7 @@ export function OwnerDesktopHeader({ userLabel, active }: { userLabel: string; a
         </ul>
       </nav>
       <div className="ms-auto flex items-center gap-2">
+        <IconButton href={bellHref} label={t.shell.notificationsNew(unread)} icon="notifications" size={44} iconSize={24} dot={unread > 0} />
         <LocaleSwitch />
         <UserMenu name={userLabel} initials={userLabel.slice(0, 1)} profileHref={null} appearance="name" />
       </div>
@@ -127,8 +128,8 @@ export function OwnerDesktopHeader({ userLabel, active }: { userLabel: string; a
 
 export interface OwnerShellProps {
   /** DebtorTop title (default greeting set by the layout). */
-  title: string;
-  sub?: string;
+  title: ReactNode;
+  sub?: ReactNode;
   /** «عبدالله م. · مصرف الأفق» (desktop header). */
   userLabel: string;
   unread?: number;
@@ -137,6 +138,8 @@ export interface OwnerShellProps {
   hideNav?: boolean;
   active?: OwnerNavKey | null;
   numerals?: Numerals;
+  /** Bell target on mobile and desktop (default /owner/notifications). */
+  bellHref?: string;
   children: ReactNode;
 }
 
@@ -144,17 +147,19 @@ export interface OwnerShellProps {
  * Owner (debtor) portal: mobile-first DebtorTop + content + DebtorNav; from 1024px a top header with links
  * and a centered 1040px column — no sidebar (B6 responsive rule).
  */
-export function OwnerShell({ title, sub, userLabel, unread = 0, back, hideNav, active, numerals = "latn", children }: OwnerShellProps) {
+export function OwnerShell({ title, sub, userLabel, unread = 0, back, hideNav, active, numerals = "latn", bellHref, children }: OwnerShellProps) {
   const { locale } = useI18n();
   return (
     <I18nProvider locale={locale} numerals={numerals}>
     <div className="flex min-h-dvh flex-col bg-warm">
-      <SkipLink />
-      <div className="lg:hidden">
-        <DebtorTop title={title} sub={sub} unread={unread} back={back} />
+      <div className="print:hidden">
+        <SkipLink />
       </div>
-      <div className="hidden lg:block">
-        <OwnerDesktopHeader userLabel={userLabel} active={active} />
+      <div className="lg:hidden print:hidden">
+        <DebtorTop title={title} sub={sub} unread={unread} back={back} bellHref={bellHref} />
+      </div>
+      <div className="hidden lg:block print:hidden">
+        <OwnerDesktopHeader userLabel={userLabel} active={active} unread={unread} bellHref={bellHref} />
       </div>
       <main
         id="main"
@@ -162,11 +167,12 @@ export function OwnerShell({ title, sub, userLabel, unread = 0, back, hideNav, a
         className={cn(
           "mx-auto w-full flex-1 px-[18px] py-[18px] text-16 outline-none md:max-w-[560px] md:px-0 lg:max-w-[1040px] lg:py-10",
           !hideNav && "pb-24 lg:pb-10",
+          "print:max-w-none print:p-0",
         )}
       >
         {children}
       </main>
-      {hideNav ? null : <DebtorNav active={active} className="fixed inset-x-0 bottom-0 z-30 lg:hidden" />}
+      {hideNav ? null : <DebtorNav active={active} className="fixed inset-x-0 bottom-0 z-30 lg:hidden print:hidden" />}
     </div>
     </I18nProvider>
   );
