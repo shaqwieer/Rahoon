@@ -16,6 +16,8 @@ export interface AlertProps {
   tone?: AlertTone;
   title?: ReactNode;
   children?: ReactNode;
+  /** Same as children — convenient for one-line bodies. */
+  body?: ReactNode;
   icon?: string;
   /** Link or button at the inline end (e.g. «فتح التكليف»). */
   action?: ReactNode;
@@ -31,7 +33,8 @@ export interface AlertProps {
 }
 
 /** In-page alert / callout (C05). Stays until resolved; colour is supported by an icon and text. */
-export function Alert({ tone = "info", title, children, icon, action, role, compact, className, id }: AlertProps) {
+export function Alert({ tone = "info", title, children: childrenProp, body, icon, action, role, compact, className, id }: AlertProps) {
+  const children = childrenProp ?? body;
   const t = TONE[tone];
   const resolvedRole = role ?? (tone === "warn" || tone === "err" ? "alert" : "status");
   return (

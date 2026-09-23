@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { PageHeader } from "@/components/shell/PageHeader";
@@ -110,16 +111,16 @@ export function CasesView({ data, view, filters, canCreate, canImport, canAssign
         actions={
           <div className="flex flex-wrap gap-2">
             {canImport ? (
-              <a className={buttonClasses({ variant: "secondary" })} href="/cases/import">
+              <Link className={buttonClasses({ variant: "secondary" })} href="/cases/import">
                 <Icon name="upload" size={18} />
                 استيراد ملف
-              </a>
+              </Link>
             ) : null}
             {canCreate ? (
-              <a className={buttonClasses({ variant: "primary" })} href="/cases/new">
+              <Link className={buttonClasses({ variant: "primary" })} href="/cases/new">
                 <Icon name="add" size={18} />
                 حالة جديدة
-              </a>
+              </Link>
             ) : null}
           </div>
         }

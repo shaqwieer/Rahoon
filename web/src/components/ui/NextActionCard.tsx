@@ -13,6 +13,8 @@ export type NextActionState = "available" | "blocked" | "not-yours";
 
 export interface NextActionCardProps {
   state: NextActionState;
+  /** Overrides the default «الإجراء التالي · لك / ليس لك» label (e.g. gendered «لكِ» from the API). */
+  eyebrow?: ReactNode;
   /** What to do, e.g. «إرسال الحل v2 للموافقة الداخلية». Rendered as h3. */
   title: ReactNode;
   headingLevel?: 2 | 3;
@@ -44,6 +46,7 @@ const TOP_BORDER: Record<NextActionState, string> = {
 /** C04: one authorized dominant action; blocked shows the reason; not-yours shows the owner instead of a button. */
 export function NextActionCard({
   state,
+  eyebrow: eyebrowProp,
   title,
   headingLevel = 3,
   sla,
@@ -59,7 +62,7 @@ export function NextActionCard({
   const { t } = useI18n();
   const reasonId = useId();
   const H = headingLevel === 2 ? "h2" : "h3";
-  const eyebrow = state === "not-yours" ? t.nextAction.eyebrowNotYours : t.nextAction.eyebrowYours;
+  const eyebrow = eyebrowProp ?? (state === "not-yours" ? t.nextAction.eyebrowNotYours : t.nextAction.eyebrowYours);
   const badge =
     state === "blocked" ? (
       <span className="inline-flex items-center gap-1 rounded-xs bg-info-bg px-2 py-0.5 text-12 font-semibold text-info">
