@@ -1,26 +1,409 @@
 @import "tailwindcss";
 
+/*
+ * رهون design tokens — mirrored from design-source/09 Handoff/tokens.css (v0.1).
+ * Primitives → semantic aliases live on :root (usable from any CSS/inline style);
+ * the @theme block below maps them to Tailwind utilities (bg-rust, text-muted, border-line …).
+ * RTL is the default; every layout rule uses logical properties so LTR mirrors.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ── Primitives: color ── */
+  --p-orange-500: #f4633a; /* accent only — never small text, never white-on-orange */
+  --p-rust-600: #aa4528; /* primary action / link */
+  --p-rust-700: #8e3920; /* hover / pressed */
+  --p-rust-50: #fdf0eb; /* selected tint */
+  --p-rust-200: #f0b8a6; /* selected tint border (02 Components) */
+  --p-charcoal-900: #22262a;
+  --p-ink-950: #151513;
+  --p-neutral-0: #ffffff;
+  --p-neutral-25: #faf9f6;
+  --p-neutral-50: #f2f1ed;
+  --p-neutral-100: #edece8; /* divider inside cards / lists */
+  --p-neutral-150: #e4e3df; /* disabled fill, empty stage bar */
+  --p-neutral-200: #cbcac6; /* decorative border — not for control edges */
+  --p-neutral-400: #85847f; /* control border */
+  --p-neutral-600: #6b6a65; /* text.secondary */
+  --p-neutral-700: #5e5d58; /* secondary text on subtle */
+  --p-gold-300: #d5bd8d; /* optional premium accent; never a status */
+  --p-green-700: #1e6a45;
+  --p-green-50: #eaf4ee;
+  --p-green-300: #9ccbb0;
+  --p-amber-700: #8a5300;
+  --p-amber-50: #fbf2de;
+  --p-amber-300: #e2c27a;
+  --p-red-700: #b3261e;
+  --p-red-50: #fcecea;
+  --p-red-300: #efa59c;
+  --p-blue-700: #1d5a8c;
+  --p-blue-50: #eaf2f9;
+  --p-blue-300: #9dc0de;
+
+  /* ── Semantic: color ── */
+  --color-text-primary: var(--p-ink-950);
+  --color-text-strong: var(--p-charcoal-900);
+  --color-text-secondary: var(--p-neutral-600);
+  --color-text-link: var(--p-rust-600);
+  --color-text-inverse: var(--p-neutral-0);
+  --color-surface-canvas: var(--p-neutral-0);
+  --color-surface-warm: var(--p-neutral-25);
+  --color-surface-subtle: var(--p-neutral-50);
+  --color-surface-inverse: var(--p-ink-950);
+  --color-border-default: var(--p-neutral-200);
+  --color-border-strong: var(--p-neutral-400);
+  --color-border-subtle: var(--p-neutral-100);
+  --color-action-primary-bg: var(--p-rust-600);
+  --color-action-primary-bg-hover: var(--p-rust-700);
+  --color-action-primary-fg: var(--p-neutral-0);
+  --color-action-strong-bg: var(--p-ink-950);
+  --color-accent: var(--p-orange-500);
+  --color-selected-bg: var(--p-rust-50);
+  --color-success-fg: var(--p-green-700);
+  --color-success-bg: var(--p-green-50);
+  --color-success-border: var(--p-green-300);
+  --color-warning-fg: var(--p-amber-700);
+  --color-warning-bg: var(--p-amber-50);
+  --color-warning-border: var(--p-amber-300);
+  --color-error-fg: var(--p-red-700);
+  --color-error-bg: var(--p-red-50);
+  --color-error-border: var(--p-red-300);
+  --color-info-fg: var(--p-blue-700);
+  --color-info-bg: var(--p-blue-50);
+  --color-info-border: var(--p-blue-300);
+  --color-focus-ring: var(--p-ink-950);
+
+  /* ── Inverse (dark surface) tokens ── */
+  --inv-surface: #151513;
+  --inv-surface-raised: #22262a;
+  --inv-text: #ffffff;
+  --inv-text-secondary: #b5b3ad;
+  --inv-border: #3a3d40;
+  --inv-accent: #f4633a;
+  --inv-focus: #ffffff;
+
+  /* ── Typography (next/font variables are injected on <html>) ── */
+  --font-ar: var(--font-plex-ar), "IBM Plex Sans Arabic", "Noto Sans Arabic", Tahoma, sans-serif;
+  --font-latin: var(--font-plex), "IBM Plex Sans", "Segoe UI", sans-serif;
+  --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+  --fs-display: 40px;
+  --lh-display: 56px;
+  --fs-h1: 32px;
+  --lh-h1: 44px;
+  --fs-h2: 24px;
+  --lh-h2: 36px;
+  --fs-h3: 20px;
+  --lh-h3: 30px;
+  --fs-body-lg: 18px;
+  --lh-body-lg: 30px;
+  --fs-body: 16px;
+  --lh-body: 26px;
+  --fs-body-sm: 14px;
+  --lh-body-sm: 22px;
+  --fs-caption: 12px;
+  --lh-caption: 18px;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* ── Spacing (4/8) ── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+
+  /* ── Layout ── */
+  --bp-sm: 390px;
+  --bp-md: 768px;
+  --bp-lg: 1440px;
+  --grid-margin-sm: 16px;
+  --grid-margin-md: 32px;
+  --grid-margin-lg: 40px;
+  --shell-sidenav: 264px;
+  --shell-sidenav-collapsed: 72px;
+  --shell-topbar: 64px;
+
+  /* ── Shape ── */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  /* ── Elevation ── */
+  --shadow-0: none;
+  --shadow-1: 0 1px 2px rgba(21, 21, 19, 0.06), 0 0 0 1px rgba(21, 21, 19, 0.04);
+  --shadow-2: 0 4px 12px rgba(21, 21, 19, 0.08), 0 0 0 1px rgba(21, 21, 19, 0.05);
+  --shadow-3: 0 16px 40px rgba(21, 21, 19, 0.14), 0 0 0 1px rgba(21, 21, 19, 0.06);
+
+  /* ── Motion ── */
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-exit: cubic-bezier(0.3, 0, 1, 1);
+
+  /* ── Focus ── */
+  --focus-width: 2px;
+  --focus-offset: 2px;
+  --focus-color: var(--color-focus-ring);
+
+  /* ── Density ── */
+  --control-h-comfortable: 48px;
+  --control-h-default: 40px;
+  --control-h-compact: 32px;
+  --touch-min: 44px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@media (prefers-reduced-motion: reduce) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Tailwind utilities — only the approved palette exists (defaults are cleared). */
+@theme inline {
+  --color-*: initial;
+  --color-white: #ffffff;
+  --color-transparent: transparent;
+  --color-orange: var(--p-orange-500);
+  --color-rust: var(--p-rust-600);
+  --color-rust-700: var(--p-rust-700);
+  --color-rust-50: var(--p-rust-50);
+  --color-rust-200: var(--p-rust-200);
+  --color-charcoal: var(--p-charcoal-900);
+  --color-ink: var(--p-ink-950);
+  --color-warm: var(--p-neutral-25);
+  --color-subtle: var(--p-neutral-50);
+  --color-divider: var(--p-neutral-100);
+  --color-track: var(--p-neutral-150);
+  --color-line: var(--p-neutral-200);
+  --color-line-strong: var(--p-neutral-400);
+  --color-soft: var(--p-neutral-600);
+  --color-muted: var(--p-neutral-700);
+  --color-gold: var(--p-gold-300);
+  --color-ok: var(--p-green-700);
+  --color-ok-bg: var(--p-green-50);
+  --color-ok-line: var(--p-green-300);
+  --color-warn: var(--p-amber-700);
+  --color-warn-bg: var(--p-amber-50);
+  --color-warn-line: var(--p-amber-300);
+  --color-err: var(--p-red-700);
+  --color-err-bg: var(--p-red-50);
+  --color-err-line: var(--p-red-300);
+  --color-info: var(--p-blue-700);
+  --color-info-bg: var(--p-blue-50);
+  --color-info-line: var(--p-blue-300);
+  --color-inv: var(--inv-surface);
+  --color-inv-raised: var(--inv-surface-raised);
+  --color-inv-2: var(--inv-text-secondary);
+  --color-inv-line: var(--inv-border);
+
+  --font-*: initial;
+  --font-ar: var(--font-plex-ar), "IBM Plex Sans Arabic", "Noto Sans Arabic", Tahoma, sans-serif;
+  --font-latin: var(--font-plex), "IBM Plex Sans", "Segoe UI", sans-serif;
+  --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+
+  --radius-*: initial;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  --shadow-*: initial;
+  --shadow-1: 0 1px 2px rgba(21, 21, 19, 0.06), 0 0 0 1px rgba(21, 21, 19, 0.04);
+  --shadow-2: 0 4px 12px rgba(21, 21, 19, 0.08), 0 0 0 1px rgba(21, 21, 19, 0.05);
+  --shadow-3: 0 16px 40px rgba(21, 21, 19, 0.14), 0 0 0 1px rgba(21, 21, 19, 0.06);
+
+  /* Type scale: semantic (token names) + numeric px steps used by the design (text-14 = 14px). */
+  --text-display: 40px;
+  --text-display--line-height: 56px;
+  --text-h1: 32px;
+  --text-h1--line-height: 44px;
+  --text-h2: 24px;
+  --text-h2--line-height: 36px;
+  --text-h3: 20px;
+  --text-h3--line-height: 30px;
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 30px;
+  --text-body: 16px;
+  --text-body--line-height: 26px;
+  --text-body-sm: 14px;
+  --text-body-sm--line-height: 22px;
+  --text-caption: 12px;
+  --text-caption--line-height: 18px;
+  --text-10: 10px;
+  --text-11: 11px;
+  --text-12: 12px;
+  --text-13: 13px;
+  --text-14: 14px;
+  --text-15: 15px;
+  --text-16: 16px;
+  --text-17: 17px;
+  --text-18: 18px;
+  --text-19: 19px;
+  --text-20: 20px;
+  --text-22: 22px;
+  --text-24: 24px;
+  --text-26: 26px;
+  --text-28: 28px;
+  --text-30: 30px;
+  --text-32: 32px;
+  --text-36: 36px;
+  --text-40: 40px;
+  --text-52: 52px;
+
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  html[lang="ar"] body {
+    font-family: var(--font-ar);
+  }
+  html[lang="en"] body {
+    font-family: var(--font-latin);
+  }
+  body {
+    background: var(--color-surface-warm);
+    color: var(--color-text-primary);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  a {
+    color: var(--color-text-link);
+    text-underline-offset: 3px;
+  }
+  a:hover {
+    color: var(--color-action-primary-bg-hover);
+  }
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: var(--focus-width) solid var(--focus-color);
+    outline-offset: var(--focus-offset);
+  }
+  bdi[dir="ltr"],
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  ::selection {
+    background: var(--p-rust-50);
+    color: var(--p-ink-950);
+  }
+  dialog::backdrop {
+    background: rgba(21, 21, 19, 0.4);
+  }
+}
+
+/* Material Symbols Rounded — ligature icons. Decorative uses carry aria-hidden. */
+.ms {
+  font-family: "Material Symbols Rounded";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  flex: none;
+  font-feature-settings: "liga";
+  -webkit-font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  overflow: hidden;
+}
+
+/* Directional icons are drawn for RTL (arrow_forward = back, chevron_left = next); flip them in LTR. */
+[dir="ltr"] .ms-mirror {
+  transform: scaleX(-1);
+}
+
+/* Dark surfaces: focus ring and link colours switch to white. */
+.surface-dark {
+  --focus-color: var(--inv-focus);
+}
+
+/* Orange marker on the inline-start edge (active nav item, selected row / option). */
+@utility bar-start {
+  box-shadow: inset -3px 0 0 var(--p-orange-500);
+  [dir="ltr"] & {
+    box-shadow: inset 3px 0 0 var(--p-orange-500);
+  }
+}
+
+/* Selected tab underline (direction-agnostic). */
+@utility bar-bottom {
+  box-shadow: inset 0 -3px 0 var(--p-orange-500);
+}
+
+/* Visually hidden but announced. */
+@utility sr-only-focusable {
+  &:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+@keyframes rh-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-rh-spin {
+  animation: rh-spin 0.9s linear infinite;
+}
+
+@keyframes rh-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+.animate-rh-pulse {
+  animation: rh-pulse 1.6s var(--ease-standard) infinite;
+}
+
+.hatch {
+  background: repeating-linear-gradient(135deg, #f2f1ed 0 12px, #faf9f6 12px 24px);
 }
