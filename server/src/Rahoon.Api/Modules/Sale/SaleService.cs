@@ -210,6 +210,9 @@ public sealed class SaleService(RahoonDbContext db, RequestContext rc, IClock cl
         // Ordering rule: the transition (which may audit a blocked attempt separately) precedes any audit append.
         if (c.Status == CaseStatus.VoluntarySale)
             await workflow.TransitionAsync(c, "sale_withdrawn", reason, CaseStatus.VoluntarySale, systemInitiated: true, evidence: [$"sale:{s.BuyerReference}"]);
+        // The owner's right holds while the case is paused: resuming must not return to a sale with no open track.
+        var repointedPause = c.Status == CaseStatus.Paused && c.StatusBeforePause == CaseStatus.VoluntarySale;
+        if (repointedPause) c.StatusBeforePause = CaseStatus.ProposedSolution;
 
         var now = clock.UtcNow;
         if (s.DecisionApprovalRequestId is { } reqId)
@@ -230,7 +233,9 @@ public sealed class SaleService(RahoonDbContext db, RequestContext rc, IClock cl
         await NotifyManagerAsync(c, "انسحب المالك من البيع الطوعي", reason, $"/cases/{c.Reference}/sale", "warn");
         await audit.RecordAsync(new AuditEntry("sale.withdrawn", "انسحاب المالك من البيع الطوعي", c.Id, c.Reference,
             CaseStatusInfo.Key(from), CaseStatusInfo.Key(c.Status), reason,
-            Detail: from == CaseStatus.VoluntarySale ? "تعود الحالة إلى «حل مقترح»؛ سُحب وصول الوسيط وأُغلق العرض المضبوط." : "أُلغي طلب البيع قبل اعتماد القرار.",
+            Detail: from == CaseStatus.VoluntarySale ? "تعود الحالة إلى «حل مقترح»؛ سُحب وصول الوسيط وأُغلق العرض المضبوط."
+                : repointedPause ? "الحالة موقوفة؛ عند الاستئناف تعود إلى «حل مقترح» بدل «بيع طوعي». سُحب وصول الوسيط."
+                : "أُلغي طلب البيع قبل اعتماد القرار.",
             Evidence: [$"sale:{s.BuyerReference}"], OrganizationId: c.OrganizationId));
     }
 

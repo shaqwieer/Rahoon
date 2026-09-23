@@ -116,14 +116,21 @@ public static class OwnerSaleEndpoints
             .Require(req.ProposedMinPrice is null or > 0, "proposedMinPrice", "أدخل مبلغاً أكبر من صفر أو اتركه فارغاً.")
             .ThrowIfInvalid();
 
+        // State checks, then the OTP outside the business transaction (so failed attempts are counted), then re-check inside it.
+        async Task<Case> CheckAsync(bool track)
+        {
+            var c = await OwnCaseAsync(db, rc, track);
+            if (!CaseStatusInfo.SolutionStates.Contains(c.Status))
+                throw new DomainException("sale_not_available", "يُتاح طلب البيع الطوعي بعد اكتمال التحقق والتقييم.", StatusCodes.Status409Conflict);
+            var latest = await sales.LatestAsync(c.Id);
+            if (latest is not null && SaleService.IsOpen(latest.Status))
+                throw new ConflictException("sale_exists", "لديك طلب بيع طوعي قائم.");
+            return c;
+        }
+        var probe = await CheckAsync(track: false);
+        await VerifyOtpAsync(otp, rc, req.Code, $"sale:request:{probe.Id}");
         await using var tx = await db.Database.BeginTransactionAsync();
-        var c = await OwnCaseAsync(db, rc, track: true);
-        if (!CaseStatusInfo.SolutionStates.Contains(c.Status))
-            throw new DomainException("sale_not_available", "يُتاح طلب البيع الطوعي بعد اكتمال التحقق والتقييم.", StatusCodes.Status409Conflict);
-        var latest = await sales.LatestAsync(c.Id);
-        if (latest is not null && SaleService.IsOpen(latest.Status))
-            throw new ConflictException("sale_exists", "لديك طلب بيع طوعي قائم.");
-        await VerifyOtpAsync(otp, rc, req.Code, $"sale:request:{c.Id}");
+        var c = await CheckAsync(track: true);
 
         var now = clock.UtcNow;
         var party = await db.Parties.AsNoTracking().FirstAsync(p => p.Id == rc.OwnerPartyId);
@@ -214,11 +221,15 @@ public static class OwnerSaleEndpoints
             .Require((req.VisitWindow?.Length ?? 0) <= 60, "visitWindow", "حتى 60 حرفاً.")
             .ThrowIfInvalid();
 
+        var probeCase = await OwnCaseAsync(db, rc);
+        var probe = await sales.RequireOpenAsync(probeCase.Id);
+        if (probe.Status != SaleStatus.AwaitingConsent) throw new ConflictException("consent_not_requested", "لا توجد موافقة مطلوبة منك الآن.");
+        await VerifyOtpAsync(otp, rc, req.Code, $"sale:consent:{probe.Id}");
+
         await using var tx = await db.Database.BeginTransactionAsync();
         var c = await OwnCaseAsync(db, rc, track: true);
         var s = await sales.RequireOpenAsync(c.Id, track: true);
-        if (s.Status != SaleStatus.AwaitingConsent) throw new ConflictException("consent_not_requested", "لا توجد موافقة مطلوبة منك الآن.");
-        await VerifyOtpAsync(otp, rc, req.Code, $"sale:consent:{s.Id}");
+        if (s.Id != probe.Id || s.Status != SaleStatus.AwaitingConsent) throw new ConflictException("consent_not_requested", "لا توجد موافقة مطلوبة منك الآن.");
 
         var now = clock.UtcNow;
         var today = clock.TodayRiyadh;
@@ -384,14 +395,20 @@ public static class OwnerSaleEndpoints
         OtpService otp, SaleService sales, AuditLog audit)
     {
         if (!req.Acknowledged) Validate.Throw("acknowledged", "يجب تأكيد الموافقة على العرض.");
+        async Task<(Case, VoluntarySale, BuyerOffer)> CheckAsync(bool track)
+        {
+            var (c, s, o) = await LoadOfferAsync(db, rc, sales, offerCode, track);
+            if (s.Status != SaleStatus.Active || o.Status != BuyerOfferStatus.SharedWithOwner) throw new ConflictException("offer_closed", "لم يعد هذا العرض قائماً.");
+            if (o.ValidUntil < clock.TodayRiyadh) throw new ConflictException("offer_expired", "انتهت صلاحية هذا العرض.");
+            if (await sales.OwnerAcceptedAnyAsync(s.Id)) throw new ConflictException("offer_already_accepted", "سبق أن وافقتِ على عرض آخر.");
+            var consent = await sales.RequireSignedConsentAsync(s);
+            if (o.Price < consent.MinPrice) throw new DomainException("below_minimum", $"العرض أقل من الحد الأدنى الذي حددتِه ({consent.MinPrice:N0}). قبوله يتطلب موافقة جديدة بنطاق مختلف.");
+            return (c, s, o);
+        }
+        var (_, _, probe) = await CheckAsync(track: false);
+        await VerifyOtpAsync(otp, rc, req.Code, $"sale:offer:{probe.Id}");
         await using var tx = await db.Database.BeginTransactionAsync();
-        var (c, s, o) = await LoadOfferAsync(db, rc, sales, offerCode, track: true);
-        if (s.Status != SaleStatus.Active || o.Status != BuyerOfferStatus.SharedWithOwner) throw new ConflictException("offer_closed", "لم يعد هذا العرض قائماً.");
-        if (o.ValidUntil < clock.TodayRiyadh) throw new ConflictException("offer_expired", "انتهت صلاحية هذا العرض.");
-        if (await sales.OwnerAcceptedAnyAsync(s.Id)) throw new ConflictException("offer_already_accepted", "سبق أن وافقتِ على عرض آخر.");
-        var consent = await sales.RequireSignedConsentAsync(s);
-        if (o.Price < consent.MinPrice) throw new DomainException("below_minimum", $"العرض أقل من الحد الأدنى الذي حددتِه ({consent.MinPrice:N0}). قبوله يتطلب موافقة جديدة بنطاق مختلف.");
-        await VerifyOtpAsync(otp, rc, req.Code, $"sale:offer:{o.Id}");
+        var (c, s, o) = await CheckAsync(track: true);
 
         var now = clock.UtcNow;
         var party = await db.Parties.AsNoTracking().FirstAsync(p => p.Id == rc.OwnerPartyId);

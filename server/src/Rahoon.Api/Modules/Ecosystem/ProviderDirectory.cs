@@ -85,9 +85,15 @@ public sealed record DirectoryRow(
 /// </summary>
 public sealed class ProviderDirectory(RahoonDbContext db, IClock clock)
 {
-    public async Task<DateOnly?> PracticeLicenseExpiryAsync(Guid profileId) =>
-        await db.Set<ProviderLicense>().Where(l => l.ProviderProfileId == profileId && l.IsCurrent && l.Kind == LicenseRules.PracticeLicense)
-            .Select(l => l.ExpiresOn).FirstOrDefaultAsync();
+    /// <summary>
+    /// Expiry of the latest compliance-<b>approved</b> practice licence. A self-uploaded renewal pending review never
+    /// changes directory status or assignability until platform compliance approves it.
+    /// </summary>
+    public async Task<DateOnly?> PracticeLicenseExpiryAsync(Guid profileId) => await ApprovedPracticeExpiryAsync(db, profileId);
+
+    public static async Task<DateOnly?> ApprovedPracticeExpiryAsync(RahoonDbContext db, Guid profileId) =>
+        await db.Set<ProviderLicense>().Where(l => l.ProviderProfileId == profileId && l.Kind == LicenseRules.PracticeLicense && l.ReviewStatus == LicenseReviewStatus.Approved)
+            .OrderByDescending(l => l.UploadedAt).Select(l => l.ExpiresOn).FirstOrDefaultAsync();
 
     /// <summary>Performance of one provider at one lender (lender rows only — explicit org filter, 12 months).</summary>
     public async Task<ProviderPerformance> PerformanceAsync(Guid lenderOrgId, Guid providerOrgId, bool reworkApplies = true)

@@ -97,6 +97,34 @@ public sealed class EcosystemTests(ApiFixture api)
     }
 
     [Fact]
+    public async Task Self_uploaded_licence_renewal_changes_nothing_until_compliance_approves()
+    {
+        var hatem = await RawSession.LoginAsync(api, "h.alrashid@valuer-b.example");
+        var layla = await api.LoginAsync("l.alghamdi@alufuq.example");
+        async Task<string> LicenceTextAsync()
+        {
+            var (_, dir) = await layla.GetAsync("/api/institution/providers?type=valuer");
+            return TestClient.Str(dir!["items"]!.AsArray().First(i => TestClient.Str(i, "name") == "مكتب تقييم معتمد «ب»")!["license"], "text");
+        }
+        var before = await LicenceTextAsync();
+        var renewal = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(700);
+        var (su, _) = await hatem.UploadAsync("/api/provider/onboarding/documents", "practice_license", "1100884471", renewal.ToString("yyyy-MM-dd"));
+        Assert.Equal(HttpStatusCode.OK, su);
+        Assert.Equal(before, await LicenceTextAsync()); // the pending upload does not change directory status
+        var (_, profile) = await hatem.Json.GetAsync("/api/provider/profile");
+        Assert.NotNull(profile!["license"]!["pendingRenewal"]);
+
+        var (providerOrg, licenseId) = await api.WithDbAsync(async db =>
+        {
+            var l = await db.Set<ProviderLicense>().FirstAsync(x => x.IsCurrent && x.Kind == "practice_license" && db.Organizations.Any(o => o.Id == x.ProviderOrganizationId && o.ShortCode == "valuer-b"));
+            return (l.ProviderOrganizationId, l.Id);
+        });
+        var hessa = await api.LoginAsync("h.alotaibi@rahoon.example");
+        Assert.Equal(HttpStatusCode.OK, (await hessa.PostAsync($"/api/platform/providers/{providerOrg}/licenses/{licenseId}/review", new { decision = "approve", note = "مطابق للشهادة" })).Status);
+        Assert.Equal($"ساري حتى {renewal:yyyy-MM}", await LicenceTextAsync());
+    }
+
+    [Fact]
     public async Task Invoice_from_delivered_assignment_requires_a_different_approver()
     {
         var hatem = await api.LoginAsync("h.alrashid@valuer-b.example");

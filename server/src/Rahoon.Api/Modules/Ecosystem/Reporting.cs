@@ -149,8 +149,13 @@ public static class ReportingEndpoints
         v.Require(okF, "from", "الفترة بصيغة yyyy-MM.").Require(okT, "to", "الفترة بصيغة yyyy-MM.");
         v.Require(!okF || !okT || (t >= f && t <= f.AddMonths(36)), "to", "الفترة حتى 36 شهراً ونهايتها بعد بدايتها.");
         v.ThrowIfInvalid();
-        return (f, t.AddMonths(1).AddDays(-1));
+        // Snap to whole quarters so overlapping month ranges cannot be subtracted to isolate a suppressed cell.
+        var qFrom = new DateOnly(f.Year, (f.Month - 1) / 3 * 3 + 1, 1);
+        var qTo = new DateOnly(t.Year, (t.Month - 1) / 3 * 3 + 1, 1).AddMonths(3).AddDays(-1);
+        return (qFrom, qTo);
     }
+
+    private static readonly string[] Regions = ["الرياض", "مكة المكرمة", "الشرقية", "المدينة المنورة", "عسير", "أخرى"];
 
     internal static async Task<(string RowHeader, List<string> Rows, List<string> Columns, List<ReportCell> Cells, string MetricLabel)> RunAsync(ReportQuery q, RahoonDbContext db, Guid orgId)
     {
@@ -184,14 +189,15 @@ public static class ReportingEndpoints
                 break;
             case "region_quarter":
                 header = "المنطقة";
-                rowsFacts = inPeriod.Select(x => new ReportFact(x.f.Region ?? "أخرى", ReportAggregator.Quarter(x.Date!.Value), Value(x))).ToList();
-                rows = rowsFacts.Select(f => f.Row).Distinct().OrderBy(r => r).ToList();
+                // Fixed row sets: a row's presence must not reveal that a case exists in it.
+                rowsFacts = inPeriod.Select(x => new ReportFact(Regions.Contains(x.f.Region) ? x.f.Region! : "أخرى", ReportAggregator.Quarter(x.Date!.Value), Value(x))).ToList();
+                rows = [.. Regions];
                 columns = quarters;
                 break;
             case "status":
                 header = "الحالة";
                 rowsFacts = inPeriod.Select(x => new ReportFact(CaseStatusInfo.Of(x.f.Status).LabelAr, "الكل", Value(x))).ToList();
-                rows = rowsFacts.Select(f => f.Row).Distinct().OrderBy(r => r).ToList();
+                rows = Enum.GetValues<CaseStatus>().Where(s => s != CaseStatus.Draft).Select(s => CaseStatusInfo.Of(s).LabelAr).ToList();
                 columns = ["الكل"];
                 break;
             default:

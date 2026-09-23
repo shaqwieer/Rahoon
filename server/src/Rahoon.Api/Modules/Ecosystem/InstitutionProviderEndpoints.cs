@@ -64,7 +64,7 @@ public static class InstitutionProviderEndpoints
         var items = new List<object>();
         foreach (var p in profiles)
         {
-            var exp = await db.Set<ProviderLicense>().Where(l => l.ProviderProfileId == p.Id && l.IsCurrent && l.Kind == LicenseRules.PracticeLicense).Select(l => l.ExpiresOn).FirstOrDefaultAsync();
+            var exp = await ProviderDirectory.ApprovedPracticeExpiryAsync(db, p.Id);
             items.Add(new { id = p.ProviderOrganizationId, name = p.LegalName, type = p.ProviderType.ToString(), typeLabel = LicenseRules.TypeLabel(p.ProviderType), p.City, license = LicenseRules.Text(exp, today) });
         }
         return Results.Ok(new { items });

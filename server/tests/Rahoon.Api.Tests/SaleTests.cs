@@ -182,6 +182,27 @@ public sealed class SaleTests(ApiFixture api)
     }
 
     [Fact]
+    public async Task Owner_otp_is_locked_after_three_wrong_codes()
+    {
+        var r = await Scenarios.ReadyForApprovalAsync(api);
+        var owner = await Scenarios.OwnerForNewCaseAsync(api, r);
+        var (_, otp) = await owner.PostAsync("/api/owner/sale/request/otp");
+        var code = TestClient.Str(otp, "sandboxCode");
+        var wrong = code == "000000" ? "111111" : "000000";
+        HttpStatusCode last = default;
+        JsonNode? lastBody = null;
+        for (var i = 0; i < 3; i++)
+            (last, lastBody) = await owner.PostAsync("/api/owner/sale/request", new { acknowledgements = SaleScenarios.Acks, code = wrong });
+        Assert.Equal(HttpStatusCode.Unauthorized, last);
+        Assert.Equal("otp_exhausted", TestClient.Str(lastBody, "code"));
+        // The attempts were persisted: the right code no longer works and nothing was recorded.
+        var (s, _) = await owner.PostAsync("/api/owner/sale/request", new { acknowledgements = SaleScenarios.Acks, code });
+        Assert.NotEqual(HttpStatusCode.OK, s);
+        Assert.False(await api.WithDbAsync(db => db.Set<VoluntarySale>().AnyAsync(x => db.Cases.Any(c => c.Id == x.CaseId && c.Reference == r))));
+        Assert.False(await api.WithDbAsync(db => db.ConsentRecords.AnyAsync(x => db.Cases.Any(c => c.Id == x.CaseId && c.Reference == r))));
+    }
+
+    [Fact]
     public async Task Owner_withdrawal_returns_case_to_proposed_solution_never_referral()
     {
         var (r, owner) = await SaleScenarios.OpenAsync(api);

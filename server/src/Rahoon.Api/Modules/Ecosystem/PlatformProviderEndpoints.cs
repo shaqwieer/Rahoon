@@ -12,6 +12,7 @@ namespace Rahoon.Api.Modules.Ecosystem;
 
 public sealed record ProviderDecisionBody(string Decision, string Message);
 public sealed record ProviderStatusBody(string Action, string Reason);
+public sealed record LicenseReviewBody(string Decision, string? Note);
 
 /// <summary>
 /// Platform provider registry (PA16) and registration review (V06b). Metadata only — no institution data and no
@@ -29,6 +30,7 @@ public static class PlatformProviderEndpoints
         g.MapPost("/applications/{profileId:guid}/decision", Decide).Idempotent();
         g.MapGet("/applications/{profileId:guid}/documents/{licenseId:guid}/file", Download);
         g.MapPost("/{providerOrganizationId:guid}/status", ChangeStatus).Idempotent();
+        g.MapPost("/{providerOrganizationId:guid}/licenses/{licenseId:guid}/review", ReviewLicense).Idempotent();
     }
 
     private static async Task<IResult> Registry(string? status, RahoonDbContext db, IClock clock)
@@ -38,8 +40,12 @@ public static class PlatformProviderEndpoints
         if (Enum.TryParse<ProviderRegistrationStatus>(status, true, out var st)) q = q.Where(p => p.Status == st);
         var profiles = await q.OrderBy(p => p.LegalName).ToListAsync();
         var ids = profiles.Select(p => p.Id).ToList();
-        var practice = await db.Set<ProviderLicense>().AsNoTracking().Where(l => ids.Contains(l.ProviderProfileId) && l.IsCurrent && l.Kind == LicenseRules.PracticeLicense)
-            .ToDictionaryAsync(l => l.ProviderProfileId, l => l.ExpiresOn);
+        var practice = (await db.Set<ProviderLicense>().AsNoTracking()
+                .Where(l => ids.Contains(l.ProviderProfileId) && l.Kind == LicenseRules.PracticeLicense && l.ReviewStatus == LicenseReviewStatus.Approved)
+                .Select(l => new { l.ProviderProfileId, l.ExpiresOn, l.UploadedAt }).ToListAsync())
+            .GroupBy(l => l.ProviderProfileId).ToDictionary(g => g.Key, g => g.OrderByDescending(l => l.UploadedAt).First().ExpiresOn);
+        var pending = await db.Set<ProviderLicense>().AsNoTracking().Where(l => ids.Contains(l.ProviderProfileId) && l.IsCurrent && l.ReviewStatus == LicenseReviewStatus.Pending)
+            .Select(l => l.ProviderProfileId).Distinct().ToListAsync();
         return Results.Ok(new
         {
             note = "دليل المنصة يضم المقبولين بعد مراجعة الامتثال؛ كل منشأة تختار من تضيف. لا يُعرض أداء منشأة لأخرى.",
@@ -54,6 +60,7 @@ public static class PlatformProviderEndpoints
                     registration = p.Status.ToString(), registrationLabel = ProviderOnboardingEndpoints.StatusLabel(p.Status),
                     license = LicenseRules.Text(exp, today), licenseState = ProviderDirectory.Snake(LicenseRules.State(exp, today)), licenseIcon = icon, licenseTone = tone,
                     directoryStatus = key, directoryLabel = label, directoryTone = sTone, acceptedAt = p.AcceptedAt,
+                    pendingDocumentReview = p.Status != ProviderRegistrationStatus.Submitted && pending.Contains(p.Id),
                 };
             }),
         });
@@ -164,7 +171,30 @@ public static class PlatformProviderEndpoints
         return Results.File(await storage.OpenReadAsync(l.StorageKey), l.ContentType, l.FileName);
     }
 
-    /// <summary>Suspension (e.g. expired licence) and reinstatement; reinstating requires a valid practice licence.</summary>
+    /// <summary>
+    /// Manual review of a document uploaded after acceptance (licence / insurance renewal). Until approved, the previous
+    /// approved licence keeps governing directory status and assignability.
+    /// </summary>
+    private static async Task<IResult> ReviewLicense(Guid providerOrganizationId, Guid licenseId, LicenseReviewBody req, RahoonDbContext db, RequestContext rc, IClock clock, AuditLog audit, Notifier notifier)
+    {
+        new Validator().Require(req.Decision is "approve" or "reject", "decision", "اختر القرار.")
+            .Require(req.Decision != "reject" || (req.Note?.Trim().Length ?? 0) >= 5, "note", "سبب الرفض إلزامي.").ThrowIfInvalid();
+        var l = await db.Set<ProviderLicense>().FirstOrDefaultAsync(x => x.Id == licenseId && x.ProviderOrganizationId == providerOrganizationId && x.IsCurrent) ?? throw new NotFoundException();
+        if (l.ReviewStatus != LicenseReviewStatus.Pending) throw new ConflictException("already_reviewed", "رُوجع هذا المستند مسبقاً.");
+        if (req.Decision == "approve" && l.Kind != LicenseRules.CommercialRegister && LicenseRules.State(l.ExpiresOn, clock.TodayRiyadh) == LicenseState.Expired)
+            throw new DomainException("license_expired", "لا يُعتمد مستند منتهي الصلاحية.");
+        l.ReviewStatus = req.Decision == "approve" ? LicenseReviewStatus.Approved : LicenseReviewStatus.Rejected;
+        var p = await db.Set<ProviderProfile>().FirstAsync(x => x.Id == l.ProviderProfileId);
+        db.Set<ProviderReviewDecision>().Add(new ProviderReviewDecision { ProviderProfileId = p.Id, Decision = $"license_{req.Decision}", Message = req.Note?.Trim() ?? "اعتماد المستند", DecidedByUserId = rc.UserId, DecidedAt = clock.UtcNow });
+        var admins = await db.Memberships.IgnoreQueryFilters().Where(m => m.OrganizationId == providerOrganizationId && m.Status == MembershipStatus.Active).Select(m => m.UserId).ToListAsync();
+        foreach (var u in admins)
+            notifier.Notify(u, providerOrganizationId, "registration", req.Decision == "approve" ? "اعتُمد المستند المرفوع" : "لم يُعتمد المستند المرفوع", req.Note, "/provider/profile", tone: req.Decision == "approve" ? "ok" : "warn");
+        await audit.RecordAsync(new AuditEntry("provider.license_reviewed", $"مراجعة مستند {l.Kind} لمقدم الخدمة {p.LegalName}: {req.Decision}", Reason: req.Note, OrganizationId: rc.OrganizationId));
+        await db.SaveChangesAsync();
+        return Results.Ok(new { review = l.ReviewStatus.ToString() });
+    }
+
+    /// <summary>Suspension (e.g. expired licence) and reinstatement; reinstating requires a valid, approved practice licence.</summary>
     private static async Task<IResult> ChangeStatus(Guid providerOrganizationId, ProviderStatusBody req, RahoonDbContext db, RequestContext rc, IClock clock, AuditLog audit)
     {
         new Validator().Require(req.Action is "suspend" or "reinstate", "action", "اختر الإجراء.")
@@ -179,9 +209,9 @@ public static class PlatformProviderEndpoints
         else
         {
             if (p.Status != ProviderRegistrationStatus.SuspendedLicense) throw new ConflictException("not_suspended", "مقدم الخدمة غير موقوف.");
-            var exp = await db.Set<ProviderLicense>().Where(l => l.ProviderProfileId == p.Id && l.IsCurrent && l.Kind == LicenseRules.PracticeLicense).Select(l => l.ExpiresOn).FirstOrDefaultAsync();
+            var exp = await ProviderDirectory.ApprovedPracticeExpiryAsync(db, p.Id);
             if (LicenseRules.State(exp, clock.TodayRiyadh) is LicenseState.Expired or LicenseState.Missing)
-                throw new DomainException("license_expired", "لا يُعاد التفعيل قبل رفع ترخيص ساري ومراجعته.");
+                throw new DomainException("license_expired", "لا يُعاد التفعيل قبل رفع ترخيص ساري واعتماده من الامتثال.");
             p.Status = ProviderRegistrationStatus.Accepted;
             p.SuspendedReason = null;
         }

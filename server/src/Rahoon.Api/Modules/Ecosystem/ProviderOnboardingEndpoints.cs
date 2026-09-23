@@ -214,13 +214,19 @@ public static class ProviderOnboardingEndpoints
         var today = clock.TodayRiyadh;
         var licenses = await CurrentLicensesAsync(db, p.Id);
         var practice = licenses.FirstOrDefault(l => l.Kind == LicenseRules.PracticeLicense);
-        var state = LicenseRules.State(practice?.ExpiresOn, today);
-        var (key, label, tone, _) = LicenseRules.DirectoryStatus(p.Status, practice?.ExpiresOn, today);
+        var approvedExpiry = await ProviderDirectory.ApprovedPracticeExpiryAsync(db, p.Id);
+        var state = LicenseRules.State(approvedExpiry, today);
+        var (key, label, tone, _) = LicenseRules.DirectoryStatus(p.Status, approvedExpiry, today);
         return Results.Ok(new
         {
             name = p.LegalName, type = LicenseRules.TypeLabel(p.ProviderType), p.City, applicationRef = p.ApplicationRef,
             registration = StatusLabel(p.Status), directoryStatus = new { key, label, tone },
-            license = new { state = ProviderDirectory.Snake(state), text = LicenseRules.Text(practice?.ExpiresOn, today), number = LicenseRules.MaskNumber(practice?.Number) },
+            license = new
+            {
+                state = ProviderDirectory.Snake(state), text = LicenseRules.Text(approvedExpiry, today), number = LicenseRules.MaskNumber(practice?.Number),
+                pendingRenewal = practice is { ReviewStatus: LicenseReviewStatus.Pending } && p.Status != ProviderRegistrationStatus.Submitted
+                    ? "تجديد مرفوع بانتظار مراجعة الامتثال — يبقى الترخيص المعتمد السابق سارياً في الدليل" : null,
+            },
             documents = LicenseRules.RequiredKinds.Select(k => DocumentCard(k, p.ProviderType, licenses.FirstOrDefault(l => l.Kind == k), today)),
             team = new { count = p.TeamCount, individuallyLicensed = p.TeamIndividuallyLicensed },
             billing = p.BillingIbanMasked,

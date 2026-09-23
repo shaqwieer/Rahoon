@@ -31,11 +31,14 @@ public sealed partial class DevSeeder
         await db.SaveChangesAsync();
 
         // ── Platform registry (PA16) + licences (V06) ──
-        var today = D("2026-09-23");
+        // Dates that tests and the UI read relatively («ينتهي خلال 20 يوماً», 12-month performance) are anchored on the
+        // real clock so they stay true whenever the seed runs; canon dates that nothing asserts stay fixed.
+        var today = clock.TodayRiyadh;
+        var now = clock.UtcNow;
         (string code, ProviderType type, string app, ProviderRegistrationStatus status, DateOnly? licence, string licNo)[] registry =
         [
             ("valuer-b", ProviderType.Valuer, "PRV-APP-0012", ProviderRegistrationStatus.Accepted, D("2027-06-30"), "1100884471"),
-            ("valuer-w", ProviderType.Valuer, "PRV-APP-0019", ProviderRegistrationStatus.Accepted, D("2026-10-31"), "1100772290"),
+            ("valuer-w", ProviderType.Valuer, "PRV-APP-0019", ProviderRegistrationStatus.Accepted, today.AddDays(38), "1100772290"),
             ("valuer-h", ProviderType.Valuer, "PRV-APP-0021", ProviderRegistrationStatus.SuspendedLicense, D("2026-08-31"), "1100661802"),
             ("broker-a", ProviderType.Broker, "PRV-APP-0015", ProviderRegistrationStatus.Accepted, D("2027-03-31"), "1200553318"),
             ("broker-c", ProviderType.Broker, "PRV-APP-0026", ProviderRegistrationStatus.Accepted, D("2026-12-31"), "1200441127"),
@@ -56,7 +59,7 @@ public sealed partial class DevSeeder
             };
             db.Set<ProviderProfile>().Add(p);
             SeedLicense(p, LicenseRules.PracticeLicense, r.licNo, r.licence, LicenseReviewStatus.Approved);
-            SeedLicense(p, LicenseRules.Insurance, "INS-" + r.licNo[^4..], (r.licence ?? today).AddMonths(-2), LicenseReviewStatus.Approved);
+            SeedLicense(p, LicenseRules.Insurance, "INS-" + r.licNo[^4..], (r.licence ?? today).AddMonths(3), LicenseReviewStatus.Approved);
             SeedLicense(p, LicenseRules.CommercialRegister, p.CrNumber, D("2027-12-31"), LicenseReviewStatus.Approved);
         }
 
@@ -70,7 +73,7 @@ public sealed partial class DevSeeder
         };
         db.Set<ProviderProfile>().Add(e);
         SeedLicense(e, LicenseRules.PracticeLicense, "1100924471", D("2028-02-01"), LicenseReviewStatus.Pending);
-        SeedLicense(e, LicenseRules.Insurance, "INS-0044", D("2026-10-07"), LicenseReviewStatus.Pending);
+        SeedLicense(e, LicenseRules.Insurance, "INS-0044", today.AddDays(14), LicenseReviewStatus.Pending);
         SeedLicense(e, LicenseRules.CommercialRegister, "2050114471", D("2027-05-30"), LicenseReviewStatus.Pending);
 
         // V06a sample: draft at step 3, autosaved.
@@ -83,7 +86,7 @@ public sealed partial class DevSeeder
         };
         db.Set<ProviderProfile>().Add(t);
         SeedLicense(t, LicenseRules.PracticeLicense, "1300554471", D("2028-02-01"), LicenseReviewStatus.Pending);
-        SeedLicense(t, LicenseRules.Insurance, "INS-0047", D("2026-10-07"), LicenseReviewStatus.Pending);
+        SeedLicense(t, LicenseRules.Insurance, "INS-0047", today.AddDays(14), LicenseReviewStatus.Pending);
         await db.SaveChangesAsync();
 
         // ── Institution directories (V05): each institution curates its own list ──
@@ -127,7 +130,7 @@ public sealed partial class DevSeeder
             var fee = directory.First(d => d.org == h.org && d.provider == h.provider).fee;
             for (var i = 0; i < h.delivered; i++)
             {
-                var delivered = At("2026-09-20T12:00:00").AddDays(-(h.delivered - i) * 330 / h.delivered);
+                var delivered = now.AddDays(-3 - (h.delivered - i) * 330 / h.delivered);
                 var created = delivered.AddDays(-h.avgDays);
                 var isLate = i < h.late;
                 var due = DateOnly.FromDateTime(delivered.ToOffset(TimeSpan.FromHours(3)).DateTime).AddDays(isLate ? -2 : 1);
