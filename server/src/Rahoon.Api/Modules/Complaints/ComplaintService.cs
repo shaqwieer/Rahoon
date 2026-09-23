@@ -26,11 +26,17 @@ public sealed class ComplaintService(RahoonDbContext db, RequestContext rc, IClo
     {
         await using var tx = await db.Database.BeginTransactionAsync();
         var year = clock.TodayRiyadh.Year;
-        var count = await db.Complaints.IgnoreQueryFilters().CountAsync(x => x.Reference.StartsWith($"CMP-{year}-"));
+        var key = $"complaint:{year}";
+        // Atomic counter (same pattern as case references) — no duplicate numbers under concurrency.
+        var next = (await db.Database.SqlQuery<long>($"""
+            INSERT INTO cases.reference_counters (key, value) VALUES ({key}, 142)
+            ON CONFLICT (key) DO UPDATE SET value = cases.reference_counters.value + 1
+            RETURNING value AS "Value"
+            """).ToListAsync())[0];
         var reviewer = await IndependentReviewerAsync(c);
         var complaint = new Complaint
         {
-            OrganizationId = c.OrganizationId, Reference = $"CMP-{year}-{count + 142:D4}", CaseId = c.Id, Type = type, Subject = subject.Trim(), Body = body,
+            OrganizationId = c.OrganizationId, Reference = $"CMP-{year}-{next:D4}", CaseId = c.Id, Type = type, Subject = subject.Trim(), Body = body,
             SubmittedVia = via, SubmittedByUserId = submittedBy, SubmittedByLabel = submittedByLabel, SubmittedAt = clock.UtcNow,
             Status = reviewer is null ? ComplaintStatus.Received : ComplaintStatus.InReview, ReviewerUserId = reviewer,
             DueOn = BusinessDays.Add(clock.TodayRiyadh, 5),

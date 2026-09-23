@@ -200,4 +200,23 @@ public sealed class ResolutionFlowTests(ApiFixture api)
         var mine = list!.AsArray().First(x => TestClient.Str(x, "caseRef") == r)!;
         Assert.Null(mine["subject"]);
     }
+
+    [Fact]
+    public async Task Expired_offer_is_marked_without_changing_case_status()
+    {
+        var r = await Scenarios.ReadyForApprovalAsync(api);
+        await Scenarios.SubmitAsync(api, r);
+        await ApproveAsync(r);
+        await api.WithDbAsync(async db =>
+        {
+            var offer = await db.Offers.FirstAsync(o => db.Cases.Any(c => c.Id == o.CaseId && c.Reference == r));
+            offer.ValidUntil = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(-1);
+            return await db.SaveChangesAsync();
+        });
+        using var scope = api.Services.CreateScope();
+        Assert.True(await scope.ServiceProvider.GetRequiredService<Rahoon.Api.Modules.Solutions.OfferExpiryMonitor>().RunOnceAsync() >= 1);
+        var offerStatus = await api.WithDbAsync(db => db.Offers.Where(o => db.Cases.Any(c => c.Id == o.CaseId && c.Reference == r)).Select(o => o.Status).FirstAsync());
+        Assert.Equal(Rahoon.Api.Modules.Solutions.OfferStatus.Expired, offerStatus);
+        Assert.Equal(CaseStatus.AwaitingCustomer, await api.WithDbAsync(db => db.Cases.Where(c => c.Reference == r).Select(c => c.Status).FirstAsync()));
+    }
 }

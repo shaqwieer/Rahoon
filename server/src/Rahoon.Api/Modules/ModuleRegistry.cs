@@ -23,6 +23,7 @@ public static class ModuleRegistry
         services.AddScoped<AgreementService>();
         services.AddScoped<ComplaintService>();
         services.AddScoped<BreachMonitor>();
+        services.AddScoped<OfferExpiryMonitor>();
         services.AddHostedService<BreachMonitorService>();
         return services;
     }

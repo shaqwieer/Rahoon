@@ -73,7 +73,7 @@ public sealed class BreachMonitor(RahoonDbContext db, IClock clock, Notifier not
     }
 }
 
-/// <summary>Runs the breach monitor hourly (disabled in tests; they call RunOnceAsync directly).</summary>
+/// <summary>Runs the hourly jobs — breach detection and offer expiry (disabled in tests; they call RunOnceAsync directly).</summary>
 public sealed class BreachMonitorService(IServiceScopeFactory scopes, IConfiguration config, ILogger<BreachMonitorService> log) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -87,6 +87,8 @@ public sealed class BreachMonitorService(IServiceScopeFactory scopes, IConfigura
                 using var scope = scopes.CreateScope();
                 var opened = await scope.ServiceProvider.GetRequiredService<BreachMonitor>().RunOnceAsync(stoppingToken);
                 if (opened > 0) log.LogInformation("Breach monitor opened {Count} review(s)", opened);
+                var expired = await scope.ServiceProvider.GetRequiredService<Solutions.OfferExpiryMonitor>().RunOnceAsync(stoppingToken);
+                if (expired > 0) log.LogInformation("Offer expiry marked {Count} offer(s)", expired);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
