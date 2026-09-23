@@ -254,6 +254,9 @@ O05 notes:
 11. The O03 experimental rule is status only, with no suggestion engine.
 
 ## Open issues
+- **CI / plain `dotnet test` (migrations path) stays red until the consolidated migration is generated.** The fixture calls
+  `MigrateAsync`, and the new tables and columns are in no migration. With `RAHOON_TEST_ENSURE_CREATED=1` all tests pass except the
+  pre-existing tampering test.
 - **Migration required** for all new tables and columns. `CaseWorkflow` guard names from the Handoff (`notice_sent`, `objection_period_elapsed`) are enforced through `extraGuardFailures`; they could be promoted to named guards when `CaseWorkflow.cs` can be edited.
 - The approval inbox (L16) lists only solution approvals. Referral, reconciliation, distribution, closure and settings decisions notify approvers but do not appear there.
 - The generated owner summary PDF is Latin-only (no Arabic shaping); the Arabic content comes from the API. The file scanner is still the placeholder.

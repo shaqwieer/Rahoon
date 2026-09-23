@@ -68,9 +68,9 @@ public sealed class ClosureService(RahoonDbContext db)
         else
             rows.Add(new("expected", "المبلغ المتوقع", r.ExpectedAmount, "internal", "داخلي", r.ExpectedSource ?? "—", r.ExpectedSource, Day(r.CreatedAt)));
 
-        foreach (var l in r.Lines.Where(l => l.Kind == "receipt").OrderBy(l => l.ValueDate))
+        foreach (var l in r.Lines.Where(l => l.Kind == "receipt").OrderBy(l => l.ValueDate).ThenBy(l => l.Reference).ThenBy(l => l.Id))
             rows.Add(new($"receipt:{l.Id}", l.Label, l.Amount, "bank", "بنكي", $"{l.Reference} · {l.ValueDate:yyyy-MM-dd}", l.Reference, l.ValueDate?.ToString("yyyy-MM-dd")));
-        foreach (var l in r.Lines.Where(l => l.Kind == "waiver"))
+        foreach (var l in r.Lines.Where(l => l.Kind == "waiver").OrderBy(l => l.ValueDate).ThenBy(l => l.Reference).ThenBy(l => l.Id))
             rows.Add(new($"waiver:{l.Id}", l.Label, l.Amount, "internal", "داخلي", l.Reference ?? "—", l.Reference, l.ValueDate?.ToString("yyyy-MM-dd")));
         rows.Add(new("difference", "الفرق", r.Difference, "internal", "داخلي",
             r.Difference == 0 ? "مطابقة صفرية الفرق" : $"فرق مفسَّر: {r.DifferenceExplanation}",
