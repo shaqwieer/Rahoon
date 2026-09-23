@@ -58,7 +58,7 @@ public static partial class PlatformEndpoints
     {
         await temp.ExpireDueAsync();
         var now = clock.UtcNow;
-        var dayStart = new DateTimeOffset(clock.TodayRiyadh.ToDateTime(TimeOnly.MinValue), TimeSpan.FromHours(3));
+        var dayStart = new DateTimeOffset(clock.TodayRiyadh.ToDateTime(TimeOnly.MinValue), TimeSpan.FromHours(3)).ToUniversalTime();
         using var _ = rc.BeginSystemScope();
         var activeTenants = await db.Organizations.CountAsync(o => o.Kind == OrganizationKind.Lender && o.Status == OrganizationStatus.Active);
         var quarterStart = new DateTimeOffset(new DateTime(now.Year, (now.Month - 1) / 3 * 3 + 1, 1), TimeSpan.Zero);
@@ -325,8 +325,8 @@ public static partial class PlatformEndpoints
         var e = db.AuditEvents.AsNoTracking();
         if (organizationId is { } o) e = e.Where(x => x.OrganizationId == o);
         if (!string.IsNullOrWhiteSpace(type)) e = e.Where(x => x.Type.StartsWith(type));
-        if (from is { } f) { var start = new DateTimeOffset(f.ToDateTime(TimeOnly.MinValue), TimeSpan.FromHours(3)); e = e.Where(x => x.OccurredAt >= start); }
-        if (to is { } t) { var end = new DateTimeOffset(t.AddDays(1).ToDateTime(TimeOnly.MinValue), TimeSpan.FromHours(3)); e = e.Where(x => x.OccurredAt < end); }
+        if (from is { } f) { var start = new DateTimeOffset(f.ToDateTime(TimeOnly.MinValue), TimeSpan.FromHours(3)).ToUniversalTime(); e = e.Where(x => x.OccurredAt >= start); }
+        if (to is { } t) { var end = new DateTimeOffset(t.AddDays(1).ToDateTime(TimeOnly.MinValue), TimeSpan.FromHours(3)).ToUniversalTime(); e = e.Where(x => x.OccurredAt < end); }
         if (!string.IsNullOrWhiteSpace(q)) e = e.Where(x => x.Title.Contains(q) || (x.ActorLabel != null && x.ActorLabel.Contains(q)));
         return e;
     }

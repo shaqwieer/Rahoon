@@ -25,6 +25,7 @@ public static class TempAccessEndpoints
             .RequireAnyPermission(P.PlatformTempAccess, P.PlatformTempAccessApprove).Idempotent();
         p.MapGet("/temp-access/{id:guid}/view", async (Guid id, string? screen, TempAccessService s, RahoonDbContext db) =>
         {
+            await s.ExpireDueAsync(); // committed on its own, even when the view below is refused
             await using var tx = await db.Database.BeginTransactionAsync();
             var result = await s.ViewAsync(id, screen);
             await tx.CommitAsync();

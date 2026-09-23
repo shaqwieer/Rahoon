@@ -33,8 +33,21 @@ public sealed class TestClient(HttpClient http)
         return (res.StatusCode, await res.Content.ReadAsByteArrayAsync(), res.Content.Headers.ContentType?.MediaType);
     }
 
+    /// <summary>Raw POST (CSV exports): status, body bytes and response headers.</summary>
+    public async Task<(HttpStatusCode Status, byte[] Bytes, Dictionary<string, string> Headers)> PostRawAsync(string path, object? body = null)
+    {
+        byte[] bytes = [];
+        var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var (status, _) = await SendContentAsync(HttpMethod.Post, path, JsonContent.Create(body ?? new { }), onResponse: async res =>
+        {
+            bytes = await res.Content.ReadAsByteArrayAsync();
+            foreach (var h in res.Headers.Concat(res.Content.Headers)) headers[h.Key] = string.Join(",", h.Value);
+        });
+        return (status, bytes, headers);
+    }
+
     private async Task<(HttpStatusCode Status, JsonNode? Body)> SendContentAsync(HttpMethod method, string path, HttpContent? content,
-        string? idempotencyKey = null, bool includeCsrf = true, string? origin = Origin, bool autoKey = true)
+        string? idempotencyKey = null, bool includeCsrf = true, string? origin = Origin, bool autoKey = true, Func<HttpResponseMessage, Task>? onResponse = null)
     {
         using var msg = new HttpRequestMessage(method, path);
         if (origin is not null) msg.Headers.Add("Origin", origin);
@@ -54,6 +67,11 @@ public sealed class TestClient(HttpClient http)
                     else _cookies[pair[0]] = pair[1];
                 }
             }
+        }
+        if (onResponse is not null)
+        {
+            await onResponse(res);
+            return (res.StatusCode, null);
         }
         var text = await res.Content.ReadAsStringAsync();
         JsonNode? node = null;

@@ -108,8 +108,8 @@ public sealed class TemplateService(RahoonDbContext db, RequestContext rc, ICloc
 
         if (draft is null)
         {
-            var next = versions.Where(t => t.OrganizationId == org || org is null).Max(t => t.VersionNo) + 1;
-            if (org is not null) next = Math.Max(next, versions.Max(t => t.VersionNo) + 1);
+            // Institution versions continue after the highest base or own version; base versions after base ones.
+            var next = versions.Max(t => t.VersionNo) + 1;
             draft = new CommunicationTemplate
             {
                 OrganizationId = org, Code = code, Title = basis.Title, Audience = basis.Audience, VersionNo = next, Variables = [.. basis.Variables],
