@@ -8,7 +8,6 @@ import { PageHeader } from "@/components/shell/PageHeader";
 import { Alert, Button, EmptyState, Icon, RadioCardGroup, SlaBadge, Tabs, Tag, Textarea, useToast } from "@/components/ui";
 import { apiSend, isApiError, useIdempotencyKey } from "@/lib/api/client";
 import { toSlaTone } from "@/lib/api/lender";
-import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 export interface InboxItem {
