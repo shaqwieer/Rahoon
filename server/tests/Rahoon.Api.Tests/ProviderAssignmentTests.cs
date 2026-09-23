@@ -79,6 +79,14 @@ public sealed class ProviderAssignmentTests(ApiFixture api)
         Assert.Equal(HttpStatusCode.Forbidden, (await omar.GetAsync($"/api/cases/{a.CaseRef}/assignments")).Status);
         Assert.Equal(HttpStatusCode.Forbidden, (await omar.GetAsync($"/api/cases/{a.CaseRef}")).Status);
         Assert.Equal(HttpStatusCode.Forbidden, (await omar.GetAsync($"/api/cases/{a.CaseRef}/documents")).Status);
+        // Live assignments put the lender in his readable organizations; no other lender-data endpoint may use that.
+        foreach (var path in new[] { "/api/search?q=RH-2026", "/api/tasks", "/api/complaints", "/api/approvals", "/api/portfolio", "/api/settings/users" })
+        {
+            var (ls, lb) = await omar.GetAsync(path);
+            Assert.True(ls == HttpStatusCode.Forbidden, $"{path}: {ls} {lb?.ToJsonString()}");
+        }
+        var (_, notes) = await omar.GetAsync("/api/notifications");
+        Assert.DoesNotContain(a.CaseRef, notes?.ToJsonString() ?? "");
 
         // Detail: scope, shared documents, masked contact — no case reference, debt figures or party identities.
         var (s, detail) = await omar.GetAsync($"/api/provider/assignments/{a.Id}");

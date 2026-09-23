@@ -134,7 +134,11 @@ public sealed partial class PlatformAdminTests(ApiFixture api)
         Assert.Matches(CaseRef(), TestClient.Str(view, "reference"));
         Assert.Equal(maskedId, TestClient.Str(view, "maskedId"));
         Assert.True(view!["readOnly"]!.GetValue<bool>());
-        Assert.Equal(HttpStatusCode.Forbidden, (await rana.GetAsync($"/api/cases/{TestClient.Str(view, "reference")}")).Status); // still no lender endpoints
+        // An active grant widens her readable organizations; lender endpoints still refuse, monitoring stays masked.
+        foreach (var path in new[] { $"/api/cases/{TestClient.Str(view, "reference")}", "/api/search?q=RH-2026", "/api/tasks", "/api/complaints", "/api/portfolio" })
+            Assert.Equal(HttpStatusCode.Forbidden, (await rana.GetAsync(path)).Status);
+        var (_, maskedAgain) = await rana.GetAsync($"/api/platform/cases/monitor?organizationId={alufuq}");
+        Assert.DoesNotMatch(CaseRef(), maskedAgain!.ToJsonString());
         var reqGuid = Guid.Parse(requestId);
         Assert.Equal(1, await api.WithDbAsync(db => db.Set<TempAccessViewLog>().CountAsync(v => v.RequestId == reqGuid)));
 

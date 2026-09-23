@@ -13,7 +13,13 @@ New test classes:
 | `ProviderAssignmentTests` | 5 | provider isolation, the access window (write → read-only 7 days → gone), the independence declaration, return/resubmit, accept creating a valuation, share rules, the seeded inbox |
 | `InstitutionAdminTests` | 6 | S05 invitation (domain, password policy, single use, MFA), role change by a second admin, suspension revoking sessions, approval-limit maker-checker and PA07 minima, template publisher ≠ editor, A01/A06/A03 bounds, permission matrix, report CSV and the auditor-only report |
 | `PlatformAdminTests` | 4 | S02 validation and the PA02 approve → onboarding → admin acceptance flow, masked monitoring, dual approval of temp access (institution admin + auditor), the requester unable to approve, view logging, expiry and notification, PA11 masking and signed export, PA10 metadata only, PA07 fixed rules |
-| `B7UnitTests` | 6 (4 facts, 1 theory × 3) | password policy, personal e-mail domains, template variables and tone check |
+| `B7UnitTests` | 6 (3 facts + 1 theory × 3 cases) | password policy, personal e-mail domains, template variables and tone check |
+
+**Cross-endpoint isolation check.** Live seeded assignments keep مصرف الأفق and السنبلة in عمر's readable organizations,
+and an active temporary grant does the same for رنا. Every existing endpoint guarded only by `RequireSession()`, or by
+a permission a provider or platform role holds, was grepped. The only ones are notifications (per user), document types
+(catalog), `auth/*` and the B7 groups (`RequireOrg`). The tests also assert 403 for provider and grant-holding platform
+users on search, tasks, complaints, portfolio, approvals and case routes.
 
 Test helpers:
 
@@ -126,7 +132,8 @@ It never includes the case reference, debt figures, other parties or identity nu
 - The policy acknowledgement is recorded in the audit event.
 - It then opens an **MFA-pending session and issues the login SMS code**. The client completes it with the existing
   `POST /api/auth/mfa/verify`.
-- Someone who already holds an account at another institution confirms with `currentPassword` instead of setting a password.
+- Someone who already holds an account at another institution confirms with `currentPassword` instead of setting a
+  password. Wrong attempts use the login lockout counter (5 attempts → 15 minutes).
 - The first admin's acceptance switches an `Onboarding` organization to `Active`.
 
 ## Institution admin (A01–A07) — all `RequireOrg(Lender)`

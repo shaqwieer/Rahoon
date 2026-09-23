@@ -219,7 +219,7 @@ public static class StaffInvitationEndpoints
     }
 
     private static async Task<IResult> Accept(string token, AcceptInvitationRequest req, HttpContext http, RahoonDbContext db, RequestContext rc, IClock clock,
-        IPasswordHasher<User> hasher, SessionService sessions, OtpService otp, AuditLog audit)
+        IPasswordHasher<User> hasher, SessionService sessions, OtpService otp, AuditLog audit, AuthOptions options)
     {
         using var _ = rc.BeginSystemScope();
         await using var tx = await db.Database.BeginTransactionAsync();
@@ -248,9 +248,23 @@ public static class StaffInvitationEndpoints
 
         if (existingAccount)
         {
-            // Same generic refusal as login; never reveal more than needed.
-            if (hasher.VerifyHashedPassword(user!, user!.PasswordHash!, req.CurrentPassword ?? "") == PasswordVerificationResult.Failed)
+            // Same lockout as login: 5 wrong passwords → 15-minute lock, counted on the same user record.
+            if (user!.LockedUntil is { } until && until > now)
+                throw new DomainException("locked", "أُوقف الدخول مؤقتاً بعد محاولات فاشلة. حاول بعد 15 دقيقة.", StatusCodes.Status423Locked);
+            if (hasher.VerifyHashedPassword(user, user.PasswordHash!, req.CurrentPassword ?? "") == PasswordVerificationResult.Failed)
+            {
+                user.FailedLoginCount++;
+                if (user.FailedLoginCount >= options.MaxFailedLogins)
+                {
+                    user.LockedUntil = now.AddMinutes(options.LockoutMinutes);
+                    user.FailedLoginCount = 0;
+                }
+                await audit.RecordAsync(new AuditEntry("auth.login_failed", "كلمة مرور خاطئة عند قبول دعوة", Detail: Mask.Email(user.Email), OrganizationId: inv.OrganizationId));
+                await db.SaveChangesAsync();
+                await tx.CommitAsync();
                 throw new DomainException("invalid_credentials", "كلمة المرور الحالية غير صحيحة.", StatusCodes.Status401Unauthorized);
+            }
+            user.FailedLoginCount = 0;
         }
         else
         {
