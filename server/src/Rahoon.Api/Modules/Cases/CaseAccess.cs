@@ -154,7 +154,8 @@ public sealed class NextActionBuilder(RahoonDbContext db, RequestContext rc, ICl
             }
             case CaseStatus.InternalApproval:
             {
-                var req = await db.ApprovalRequests.Where(a => a.CaseId == c.Id && a.Status == Solutions.ApprovalStatus.Pending).OrderByDescending(a => a.SubmittedAt).FirstOrDefaultAsync();
+                var req = await db.ApprovalRequests.Where(a => a.CaseId == c.Id && a.Status == Solutions.ApprovalStatus.Pending && a.Subject == Solutions.ApprovalSubject.Solution)
+                    .OrderByDescending(a => a.SubmittedAt).FirstOrDefaultAsync();
                 if (req is null) return Generic(c, "بانتظار قرار المعتمد", null, dueTone, dueText);
                 var approverName = req.AssignedApproverUserId is { } a ? await UserName(a) : "المعتمد المختص";
                 var mine = req.AssignedApproverUserId == rc.UserId && rc.Has(P.SolutionApprove);

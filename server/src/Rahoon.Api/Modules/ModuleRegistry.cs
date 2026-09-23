@@ -41,6 +41,7 @@ public static class ModuleRegistry
         ComplaintEndpoints.Map(app);
         OwnerEndpoints.Map(app);
         WorkspaceEndpoints.Map(app);
+        app.MapCaseTabs();
         return app;
     }
 }

@@ -123,6 +123,8 @@ public sealed class OwnerAccess : OrgEntity
     public DateTimeOffset? RevokedAt { get; set; }
     public string? ContactHours { get; set; }
     public List<string> AllowedChannels { get; set; } = ["platform", "sms"];
+    /// <summary>Communication needs shown prominently to the case team (L06), e.g. calls only with a relative present.</summary>
+    public string? CommunicationNeeds { get; set; }
 }
 
 public sealed class FinancingContract : OrgEntity
