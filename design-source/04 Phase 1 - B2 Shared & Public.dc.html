@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style data-omelette-injected>html,body{background:transparent}</style><script data-omelette-injected>(()=>{{const n=new URLSearchParams(location.search).get("theme");if(n==="light"||n==="dark"){document.documentElement.dataset.theme=n}}{if(new URLSearchParams(location.search).get("_omthumb")==="1"){const n=(f)=>{const g=f.focus;if(!g)return;f.focus=function(h){g.call(this,{...h,preventScroll:true})}};n(HTMLElement.prototype);n(SVGElement.prototype);if(typeof MathMLElement!=="undefined"){n(MathMLElement.prototype)}const d=(f)=>{f.removeAttribute("autofocus");f.inert=true;if(!(f instanceof HTMLElement))f.removeAttribute("tabindex")};const p=(f)=>{if(f.hasAttribute("autofocus"))d(f);for(const g of f.querySelectorAll("[autofocus]")){d(g)}};p(document.documentElement);new MutationObserver((f)=>{for(const g of f){for(const h of g.addedNodes){if(h.nodeType===1)p(h)}}}).observe(document,{childList:true,subtree:true})}}{const n=()=>{try{if(document.querySelector('meta[name="color-scheme"]'))return;const d=getComputedStyle(document.documentElement).getPropertyValue("color-scheme").trim();if(d&&d!=="normal")return;const p=(y)=>{if(!y)return null;const m=getComputedStyle(y).backgroundColor.match(/^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)(?:[,\s/]+([\d.]+%?))?\s*\)$/);if(!m)return null;const w=m[4]==null?1:parseFloat(m[4])/(m[4].endsWith("%")?100:1);if(w<0.99)return null;return[+m[1],+m[2],+m[3]]};const f=p(document.body)||p(document.documentElement);if(!f)return;const g=(y)=>{const m=y/255;return m<=0.04045?m/12.92:((m+0.055)/1.055)**2.4};const h=0.2126*g(f[0])+0.7152*g(f[1])+0.0722*g(f[2]);document.documentElement.style.setProperty("color-scheme",h<0.4?"dark":"light")}catch{}};if(document.readyState==="complete")n();else window.addEventListener("load",n)}var I=["https://claude.ai","https://preview.claude.ai","https://e63c2df4-10d1-4523-b118-38dc26378701.claudeusercontent.com"];var B=true;var K=false;var C=()=>{};if(K===true){try{const n=setTimeout.bind(window);const d=1e4;const p=15;const f=1e4;const g=120000;const h=200;const y=(o)=>{try{let r;if(typeof o==="string")r=o;else if(o instanceof URL)r=o.href;else if(typeof Request!=="undefined"&&o instanceof Request)r=o.url;else return null;if(!r)return null;const l=document.baseURI;const i=new URL(r,l);if(i.protocol!=="http:"&&i.protocol!=="https:")return null;if(i.origin!==new URL(l).origin)return null;return i.origin+i.pathname}catch{return null}};const m=new Map;const w=(o)=>{let r=m.get(o);if(!r){if(m.size>=h){const l=m.keys().next().value;if(l!==undefined)m.delete(l)}r={fails:[],until:0,cooldown:f,hard:false};m.set(o,r)}return r};const R=(o)=>{const r=m.get(o);return r!==undefined&&r.until>Date.now()};const O=(o,r)=>{const l=Date.now();const i=w(o);if(r)i.hard=true;if(i.until>l)return;i.fails.push(l);while(i.fails.length>0&&i.fails[0]<=l-d)i.fails.shift();if(i.fails.length>=p){i.until=l+i.cooldown;if(i.hard)i.cooldown=Math.min(i.cooldown*2,g);i.fails.length=0;try{n(()=>{try{S(true)}catch{}},i.until-l+100)}catch{}console.warn("[omelette] asset circuit breaker: pausing requests to "+o+" for "+Math.round((i.until-l)/1000)+"s after "+p+" failures in "+d/1000+"s")}};const e=(o)=>{m.delete(o)};const t=100;const a=new WeakMap;const u=new Set;let s=null;const S=(o)=>{for(const r of Array.from(u)){try{const l=a.get(r);if(l===undefined){u.delete(r);continue}if(o){const i=y(l);if(i!==null&&R(i))continue}a.delete(r);u.delete(r);if(s!==null)s.call(r,l)}catch{}}};C=()=>{try{m.clear();S(false)}catch{}};document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")C()});const _=window.fetch;if(typeof _==="function"){const o=function(...r){let l=null;try{l=y(r[0])}catch{}if(l!==null&&R(l)){let c;try{if(r[1]&&r[1].signal!==undefined){c=r[1].signal||undefined}else if(typeof Request!=="undefined"&&r[0]instanceof Request){c=r[0].signal||undefined}}catch{c=undefined}return new Promise((k,b)=>{const E=()=>{try{return c.reason!==undefined?c.reason:new DOMException("The operation was aborted.","AbortError")}catch{return new DOMException("The operation was aborted.","AbortError")}};try{if(c&&c.aborted){b(E());return}}catch{}let T=false;const j=()=>{if(T)return;T=true;b(E())};try{if(c)c.addEventListener("abort",j,{once:true})}catch{}n(()=>{if(T)return;T=true;try{if(c)c.removeEventListener("abort",j)}catch{}let L;try{L=new Response(null,{status:429,statusText:"Too Many Requests",headers:{"Retry-After":"10"}})}catch{L={ok:false,status:429}}k(L)},250)})}const i=_.apply(window,r);if(l!==null){const c=l;i.then((k)=>{try{if(k.ok)e(c);else if(k.status===401||k.status===403||k.status===404||k.status===429){O(c,k.status!==404)}}catch{}},()=>{})}return i};window.fetch=o}const v=Object.getOwnPropertyDescriptor(HTMLImageElement.prototype,"src");if(v!==undefined&&v.set!==undefined&&v.get!==undefined){const o=v.set;s=o;Object.defineProperty(HTMLImageElement.prototype,"src",{configurable:true,enumerable:v.enumerable,get:v.get,set(r){const l=`${r}`;try{const i=y(l);if(i!==null&&R(i)){a.set(this,l);if(u.size<t)u.add(this);return}}catch{}try{a.delete(this);u.delete(this)}catch{}o.call(this,l)}})}try{const o=HTMLImageElement.prototype.setAttribute;HTMLImageElement.prototype.setAttribute=function(r,l){if(arguments.length<2){o.apply(this,arguments);return}if(typeof r==="string"&&r.toLowerCase()==="src"){const i=`${l}`;try{const c=y(i);if(c!==null&&R(c)){a.set(this,i);if(u.size<t)u.add(this);return}a.delete(this);u.delete(this)}catch{}o.call(this,r,i);return}o.call(this,r,l)}}catch{}window.addEventListener("error",(o)=>{try{const r=o.target;if(r instanceof HTMLImageElement){const l=y(r.currentSrc||r.src||"");if(l!==null)O(l,true)}}catch{}},true);window.addEventListener("load",(o)=>{try{const r=o.target;if(r instanceof HTMLImageElement){const l=y(r.currentSrc||r.src||"");if(l!==null)e(l);const i=a.get(r);if(i!==undefined){let c=false;try{c=new URL(i,document.baseURI).href===new URL(r.currentSrc||r.src||"",document.baseURI).href}catch{c=false}if(c){a.delete(r);u.delete(r)}}}}catch{}},true)}catch{}}var J=30000;var G=3000;document.addEventListener("DOMContentLoaded",()=>{const n=window.Babel;const d="om-src-id";if(n&&n.registerPlugin&&!(n.availablePlugins&&n.availablePlugins[d])){n.registerPlugin(d,({types:h})=>({visitor:{JSXOpeningElement(y,m){const w=y.node;if(w.name&&w.name.type==="JSXMemberExpression")return;for(let t=0;t<w.attributes.length;t++){const a=w.attributes[t];if(a.type==="JSXAttribute"&&a.name&&a.name.name==="data-om-id")return}const R=m.file&&m.file.opts&&m.file.opts.filename||"?";const O=w.loc&&w.loc.start;const e=`jsx:${R}:${w.start??0}:${O?O.line:0}:${O?O.column+1:0}`;w.attributes.push(h.jsxAttribute(h.jsxIdentifier("data-om-id"),h.stringLiteral(e)))}}}))}const p="om-text-extract";let f=false;if(B&&n&&n.registerPlugin&&!(n.availablePlugins&&n.availablePlugins[p])){const h=window.React;if(h&&h.useSyncExternalStore&&h.createElement){f=true;const y={};const m=new Set;let w=0;window.__omTextO=y;window.__omTextSet=(e)=>{for(const t in e){const a=e[t];if(a==null)delete y[t];else y[t]=a}w++;m.forEach((t)=>t())};const R=(e)=>{m.add(e);return()=>m.delete(e)};const O=()=>w;window.__OmT=function e(t){h.useSyncExternalStore(R,O,O);return h.createElement("span",{"data-om-text":t.i,className:"__om-t"},t.i in y?y[t.i]:t.children)};n.registerPlugin(p,({types:e})=>{const t={style:1,script:1,noscript:1,textarea:1,title:1,option:1,text:1,tspan:1,textPath:1};const a={placeholder:1,alt:1,title:1,label:1,"aria-label":1,"aria-description":1,"aria-placeholder":1};const u=(o,r)=>e.logicalExpression("??",e.memberExpression(e.logicalExpression("||",e.memberExpression(e.identifier("window"),e.identifier("__omTextO")),e.objectExpression([])),e.stringLiteral(o),true),r);const s=(o)=>o.file&&o.file.opts&&o.file.opts.filename||"?";const S=(o)=>o.file&&o.file.code||"";const _=(o,r)=>{const l=(c)=>c&&c.start!=null&&c.end!=null&&(c.type==="StringLiteral"||c.type==="TemplateLiteral"&&c.expressions.length===0)?[c.start,c.end]:null;const i=l(r);if(i)return i;if(r&&r.type==="Identifier"){const c=o.scope.getBinding(r.name);if(c&&c.constant&&c.path.node.type==="VariableDeclarator"){return l(c.path.node.init)}}return null};const v=(o,r,l)=>{const i=o.node;let c=false;const k=(E,T)=>{c=true;return e.jsxElement(e.jsxOpeningElement(e.jsxIdentifier("__OmT"),[e.jsxAttribute(e.jsxIdentifier("i"),e.stringLiteral(E))],false),e.jsxClosingElement(e.jsxIdentifier("__OmT")),[T],false)};const b=i.children.map((E)=>{if(E.type==="JSXText"){if(E.start==null||E.end==null)return E;const T=l.slice(E.start,E.end);const j=T.length-T.trimStart().length;const L=T.length-T.trimEnd().length;if(j+L>=T.length)return E;return k(`txt:${r}:${E.start+j}:${E.end-L}`,E)}if(E.type==="JSXExpressionContainer"){const T=_(o,E.expression);if(T)return k(`str:${r}:${T[0]}:${T[1]}`,E)}return E});if(c)i.children=b};return{visitor:{JSXOpeningElement(o,r){const l=o.node;const i=s(r);const c={};for(let k=0;k<l.attributes.length;k++){const b=l.attributes[k];if(b.type!=="JSXAttribute"||!b.name)continue;const E=b.name.name;if(!a[E])continue;if(!b.value||b.value.type!=="StringLiteral")continue;if(b.value.start==null||b.value.end==null)continue;const T=`txt:${i}:${b.value.start}:${b.value.end}`;c[E]=T;b.value=e.jsxExpressionContainer(u(T,e.stringLiteral(b.value.value)))}if(Object.keys(c).length){l.attributes.push(e.jsxAttribute(e.jsxIdentifier("data-om-text-attrs"),e.stringLiteral(JSON.stringify(c))))}},JSXElement(o,r){const l=o.node.openingElement;const i=l&&l.name&&l.name.name;if(i==="__OmT")return;if(typeof i==="string"&&t[i])return;v(o,s(r),S(r))},JSXFragment(o,r){v(o,s(r),S(r))}}}})}}const g=f?["transform-react-jsx-source",d,p]:["transform-react-jsx-source",d];document.querySelectorAll('script[type="text/babel"],script[type="text/jsx"]').forEach((h,y)=>{const m=h.getAttribute("data-plugins")||"";const w=g.filter((R)=>m.indexOf(R)<0);if(w.length){h.setAttribute("data-plugins",m?`${m},${w.join(",")}`:w.join(","))}if(!h.hasAttribute("data-filename")){h.setAttribute("data-filename",h.getAttribute("src")||`inline-${y}`)}})});var A=window.parent;var U="not editable here — open the project in the Claude Design editor to save";var W=()=>Promise.resolve({persisted:false,noHost:true,reason:U});var H=W;var M="data/storage.json";var z=()=>{try{const n=new URL(document.baseURI);const d=n.pathname.match(/\/projects\/([^/]+)\/serve\//);if(d)return d[1];return n.hostname.split(".")[0]||""}catch{return location.hostname.split(".")[0]||""}};var Z=()=>{try{const n=new URL(document.baseURI);const d=n.pathname.indexOf("/serve/");if(d>=0)return n.origin+n.pathname.slice(0,d+"/serve/".length)+M}catch{}return"./"+M};var x=null;var N=()=>{if(!x){x=fetch(Z(),{cache:"no-store"}).then((n)=>{if(n.ok)return n.text();return n.status===404?"":null}).catch(()=>null).then((n)=>{if(n===null){x=null;return null}const d=new Map;if(!n)return d;let p;try{p=JSON.parse(n)}catch{console.warn("[omelette.storage] "+M+" is not valid JSON; treating the store as unreadable so a save cannot overwrite the "+"hand-edited bytes. Fix the JSON (or delete the file) to re-enable persistence.");x=null;return null}if(p===null||typeof p!=="object"||Array.isArray(p)){console.warn("[omelette.storage] "+M+" doesn't hold a JSON object; treating the store as unreadable so a save cannot "+"overwrite the hand-edited bytes. Make the top level a JSON object to re-enable persistence.");x=null;return null}const f=p;if("data"in f){const g=f.data;if(g===null||typeof g!=="object"||Array.isArray(g)){console.warn("[omelette.storage] "+M+' has a "data" field that is not a JSON object; treating the store as unreadable so a '+'save cannot overwrite the hand-edited bytes. Make "data" a JSON object to re-enable persistence.');x=null;return null}const h=f._meta;const y=h!==null&&typeof h==="object"?h.project:undefined;if(typeof y==="string"&&y!==""&&y!==z())return d;for(const m of Object.keys(g))d.set(m,g[m]);return d}for(const g of Object.keys(f)){if(g!=="_meta")d.set(g,f[g])}return d})}return x};var F=(n)=>H(M,JSON.stringify({_meta:{project:z(),version:1},data:Object.fromEntries(n)},null,2));var D=Promise.resolve();var $=(n)=>{const d=D.then(n);D=d.then(()=>{return},()=>{return});return d};var V=/sk-(?:ant-)?[A-Za-z0-9_-]{16,}|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{20,}|xox[a-z]-[A-Za-z0-9][A-Za-z0-9-]{9,}|AIza[0-9A-Za-z_-]{30,}|-----BEGIN [A-Z ]*PRIVATE KEY-----/;var Y=/password|passwd|secret|api[_-]?key|access[_-]?token|auth[_-]?token|credential/i;var Q=(n,d,p)=>{if(V.test(d)||Y.test(n)&&typeof p==="string"&&p.length>=8){console.warn('[omelette.storage] the value for "'+n+'" looks like a credential. The storage file is a plaintext project file — visible to '+"everyone with project access and copied when the project is duplicated. Do not store secrets here.")}};var q={persisted:false,reason:"could not load the existing store — not overwriting it"};var X={persisted:false,reason:"stored value changed since a failed read — re-read this key before saving"};var P=new Set;var ee={get:(n)=>{if(typeof n!=="string"){return Promise.reject(new TypeError("storage.get: key must be a string"))}return $(N).then((d)=>{if(d===null){P.add(n);return null}P.delete(n);if(!d.has(n))return null;const p=d.get(n);return p==null?null:JSON.parse(JSON.stringify(p))})},set:(n,d)=>{if(typeof n!=="string"){return Promise.reject(new TypeError("storage.set: key must be a string"))}let p;try{p=JSON.stringify(d)}catch(g){return Promise.reject(new TypeError("storage.set: value must be JSON-serializable ("+String(g)+")"))}if(p===undefined){return Promise.reject(new TypeError("storage.set: value must be JSON-serializable"))}Q(n,p,d);const f=JSON.parse(p);return $(()=>N().then((g)=>{if(g===null)return q;if(P.has(n)){if(g.has(n))return X;P.delete(n)}g.set(n,f);return F(g)}))},delete:(n)=>{if(typeof n!=="string"){return Promise.reject(new TypeError("storage.delete: key must be a string"))}return $(()=>N().then((d)=>{if(d===null)return q;if(P.has(n)){if(d.has(n))return X;P.delete(n)}d.delete(n);return F(d)}))},keys:()=>$(N).then((n)=>n===null?[]:Array.from(n.keys()))};window.omelette={writeFile:(n,d)=>H(n,d).then((p)=>{if(!p.persisted&&!p.noHost){throw new Error(p.reason||"write failed")}}),storage:ee};if(A&&A!==window){const n=(e,t)=>{try{A.postMessage({__omelette_log:true,type:e,data:t},"*")}catch{}};["log","warn","error"].forEach((e)=>{const t=console[e];console[e]=(...a)=>{const u=a.map((s)=>{try{return typeof s==="object"?JSON.stringify(s):String(s)}catch{try{return String(s)}catch{return"[unstringifiable]"}}}).join(" ");n(e,u);t.apply(console,a)}});window.addEventListener("error",(e)=>{const t=e.target;if(t&&t!==window&&t.tagName){const a=t.src||t.href||"";n("resource_error",`${t.tagName} failed to load: ${a}`)}else{n("error",`${e.message||"Unknown error"} at ${e.filename||"?"}:${e.lineno||0}:${e.colno||0}`)}},true);window.addEventListener("unhandledrejection",(e)=>{const t=e.reason;const a=t instanceof Error?`${t.message} ${t.stack}`:String(t);n("error",`Unhandled rejection: ${a}`)});window.addEventListener("click",(e)=>{if(e.defaultPrevented||e.button!==0)return;if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;const t=e.composedPath?e.composedPath():[];const a=["button","input","select","textarea","summary","label"];let u=null;for(const v of t){if(!(v instanceof Element))continue;if(v.localName==="a"){if(!(v instanceof HTMLAnchorElement))return;u=v;break}if(a.indexOf(v.localName)!==-1)return}if(!u)return;if(u.isContentEditable)return;const s=u.closest("[contenteditable]");if(s&&s.getAttribute("contenteditable")!=="false")return;const S=(u.getAttribute("target")||"_self").toLowerCase();if(S!=="_self"&&S!=="_top"&&S!=="_parent")return;let _;try{_=new URL(u.href)}catch{return}if(_.protocol!=="http:"&&_.protocol!=="https:")return;if(location.origin==="null")return;if(_.origin===location.origin)return;e.preventDefault();window.open(_.href,"_blank","noopener,noreferrer")});const d=()=>{try{A.postMessage({type:"omelette:height",height:document.documentElement.scrollHeight},"*")}catch{}};if(window.ResizeObserver)new ResizeObserver(d).observe(document.documentElement);const p=()=>{d();if(!document.querySelector('script[type="text/babel"],script[type="text/jsx"]'))return;const e=()=>document.getElementById("root")||document.querySelector("body > div[id]");const t=e()?.firstElementChild??null;let a=0;const u=()=>{const s=e();if(s&&s.firstElementChild!==t||++a>30){d();return}setTimeout(u,100)};setTimeout(u,100)};if(document.readyState==="complete")p();else window.addEventListener("load",p);const f={};let g=0;const h=(e)=>new Promise((t,a)=>{if(!I.length){a(new Error("claude.complete: no parent origin"));return}const u=`c${++g}`;const s=()=>setTimeout(()=>{delete f[u];a(new Error(`claude.complete: no data for ${J/1000}s`))},J);const S=s();f[u]={resolve:t,reject:a,text:"",t:S,arm:s};try{for(const _ of I){A.postMessage({__om_api:true,id:u,body:e},_)}}catch(_){clearTimeout(S);delete f[u];a(_)}});const y=8;const m=async(e,t)=>{if(!Array.isArray(e.messages)){throw new Error("claude.complete: tools require a messages array")}const a=e.messages.slice();const u={...e,tools:e.tools.map((_)=>{if(_===null||typeof _!=="object")return _;const v={};for(const o of Object.keys(_)){if(typeof _[o]!=="function")v[o]=_[o]}return v})};const s=u.tool_choice;const S=s!=null&&(s.type==="any"||s.type==="tool")?{...u,tool_choice:s.disable_parallel_tool_use!==undefined?{type:"auto",disable_parallel_tool_use:s.disable_parallel_tool_use}:{type:"auto"}}:u;for(let _=0;_<y;_++){const v=await h({..._===0?u:S,messages:a});const o=v.message;const r=o&&Array.isArray(o.content)?o.content:null;const l=r?r.filter((c)=>c?.type==="tool_use"):[];if(o?.stop_reason!=="tool_use"||l.length===0){return v.text}const i=[];for(const c of l){const k=t.get(c.name);if(!k){i.push({type:"tool_result",tool_use_id:c.id,content:`no handler for tool "${c.name}"`,is_error:true});continue}try{const b=await k(c.input);const E=typeof b==="string"?b:O(b)??"";i.push({type:"tool_result",tool_use_id:c.id,content:E})}catch(b){i.push({type:"tool_result",tool_use_id:c.id,content:String(b?.message??b??"tool handler failed"),is_error:true})}}a.push({role:"assistant",content:r},{role:"user",content:i})}throw new Error(`claude.complete: exceeded ${y} tool turns`)};window.claude={complete(e){const t=e;if(t!==null&&typeof t==="object"&&Array.isArray(t.tools)&&t.tools.some((a)=>a!==null&&typeof a==="object"&&typeof a.run==="function")){const a=new Map;for(const u of t.tools){if(u!==null&&typeof u==="object"&&typeof u.run==="function"){a.set(String(u.name),u.run)}}return m(t,a)}return h(e).then((a)=>a.text)}};const w={};let R=0;H=(e,t)=>new Promise((a)=>{if(!I.length){a({persisted:false,noHost:true,reason:U});return}const u=`f${++R}`;const s=setTimeout(()=>{delete w[u];a({persisted:false,noHost:true,reason:U})},G);w[u]={settle:a,t:s};try{for(const S of I){A.postMessage({__om_file:true,id:u,op:"write",path:e,content:t},S)}}catch{clearTimeout(s);delete w[u];a({persisted:false,noHost:true,reason:U})}});const O=(e)=>{try{return JSON.stringify(e)}catch{return JSON.stringify(String(e))}};window.addEventListener("message",(e)=>{if(I.indexOf(e.origin)<0)return;if(e.source!==A)return;const t=e.data;if(!t)return;if(t.type==="omelette-preview-refresh"){if(typeof t.token!=="string"||!/^[0-9a-f.-]+(\.(rc|pr-[0-9]+))?(\.[0-9]+\.[0-9a-f]{16})?$/.test(t.token))return;const s=Math.max(1,Math.floor((t.expiresAt||0)-Date.now()/1000));document.cookie="__Host-omelette-preview="+t.token+"; Path=/; Secure; SameSite=None; Partitioned; Max-Age="+s;C();return}if(t.__om_file_r){const s=w[t.id];if(!s)return;clearTimeout(s.t);delete w[t.id];s.settle(t.ok?{persisted:true}:{persisted:false,reason:t.error||"write failed"});return}if(t.__om_api_r){const s=f[t.id];if(!s)return;if(t.error!=null){clearTimeout(s.t);delete f[t.id];s.reject(new Error(t.error));return}if(t.chunk!=null){clearTimeout(s.t);s.t=s.arm();s.text+=t.chunk;return}if(t.done){clearTimeout(s.t);delete f[t.id];s.resolve({text:t.text!=null?t.text:s.text,message:t.message});return}return}if(!t.__om_eval)return;const a=t;const u=(s)=>{e.source.postMessage({...s,__om_eval_r:1,id:a.id},e.origin)};try{const s=(0,eval)(a.code);if(s&&typeof s.then==="function"){s.then((S)=>u({ok:1,v:O(S)}),(S)=>u({ok:0,e:String(S)}))}else{u({ok:1,v:O(s)})}}catch(s){u({ok:0,e:String(s)})}})}})();
+</script>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>04 Phase 1 — B2 Shared & public — رهون</title>
+<meta name="design_doc_mode" content="canvas">
+<link rel="icon" href="assets/rahoon-favicon.svg">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400,0..1,0&display=block">
+<style>
+html,body{margin:0;background:#E7E6E1;color:#151513;font-family:"IBM Plex Sans Arabic","IBM Plex Sans",sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#AA4528;text-underline-offset:3px}a:hover{color:#8E3920}
+*:focus-visible{outline:2px solid #151513;outline-offset:2px}
+button,input,textarea{font-family:inherit}
+.ms{font-family:"Material Symbols Rounded";font-weight:400;font-style:normal;line-height:1;display:inline-block;white-space:nowrap;direction:ltr;font-feature-settings:"liga"}
+</style>
+</helmet>
+<div dir="rtl" lang="ar" style="padding:48px;display:flex;flex-direction:column;gap:96px;width:max-content">
+  <div style="display:flex;align-items:center;gap:24px">
+    <img src="assets/rahoon-horizontal-full.svg" alt="رهون" style="width:200px">
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <h1 style="margin:0;font-size:32px;line-height:44px">المرحلة 1 — الدفعة B2: الشاشات العامة والمشتركة</h1>
+      <div style="font-size:15px;color:#22262A;display:flex;gap:16px;flex-wrap:wrap"><a href="00 Brief & Assumptions.dc.html">00 الموجز</a><a href="01 Foundations.dc.html">01 الأسس</a><a href="02 Components.dc.html">02 المكونات</a><a href="03 Phase 0 — Anchor Screens.dc.html">03 الشاشات (أ)</a><a href="03 Phase 0 — Anchor Screens B.dc.html">03 الشاشات (ب)</a><strong>04 المرحلة 1 · B2</strong></div>
+    </div>
+  </div>
+
+  <!-- S01 LANDING -->
+  <section data-screen-label="S01 Landing" style="display:flex;gap:48px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P1-Public-Landing-Desktop-Default · 1440 · public, indexable</div>
+      <div data-screen-label="P1-Public-Landing-Desktop-Default" style="width:1440px;background:#FAF9F6;box-shadow:0 16px 40px rgba(21,21,19,.14)">
+        <header style="height:80px;background:#FFFFFF;border-bottom:1px solid #CBCAC6;display:flex;align-items:center;gap:32px;padding:0 80px">
+          <img src="assets/rahoon-horizontal-full.svg" alt="رهون — الصفحة الرئيسية" style="width:176px">
+          <nav aria-label="الرئيسية" style="display:flex;gap:28px;font-size:15px;font-weight:500"><a href="#" style="color:#151513;text-decoration:none">كيف تعمل</a><a href="#" style="color:#151513;text-decoration:none">للجهات المموّلة</a><a href="#" style="color:#151513;text-decoration:none">لملاك العقارات</a><a href="#" style="color:#151513;text-decoration:none">الحوكمة والخصوصية</a></nav>
+          <div style="margin-inline-start:auto;display:flex;gap:10px;align-items:center"><a href="#" lang="en" style="font:600 14px 'IBM Plex Sans';color:#151513;text-decoration:none;padding:0 8px">English</a><a href="#" style="min-height:44px;padding:0 16px;display:flex;align-items:center;border:1px solid #85847F;border-radius:6px;color:#151513;text-decoration:none;font-weight:600;font-size:15px">تسجيل الدخول</a><a href="#" style="min-height:44px;padding:0 18px;display:flex;align-items:center;border-radius:6px;background:#AA4528;color:#FFFFFF;text-decoration:none;font-weight:600;font-size:15px">طلب عرض للمنشأة</a></div>
+        </header>
+        <main>
+          <section style="padding:96px 80px 80px;display:grid;grid-template-columns:minmax(0,1fr) 560px;gap:64px;align-items:center">
+            <div style="display:flex;flex-direction:column;gap:24px">
+              <span style="font-size:15px;font-weight:600;color:#AA4528">منصة سعودية لإدارة حالات التمويل العقاري المتعثرة</span>
+              <h1 style="margin:0;font-size:52px;line-height:72px;font-weight:700;text-wrap:pretty">مسار واضح لكل حالة، من التقدير حتى الإغلاق الموثّق</h1>
+              <p style="margin:0;font-size:20px;line-height:34px;color:#22262A;max-width:34em;text-wrap:pretty">تنسّق رهون العمل بين الجهة المموّلة ومالك العقار وفريق الحالة ومقدمي الخدمة، وتسجّل كل قرار بسببه ودليله. هدفنا الوصول إلى حل مناسب: تسوية أو بيع طوعي، أو إحالة منفصلة معتمدة عند الحاجة.</p>
+              <div style="display:flex;gap:12px"><a href="#" style="min-height:52px;padding:0 24px;display:flex;align-items:center;border-radius:6px;background:#AA4528;color:#FFFFFF;text-decoration:none;font-weight:600;font-size:17px">طلب عرض للمنشأة</a><a href="#" style="min-height:52px;padding:0 24px;display:flex;align-items:center;border:1px solid #85847F;border-radius:6px;color:#151513;text-decoration:none;font-weight:600;font-size:17px;background:#FFFFFF">لملاك العقارات: كيف نساعدك</a></div>
+            </div>
+            <div role="img" aria-label="مكان لقطة من مساحة عمل الحالة" style="height:420px;border-radius:14px;border:1px solid #CBCAC6;background:repeating-linear-gradient(135deg,#F2F1ED 0 12px,#FAF9F6 12px 24px);display:flex;align-items:center;justify-content:center"><span dir="ltr" style="font:500 13px 'IBM Plex Mono';color:#5E5D58;background:#FFFFFF;padding:6px 10px;border-radius:4px">product screenshot — case workspace (masked data)</span></div>
+          </section>
+          <section aria-labelledby="notwhat" style="margin:0 80px;padding:24px 28px;border-radius:14px;background:#FFFFFF;border:1px solid #CBCAC6;display:grid;grid-template-columns:220px repeat(4,minmax(0,1fr));gap:24px;align-items:center">
+            <h2 id="notwhat" style="margin:0;font-size:18px;line-height:28px;font-weight:700">ما لا تقوم به رهون</h2>
+            <span style="font-size:15px;line-height:24px;display:flex;gap:8px"><span class="ms" aria-hidden="true" style="font-size:20px;color:#5E5D58">do_not_disturb_on</span>ليست محكمة ولا تصدر أحكاماً</span>
+            <span style="font-size:15px;line-height:24px;display:flex;gap:8px"><span class="ms" aria-hidden="true" style="font-size:20px;color:#5E5D58">do_not_disturb_on</span>لا تدير مزادات ولا تبيع العقارات علناً</span>
+            <span style="font-size:15px;line-height:24px;display:flex;gap:8px"><span class="ms" aria-hidden="true" style="font-size:20px;color:#5E5D58">do_not_disturb_on</span>ليست جهة تمويل ولا تقدّم قروضاً</span>
+            <span style="font-size:15px;line-height:24px;display:flex;gap:8px"><span class="ms" aria-hidden="true" style="font-size:20px;color:#5E5D58">do_not_disturb_on</span>لا ملكية جزئية ولا ترميز للأصول</span>
+          </section>
+          <section aria-labelledby="how" style="padding:88px 80px;display:flex;flex-direction:column;gap:32px">
+            <h2 id="how" style="margin:0;font-size:36px;line-height:50px;font-weight:700">كيف تعمل</h2>
+            <ol style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px">
+              <sc-for list="{{ how }}" as="h" hint-placeholder-count="4">
+                <li style="display:flex;flex-direction:column;gap:10px;padding-top:16px;border-top:2px solid #22262A">
+                  <span dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#AA4528;text-align:right">{{ h.n }}</span>
+                  <h3 style="margin:0;font-size:20px;line-height:30px;font-weight:600">{{ h.t }}</h3>
+                  <p style="margin:0;font-size:16px;line-height:26px;color:#22262A">{{ h.d }}</p>
+                </li>
+              </sc-for>
+            </ol>
+          </section>
+          <section style="padding:0 80px 88px;display:grid;grid-template-columns:1fr 1fr;gap:24px">
+            <div style="background:#151513;color:#FFFFFF;border-radius:14px;padding:40px;display:flex;flex-direction:column;gap:16px">
+              <h2 style="margin:0;font-size:28px;line-height:40px;font-weight:700">للجهات المموّلة</h2>
+              <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px;font-size:17px;line-height:28px">
+                <li style="display:flex;gap:10px"><span class="ms" aria-hidden="true" style="font-size:22px;color:#F4633A">check</span>محفظة واحدة بمهل ومسؤولين واضحين</li>
+                <li style="display:flex;gap:10px"><span class="ms" aria-hidden="true" style="font-size:22px;color:#F4633A">check</span>فصل بين المُعِدّ والمعتمد وحدود موافقة قابلة للتهيئة</li>
+                <li style="display:flex;gap:10px"><span class="ms" aria-hidden="true" style="font-size:22px;color:#F4633A">check</span>سجل تدقيق كامل لكل انتقال ومستند</li>
+                <li style="display:flex;gap:10px"><span class="ms" aria-hidden="true" style="font-size:22px;color:#F4633A">check</span>عزل تام لبيانات كل منشأة</li>
+              </ul>
+              <a href="#" style="align-self:flex-start;margin-top:8px;min-height:48px;padding:0 20px;display:flex;align-items:center;border-radius:6px;background:#FFFFFF;color:#151513;text-decoration:none;font-weight:700;font-size:16px">طلب عرض للمنشأة</a>
+            </div>
+            <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:40px;display:flex;flex-direction:column;gap:16px">
+              <h2 style="margin:0;font-size:28px;line-height:40px;font-weight:700">لملاك العقارات</h2>
+              <p style="margin:0;font-size:17px;line-height:30px;color:#22262A">إذا وصلتك دعوة من جهتك المموّلة عبر رهون، فهذا يعني أن هناك فريقاً يعمل على حالتك. سترى الخطوة التالية بوضوح، والمستندات المطلوبة، والخيارات المتاحة، ويمكنك طلب المساعدة أو تقديم اعتراض في أي وقت.</p>
+              <p style="margin:0;font-size:15px;line-height:24px;color:#5E5D58">لا نطلب منك أي دفعة عبر رهون، ولن نتواصل معك إلا من خلال الجهة المموّلة وقنوات موثّقة.</p>
+              <a href="#" style="align-self:flex-start;margin-top:auto;font-weight:600;font-size:16px">كيف أتحقق من صحة الدعوة؟</a>
+            </div>
+          </section>
+          <section aria-labelledby="gov" style="padding:72px 80px;background:#FFFFFF;border-top:1px solid #CBCAC6;display:grid;grid-template-columns:320px repeat(3,minmax(0,1fr));gap:32px">
+            <h2 id="gov" style="margin:0;font-size:28px;line-height:40px;font-weight:700">الحوكمة والخصوصية</h2>
+            <sc-for list="{{ gov }}" as="g" hint-placeholder-count="3"><div style="display:flex;flex-direction:column;gap:8px"><span class="ms" aria-hidden="true" style="font-size:24px;color:#AA4528">{{ g.i }}</span><h3 style="margin:0;font-size:18px;font-weight:600">{{ g.t }}</h3><p style="margin:0;font-size:15px;line-height:24px;color:#22262A">{{ g.d }}</p></div></sc-for>
+          </section>
+        </main>
+        <footer style="background:#151513;color:#FFFFFF;padding:40px 80px;display:flex;gap:40px;align-items:center">
+          <img src="assets/rahoon-horizontal-dark.svg" alt="رهون" style="width:176px">
+          <nav aria-label="روابط التذييل" style="display:flex;gap:24px;font-size:14px"><a href="#" style="color:#FFFFFF">سياسة الخصوصية</a><a href="#" style="color:#FFFFFF">الشروط</a><a href="#" style="color:#FFFFFF">تقديم شكوى</a><a href="#" style="color:#FFFFFF">تواصل معنا</a></nav>
+          <span style="margin-inline-start:auto;font-size:13px;color:#B5B3AD">© 2026 رهون · بيانات العرض خيالية</span>
+        </footer>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P1-Public-Landing-Mobile-Default · 390</div>
+      <div data-screen-label="P1-Public-Landing-Mobile-Default" style="width:390px;height:844px;background:#FAF9F6;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 16px 40px rgba(21,21,19,.14)">
+        <div style="height:60px;background:#FFFFFF;border-bottom:1px solid #CBCAC6;display:flex;align-items:center;padding:0 8px 0 16px;gap:8px"><img src="assets/rahoon-horizontal-full.svg" alt="رهون" style="width:172px"><button aria-label="القائمة" style="margin-inline-start:auto;width:44px;height:44px;border:0;background:transparent"><span class="ms" aria-hidden="true" style="font-size:24px">menu</span></button></div>
+        <div style="padding:32px 20px;display:flex;flex-direction:column;gap:18px">
+          <span style="font-size:14px;font-weight:600;color:#AA4528">منصة لإدارة حالات التمويل العقاري المتعثرة</span>
+          <h1 style="margin:0;font-size:32px;line-height:46px;font-weight:700">مسار واضح لكل حالة، من التقدير حتى الإغلاق الموثّق</h1>
+          <p style="margin:0;font-size:17px;line-height:29px;color:#22262A">تنسّق رهون العمل بين الجهة المموّلة ومالك العقار وفريق الحالة، وتسجّل كل قرار بسببه ودليله.</p>
+          <a href="#" style="min-height:52px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:#AA4528;color:#FFFFFF;text-decoration:none;font-weight:600;font-size:16px">طلب عرض للمنشأة</a>
+          <a href="#" style="min-height:52px;display:flex;align-items:center;justify-content:center;border:1px solid #85847F;border-radius:6px;color:#151513;text-decoration:none;font-weight:600;font-size:16px;background:#FFFFFF">لملاك العقارات: كيف نساعدك</a>
+          <div style="margin-top:8px;padding:16px;border-radius:10px;background:#FFFFFF;border:1px solid #CBCAC6;display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:22px"><strong style="font-size:15px">ما لا تقوم به رهون</strong><span>ليست محكمة · لا مزادات · ليست جهة تمويل · لا ترميز للأصول</span></div>
+        </div>
+      </div>
+    </div>
+    <aside style="width:380px;background:#FFFFFF;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:22px">
+      <strong style="font-size:18px">S01 الصفحة التعريفية</strong>
+      <sc-for list="{{ specLanding }}" as="s" hint-placeholder-count="6"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;font-weight:700;color:#5E5D58">{{ s.k }}</span><span>{{ s.v }}</span></div></sc-for>
+    </aside>
+  </section>
+
+  <!-- S02 DEMO REQUEST -->
+  <section data-screen-label="S02 Demo request" style="display:flex;gap:48px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P1-Public-DemoRequest-Desktop-Default · 1440</div>
+      <div data-screen-label="P1-Public-DemoRequest-Desktop-Default" style="width:1440px;min-height:900px;background:#FAF9F6;box-shadow:0 16px 40px rgba(21,21,19,.14);display:flex;flex-direction:column">
+        <header style="height:80px;background:#FFFFFF;border-bottom:1px solid #CBCAC6;display:flex;align-items:center;padding:0 80px"><img src="assets/rahoon-horizontal-full.svg" alt="رهون" style="width:176px"><a href="#" style="margin-inline-start:auto;font-weight:600;font-size:15px">العودة للرئيسية</a></header>
+        <main style="flex:1;padding:56px 80px;display:grid;grid-template-columns:minmax(0,1fr) 680px;gap:64px">
+          <div style="display:flex;flex-direction:column;gap:20px">
+            <h1 style="margin:0;font-size:40px;line-height:56px;font-weight:700">طلب عرض للمنشأة</h1>
+            <p style="margin:0;font-size:18px;line-height:30px;color:#22262A">للجهات المموّلة المرخّصة. يتواصل معك فريقنا خلال يومي عمل لتحديد موعد، ولن نطلب أي بيانات عن حالات أو عملاء في هذه المرحلة.</p>
+            <ol style="margin:8px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:14px;font-size:16px;line-height:26px">
+              <li style="display:flex;gap:12px"><span style="flex:none;width:28px;height:28px;border-radius:50%;background:#151513;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">1</span>مراجعة الطلب والتحقق من الترخيص</li>
+              <li style="display:flex;gap:12px"><span style="flex:none;width:28px;height:28px;border-radius:50%;background:#151513;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">2</span>عرض بيانات تجريبية مخفية</li>
+              <li style="display:flex;gap:12px"><span style="flex:none;width:28px;height:28px;border-radius:50%;background:#151513;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">3</span>تسجيل المنشأة وإعدادها (بعد الاتفاق)</li>
+            </ol>
+          </div>
+          <form aria-labelledby="demo-h" style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:28px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 20px;align-content:start">
+            <h2 id="demo-h" style="grid-column:1/-1;margin:0;font-size:20px;font-weight:600">بيانات المنشأة ومسؤول التواصل</h2>
+            <div style="grid-column:1/-1;display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">اسم المنشأة *</label><input value="مصرف الأفق" style="height:44px;border:1px solid #85847F;border-radius:6px;padding:0 12px;font-size:15px"></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">نوع المنشأة *</label><div style="height:44px;border:1px solid #85847F;border-radius:6px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;font-size:15px">بنك<span class="ms" aria-hidden="true" style="font-size:20px">expand_more</span></div></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">حجم المحفظة المتعثرة التقريبي</label><div style="height:44px;border:1px solid #85847F;border-radius:6px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;font-size:15px">500 – 2,000 حالة<span class="ms" aria-hidden="true" style="font-size:20px">expand_more</span></div></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">الاسم *</label><input value="ليلى الغامدي" style="height:44px;border:1px solid #85847F;border-radius:6px;padding:0 12px;font-size:15px"></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">المسمى الوظيفي *</label><input value="مديرة التحصيل" style="height:44px;border:1px solid #85847F;border-radius:6px;padding:0 12px;font-size:15px"></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">البريد المؤسسي *</label><input dir="ltr" value="l.alghamdi@gmail.com" aria-invalid="true" style="height:44px;border:2px solid #B3261E;border-radius:6px;padding:0 11px;font:400 15px 'IBM Plex Sans';text-align:right"><span style="font-size:13px;color:#B3261E;display:flex;gap:4px;align-items:center"><span class="ms" aria-hidden="true" style="font-size:16px">error</span>استخدم بريد المنشأة وليس بريداً شخصياً</span></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">الجوال</label><div style="display:flex;height:44px;border:1px solid #85847F;border-radius:6px;overflow:hidden"><input dir="ltr" value="05• ••• ••12" style="flex:1;min-width:0;border:0;padding:0 12px;font:500 15px 'IBM Plex Mono';text-align:right"><span dir="ltr" style="display:flex;align-items:center;padding:0 12px;background:#F2F1ED;font:500 14px 'IBM Plex Mono'">+966</span></div></div>
+            <div style="grid-column:1/-1;display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">ما الذي تودّون معرفته؟</label><textarea style="min-height:88px;border:1px solid #85847F;border-radius:6px;padding:10px 12px;font-size:15px;line-height:24px">نرغب في فهم مسار الموافقات وحدودها.</textarea></div>
+            <label style="grid-column:1/-1;display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:22px"><span style="flex:none;width:20px;height:20px;border-radius:4px;background:#151513;display:flex;align-items:center;justify-content:center"><span class="ms" aria-hidden="true" style="font-size:16px;color:#FFFFFF">check</span></span>أوافق على استخدام بياناتي للتواصل بشأن هذا الطلب وفق <a href="#">سياسة الخصوصية</a>.</label>
+            <button type="button" style="grid-column:1/-1;min-height:48px;border-radius:6px;border:0;background:#AA4528;color:#FFFFFF;font-weight:600;font-size:16px">إرسال الطلب</button>
+          </form>
+        </main>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P1-Public-DemoRequest-Mobile-Success · 390</div>
+      <div data-screen-label="P1-Public-DemoRequest-Mobile-Success" style="width:390px;height:844px;background:#FAF9F6;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 16px 40px rgba(21,21,19,.14)">
+        <div style="height:60px;background:#FFFFFF;border-bottom:1px solid #CBCAC6;display:flex;align-items:center;padding:0 16px"><img src="assets/rahoon-horizontal-full.svg" alt="رهون" style="width:172px"></div>
+        <div role="status" style="flex:1;padding:48px 24px;display:flex;flex-direction:column;gap:16px;align-items:flex-start">
+          <span style="width:56px;height:56px;border-radius:50%;background:#EAF4EE;display:flex;align-items:center;justify-content:center"><span class="ms" aria-hidden="true" style="font-size:30px;color:#1E6A45">check_circle</span></span>
+          <h1 style="margin:0;font-size:26px;line-height:38px;font-weight:700">وصلنا طلبك</h1>
+          <p style="margin:0;font-size:17px;line-height:29px;color:#22262A">رقم الطلب <bdi dir="ltr" style="font-family:'IBM Plex Mono';font-weight:600">DR-2026-0318</bdi>. سيتواصل معك فريقنا خلال يومي عمل على البريد المؤسسي.</p>
+          <p style="margin:0;font-size:15px;line-height:24px;color:#5E5D58">لم تُنشأ أي حسابات بعد. لن نطلب بيانات عملاء قبل توقيع الاتفاقية.</p>
+          <a href="#" style="margin-top:8px;min-height:48px;padding:0 18px;display:flex;align-items:center;border:1px solid #85847F;border-radius:6px;color:#151513;text-decoration:none;font-weight:600;font-size:15px;background:#FFFFFF">العودة للرئيسية</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- S03 LOGIN + S04 MFA -->
+  <section data-screen-label="S03-S04 Login MFA" style="display:flex;gap:48px;align-items:flex-start;flex-wrap:wrap;max-width:2400px">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P1-Shared-Login-Desktop-Default · 1440</div>
+      <div data-screen-label="P1-Shared-Login-Desktop-Default" style="width:1440px;height:900px;background:#FAF9F6;display:grid;grid-template-columns:minmax(0,1fr) 560px;box-shadow:0 16px 40px rgba(21,21,19,.14)">
+        <main style="display:flex;align-items:center;justify-content:center;padding:48px">
+          <form aria-labelledby="login-h" style="width:420px;display:flex;flex-direction:column;gap:18px">
+            <img src="assets/rahoon-horizontal-full.svg" alt="رهون" style="width:176px;margin-bottom:12px">
+            <h1 id="login-h" style="margin:0;font-size:32px;line-height:44px;font-weight:700">تسجيل الدخول</h1>
+            <p style="margin:0;font-size:15px;line-height:24px;color:#5E5D58">لفرق الجهات المموّلة ومقدمي الخدمة وإدارة المنصة.</p>
+            <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">البريد المؤسسي</label><input dir="ltr" value="s.alqahtani@alufuq.example" style="height:48px;border:1px solid #85847F;border-radius:6px;padding:0 12px;font:400 16px 'IBM Plex Sans';text-align:right"></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between"><label style="font-size:14px;font-weight:600">كلمة المرور</label><a href="#" style="font-size:14px;font-weight:600">نسيت كلمة المرور؟</a></div><div style="display:flex;height:48px;border:2px solid #151513;border-radius:6px;overflow:hidden;outline:2px solid #151513;outline-offset:2px"><input type="password" value="••••••••••••" style="flex:1;min-width:0;border:0;padding:0 12px;font-size:16px"><button type="button" aria-label="إظهار كلمة المرور" style="width:48px;border:0;background:transparent"><span class="ms" aria-hidden="true" style="font-size:20px;color:#5E5D58">visibility</span></button></div></div>
+            <button type="button" style="min-height:48px;border-radius:6px;border:0;background:#AA4528;color:#FFFFFF;font-weight:600;font-size:16px">متابعة</button>
+            <div style="border-top:1px solid #CBCAC6;padding-top:16px;display:flex;gap:10px;font-size:14px;line-height:22px"><span class="ms" aria-hidden="true" style="font-size:20px;color:#5E5D58">person</span><span>مالك عقار أو مدين؟ استخدم <strong>رابط الدعوة</strong> المرسل إليك من جهتك المموّلة. <a href="#">كيف أتحقق من الدعوة؟</a></span></div>
+            <div style="display:flex;gap:16px;font-size:13px;color:#5E5D58"><a href="#" lang="en" style="font-family:'IBM Plex Sans'">English</a><a href="#">الخصوصية</a><a href="#">المساعدة</a></div>
+          </form>
+        </main>
+        <aside style="background:#151513;color:#FFFFFF;padding:64px 56px;display:flex;flex-direction:column;gap:20px;justify-content:flex-end">
+          <img src="assets/rahoon-app-icon.svg" alt="" style="width:72px;border-radius:14px">
+          <p style="margin:0;font-size:24px;line-height:38px;font-weight:600">كل قرار بسببه، وكل مستند بإصداره، وكل خطوة بمسؤولها.</p>
+          <span style="font-size:14px;line-height:22px;color:#B5B3AD">جلسة آمنة · التحقق بخطوتين إلزامي لكل الحسابات المؤسسية.</span>
+        </aside>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:left">P1-Shared-Login-Desktop-EN-LTR · 1440</div>
+      <div data-screen-label="P1-Shared-Login-Desktop-EN-LTR" dir="ltr" lang="en" style="width:1440px;height:900px;background:#FAF9F6;display:grid;grid-template-columns:minmax(0,1fr) 560px;box-shadow:0 16px 40px rgba(21,21,19,.14);font-family:'IBM Plex Sans',sans-serif">
+        <main style="display:flex;align-items:center;justify-content:center;padding:48px">
+          <form aria-labelledby="login-en" style="width:420px;display:flex;flex-direction:column;gap:18px">
+            <img src="assets/rahoon-horizontal-full.svg" alt="Rahoon" style="width:176px;margin-bottom:12px">
+            <h1 id="login-en" style="margin:0;font-size:32px;line-height:44px;font-weight:700">Sign in</h1>
+            <p style="margin:0;font-size:15px;line-height:24px;color:#5E5D58">For lender teams, service providers and platform administrators.</p>
+            <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">Work email</label><input value="s.alqahtani@alufuq.example" style="height:48px;border:1px solid #85847F;border-radius:6px;padding:0 12px;font:400 16px 'IBM Plex Sans'"></div>
+            <div role="alert" style="display:flex;gap:10px;padding:12px 14px;border-radius:10px;background:#FCECEA;border:1px solid #EFA59C;font-size:14px;line-height:22px"><span class="ms" aria-hidden="true" style="font-size:20px;color:#B3261E">error</span><span><strong style="color:#B3261E">Email or password is incorrect.</strong> 3 attempts remain before a 15-minute lock.</span></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between"><label style="font-size:14px;font-weight:600">Password</label><a href="#" style="font-size:14px;font-weight:600">Forgot password?</a></div><div style="display:flex;height:48px;border:2px solid #B3261E;border-radius:6px;overflow:hidden"><input type="password" value="••••••••" style="flex:1;min-width:0;border:0;padding:0 12px;font-size:16px"><button type="button" aria-label="Show password" style="width:48px;border:0;background:transparent"><span class="ms" aria-hidden="true" style="font-size:20px;color:#5E5D58">visibility</span></button></div></div>
+            <button type="button" style="min-height:48px;border-radius:6px;border:0;background:#AA4528;color:#FFFFFF;font-weight:600;font-size:16px">Continue</button>
+            <div style="border-top:1px solid #CBCAC6;padding-top:16px;display:flex;gap:10px;font-size:14px;line-height:22px"><span class="ms" aria-hidden="true" style="font-size:20px;color:#5E5D58">person</span><span>Property owner? Use the <strong>invitation link</strong> sent by your lender.</span></div>
+            <div style="display:flex;gap:16px;font-size:13px"><a href="#" lang="ar" style="font-family:'IBM Plex Sans Arabic'">العربية</a><a href="#">Privacy</a><a href="#">Help</a></div>
+          </form>
+        </main>
+        <aside style="background:#151513;color:#FFFFFF;padding:64px 56px;display:flex;flex-direction:column;gap:20px;justify-content:flex-end">
+          <p style="margin:0;font-size:24px;line-height:36px;font-weight:600">Every decision with its reason. Every document with its version. Every step with its owner.</p>
+          <span style="font-size:14px;line-height:22px;color:#B5B3AD">Secure session · Two-step verification is required for all institutional accounts.</span>
+        </aside>
+      </div>
+      <span style="font-size:13px;color:#5E5D58">الشعار العربي يبقى كما هو في الواجهة الإنجليزية. يُعكس التخطيط، ولا تُعكس الأيقونات غير الاتجاهية.</span>
+    </div>
+  </section>
+
+  <section data-screen-label="S04 MFA mobile" style="display:flex;gap:48px;align-items:flex-start">
+    <sc-for list="{{ mfaStates }}" as="m" hint-placeholder-count="3">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">{{ m.frame }}</div>
+        <div data-screen-label="{{ m.frame }}" style="width:390px;height:844px;background:#FAF9F6;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 16px 40px rgba(21,21,19,.14)">
+          <div style="height:56px;display:flex;align-items:center;padding:0 8px"><button aria-label="رجوع" style="width:44px;height:44px;border:0;background:transparent"><span class="ms" aria-hidden="true" style="font-size:22px">arrow_forward</span></button></div>
+          <main style="padding:8px 24px;display:flex;flex-direction:column;gap:18px">
+            <span style="width:48px;height:48px;border-radius:12px;background:{{ m.iconBg }};display:flex;align-items:center;justify-content:center"><span class="ms" aria-hidden="true" style="font-size:26px;color:{{ m.iconFg }}">{{ m.icon }}</span></span>
+            <h1 style="margin:0;font-size:26px;line-height:38px;font-weight:700">{{ m.title }}</h1>
+            <p style="margin:0;font-size:16px;line-height:26px;color:#22262A">{{ m.body }}</p>
+            <sc-if value="{{ m.showCode }}" hint-placeholder-val="{{ true }}">
+              <div role="group" aria-label="رمز من 6 أرقام" dir="ltr" style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px">
+                <sc-for list="{{ m.digits }}" as="d" hint-placeholder-count="6"><span style="height:56px;border-radius:8px;border:{{ d.bd }};background:#FFFFFF;display:flex;align-items:center;justify-content:center;font:600 22px 'IBM Plex Mono'">{{ d.v }}</span></sc-for>
+              </div>
+              <span style="font-size:13px;color:{{ m.hintFg }};display:flex;gap:4px;align-items:center"><span class="ms" aria-hidden="true" style="font-size:16px">{{ m.hintIcon }}</span>{{ m.hint }}</span>
+            </sc-if>
+            <button style="min-height:48px;border-radius:6px;border:0;background:{{ m.btnBg }};color:{{ m.btnFg }};font-weight:600;font-size:16px">{{ m.btn }}</button>
+            <a href="#" style="font-size:15px;font-weight:600;min-height:44px;display:flex;align-items:center">{{ m.alt }}</a>
+          </main>
+        </div>
+      </div>
+    </sc-for>
+    <aside style="width:380px;background:#FFFFFF;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:22px">
+      <strong style="font-size:18px">S03 الدخول · S04 التحقق بخطوتين</strong>
+      <sc-for list="{{ specAuth }}" as="s" hint-placeholder-count="6"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;font-weight:700;color:#5E5D58">{{ s.k }}</span><span>{{ s.v }}</span></div></sc-for>
+    </aside>
+  </section>
+
+  <!-- S05 INVITE + S06 ROLE SELECT -->
+  <section data-screen-label="S05-S06 Invite RoleSelect" style="display:flex;gap:48px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P1-Shared-InvitationAccept-Desktop-Default · 1440</div>
+      <div data-screen-label="P1-Shared-InvitationAccept-Desktop-Default" style="width:1440px;height:900px;background:#FAF9F6;box-shadow:0 16px 40px rgba(21,21,19,.14);display:flex;flex-direction:column">
+        <header style="height:72px;background:#FFFFFF;border-bottom:1px solid #CBCAC6;display:flex;align-items:center;padding:0 48px"><img src="assets/rahoon-horizontal-full.svg" alt="رهون" style="width:176px"></header>
+        <main style="flex:1;display:flex;justify-content:center;padding:48px">
+          <div style="width:640px;display:flex;flex-direction:column;gap:20px">
+            <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:24px;display:flex;gap:16px;align-items:center">
+              <span style="width:48px;height:48px;border-radius:8px;background:#151513;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-weight:700">أف</span>
+              <div style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:14px;color:#5E5D58">دعوة من</span><strong style="font-size:18px">مصرف الأفق</strong><span style="font-size:14px">للانضمام بدور <strong>محلل ائتمان</strong> · فريق التحصيل العقاري — الرياض</span></div>
+              <span style="display:inline-flex;gap:4px;align-items:center;font-size:12px;font-weight:600;color:#8A5300;background:#FBF2DE;padding:3px 8px;border-radius:4px;white-space:nowrap"><span class="ms" aria-hidden="true" style="font-size:16px">schedule</span>تنتهي <bdi dir="ltr">2026-09-30</bdi></span>
+            </div>
+            <h1 style="margin:0;font-size:28px;line-height:40px;font-weight:700">إنشاء حسابك</h1>
+            <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">البريد المؤسسي</label><input dir="ltr" disabled value="f.alotaibi@alufuq.example" style="height:48px;border:1px solid #CBCAC6;border-radius:6px;padding:0 12px;font:400 16px 'IBM Plex Sans';text-align:right;background:#F2F1ED;color:#22262A"><span style="font-size:13px;color:#5E5D58">محدد من الدعوة ولا يمكن تغييره</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">الاسم الكامل</label><input value="فهد العتيبي" style="height:48px;border:1px solid #85847F;border-radius:6px;padding:0 12px;font-size:16px"></div>
+              <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">كلمة المرور</label><input type="password" value="••••••••••" style="height:48px;border:1px solid #85847F;border-radius:6px;padding:0 12px;font-size:16px"></div>
+            </div>
+            <ul aria-label="متطلبات كلمة المرور" style="margin:0;padding:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:14px">
+              <li style="display:flex;gap:6px;align-items:center;color:#1E6A45"><span class="ms" aria-hidden="true" style="font-size:18px">check_circle</span>12 حرفاً على الأقل</li>
+              <li style="display:flex;gap:6px;align-items:center;color:#1E6A45"><span class="ms" aria-hidden="true" style="font-size:18px">check_circle</span>ليست ضمن كلمات مسرّبة</li>
+              <li style="display:flex;gap:6px;align-items:center;color:#5E5D58"><span class="ms" aria-hidden="true" style="font-size:18px">radio_button_unchecked</span>لا تحتوي اسمك أو بريدك</li>
+            </ul>
+            <label style="display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:22px"><span style="flex:none;width:20px;height:20px;border-radius:4px;border:1px solid #85847F;background:#FFFFFF"></span>أقر بسياسة الاستخدام المقبول وسرية بيانات العملاء، وأن جميع إجراءاتي تُسجّل.</label>
+            <div style="display:flex;gap:12px"><button style="min-height:48px;padding:0 22px;border-radius:6px;border:0;background:#AA4528;color:#FFFFFF;font-weight:600;font-size:16px">إنشاء الحساب وإعداد التحقق</button><button style="min-height:48px;padding:0 16px;border:0;background:transparent;color:#AA4528;font-weight:600;font-size:15px;text-decoration:underline">لا أعرف هذه الدعوة</button></div>
+          </div>
+        </main>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P1-Shared-RoleOrgSelect-Desktop-Default · 960</div>
+      <div data-screen-label="P1-Shared-RoleOrgSelect-Desktop-Default" style="width:960px;height:900px;background:#FAF9F6;box-shadow:0 16px 40px rgba(21,21,19,.14);display:flex;flex-direction:column;align-items:center;padding:64px 48px;box-sizing:border-box;gap:24px">
+        <img src="assets/rahoon-horizontal-full.svg" alt="رهون" style="width:176px">
+        <div style="width:560px;display:flex;flex-direction:column;gap:16px">
+          <h1 style="margin:0;font-size:28px;line-height:40px;font-weight:700">اختر مساحة العمل</h1>
+          <p style="margin:0;font-size:15px;line-height:24px;color:#5E5D58">لديك صلاحيات في أكثر من منشأة. تعمل في منشأة واحدة كل مرة، ولا تظهر بيانات أي منشأة في الأخرى.</p>
+          <ul role="radiogroup" aria-label="المنشآت والأدوار" style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ orgs }}" as="o" hint-placeholder-count="3">
+              <li role="radio" aria-checked="{{ o.checked }}" style="{{ o.style }}">
+                <span style="width:44px;height:44px;border-radius:8px;background:{{ o.logoBg }};color:{{ o.logoFg }};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:none">{{ o.abbr }}</span>
+                <span style="flex:1;display:flex;flex-direction:column;gap:2px"><strong style="font-size:16px">{{ o.name }}</strong><span style="font-size:14px;color:#22262A">{{ o.role }}</span><span style="font-size:12px;color:#5E5D58">{{ o.meta }}</span></span>
+                <span class="ms" aria-hidden="true" style="font-size:22px;color:#5E5D58">chevron_left</span>
+              </li>
+            </sc-for>
+          </ul>
+          <label style="display:flex;gap:10px;align-items:center;font-size:14px"><span style="width:20px;height:20px;border-radius:4px;border:1px solid #85847F;background:#FFFFFF"></span>تذكّر اختياري على هذا الجهاز</label>
+        </div>
+      </div>
+    </div>
+    <aside style="width:380px;background:#FFFFFF;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:22px">
+      <strong style="font-size:18px">S05 الدعوة · S06 اختيار المنشأة والدور</strong>
+      <sc-for list="{{ specInvite }}" as="s" hint-placeholder-count="6"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;font-weight:700;color:#5E5D58">{{ s.k }}</span><span>{{ s.v }}</span></div></sc-for>
+    </aside>
+  </section>
+
+  <!-- S07 PROFILE / SECURITY / SESSIONS -->
+  <section data-screen-label="S07 Security sessions" style="display:flex;gap:48px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P1-Shared-ProfileSecurity-Desktop-Sessions · 1440</div>
+      <div data-screen-label="P1-Shared-ProfileSecurity-Desktop-Sessions" style="width:1440px;min-height:900px;background:#FAF9F6;display:flex;box-shadow:0 16px 40px rgba(21,21,19,.14)">
+        <dc-import name="LenderSidebar" active="none" hint-size="264px,900px" style="min-height:900px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="LenderTopbar" crumb1="حسابي" crumb2="الأمان والجلسات" hint-size="100%,64px"></dc-import>
+          <main style="padding:28px 40px 40px;display:flex;flex-direction:column;gap:20px">
+            <h2 style="margin:0;font-size:32px;line-height:44px;font-weight:700">حسابي</h2>
+            <div role="tablist" style="display:flex;border-bottom:1px solid #CBCAC6">
+              <button role="tab" aria-selected="false" style="min-height:44px;padding:0 14px;border:0;background:transparent;font-size:14px;color:#5E5D58">الملف الشخصي</button>
+              <button role="tab" aria-selected="true" style="min-height:44px;padding:0 14px;border:0;background:transparent;font-size:14px;font-weight:700;box-shadow:inset 0 -3px 0 #F4633A">الأمان والجلسات</button>
+              <button role="tab" aria-selected="false" style="min-height:44px;padding:0 14px;border:0;background:transparent;font-size:14px;color:#5E5D58">تفضيلات الإشعارات</button>
+              <button role="tab" aria-selected="false" style="min-height:44px;padding:0 14px;border:0;background:transparent;font-size:14px;color:#5E5D58">اللغة والعرض</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px">
+              <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:8px"><span style="font-size:14px;color:#5E5D58">كلمة المرور</span><strong style="font-size:16px">غُيّرت قبل 41 يوماً</strong><button style="align-self:flex-start;min-height:40px;padding:0 14px;border-radius:6px;border:1px solid #85847F;background:#FFFFFF;font-weight:600;font-size:14px">تغيير</button></div>
+              <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:8px"><span style="font-size:14px;color:#5E5D58">التحقق بخطوتين</span><strong style="font-size:16px;display:flex;gap:6px;align-items:center;color:#1E6A45"><span class="ms" aria-hidden="true" style="font-size:18px">verified_user</span>مفعّل · تطبيق المصادقة</strong><span style="font-size:13px;color:#5E5D58">احتياطي: رسالة إلى <bdi dir="ltr">+966 5• ••• ••81</bdi></span></div>
+              <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:8px"><span style="font-size:14px;color:#5E5D58">رموز الاسترداد</span><strong style="font-size:16px">7 من 10 متبقية</strong><button style="align-self:flex-start;min-height:40px;padding:0 14px;border-radius:6px;border:1px solid #85847F;background:#FFFFFF;font-weight:600;font-size:14px">إنشاء رموز جديدة…</button></div>
+            </div>
+            <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;overflow:hidden">
+              <div style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #EDECE8"><h3 style="margin:0;font-size:17px;font-weight:600">الجلسات النشطة</h3><button style="min-height:40px;padding:0 14px;border-radius:6px;border:1px solid #B3261E;background:#FFFFFF;color:#B3261E;font-weight:600;font-size:14px">إنهاء كل الجلسات الأخرى</button></div>
+              <div role="table" aria-label="الجلسات النشطة" style="font-size:14px">
+                <div role="row" style="display:grid;grid-template-columns:2fr 1.4fr 1.4fr 1.2fr 140px;gap:12px;padding:10px 20px;background:#FAF9F6;color:#5E5D58;font-weight:600"><span role="columnheader">الجهاز والمتصفح</span><span role="columnheader">الموقع التقريبي</span><span role="columnheader">آخر نشاط</span><span role="columnheader">المنشأة</span><span role="columnheader"></span></div>
+                <sc-for list="{{ sessions }}" as="s" hint-placeholder-count="3">
+                  <div role="row" style="display:grid;grid-template-columns:2fr 1.4fr 1.4fr 1.2fr 140px;gap:12px;padding:12px 20px;border-top:1px solid #EDECE8;align-items:center">
+                    <span role="cell" style="display:flex;gap:10px;align-items:center"><span class="ms" aria-hidden="true" style="font-size:20px;color:#5E5D58">{{ s.icon }}</span><span style="display:flex;flex-direction:column"><strong>{{ s.device }}</strong><span style="font-size:12px;color:{{ s.tagFg }}">{{ s.tag }}</span></span></span>
+                    <span role="cell">{{ s.loc }}</span><span role="cell"><bdi dir="ltr">{{ s.last }}</bdi></span><span role="cell">{{ s.org }}</span>
+                    <span role="cell"><button style="{{ s.btnStyle }}">{{ s.btn }}</button></span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="font-size:13px;color:#5E5D58;display:flex;gap:6px"><span class="ms" aria-hidden="true" style="font-size:16px">info</span>تنتهي الجلسة بعد 30 دقيقة خمول (قابلة للتهيئة من المنشأة). إنهاء أي جلسة يُسجَّل في سجل الأمان.</div>
+          </main>
+        </div>
+      </div>
+    </div>
+    <aside style="width:380px;background:#FFFFFF;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:22px">
+      <strong style="font-size:18px">S07 الملف والأمان والجلسات</strong>
+      <sc-for list="{{ specSec }}" as="s" hint-placeholder-count="5"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;font-weight:700;color:#5E5D58">{{ s.k }}</span><span>{{ s.v }}</span></div></sc-for>
+    </aside>
+  </section>
+
+  <!-- S08 NOTIFICATIONS + S10 SEARCH -->
+  <section data-screen-label="S08-S10 Notifications Search" style="display:flex;gap:48px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P1-Shared-NotificationCenter-Desktop-Open · 1440</div>
+      <div data-screen-label="P1-Shared-NotificationCenter-Desktop-Open" style="width:1440px;height:900px;background:#FAF9F6;display:flex;box-shadow:0 16px 40px rgba(21,21,19,.14);position:relative;overflow:hidden">
+        <dc-import name="LenderSidebar" active="portfolio" hint-size="264px,100%" style="height:100%"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="LenderTopbar" crumb1="المحفظة" hint-size="100%,64px"></dc-import>
+          <div style="flex:1;background:rgba(21,21,19,.04)"></div>
+        </div>
+        <div role="dialog" aria-label="الإشعارات" style="position:absolute;top:68px;left:32px;width:440px;background:#FFFFFF;border-radius:14px;box-shadow:0 16px 40px rgba(21,21,19,.14),0 0 0 1px rgba(21,21,19,.06);display:flex;flex-direction:column;max-height:800px;overflow:hidden">
+          <div style="padding:16px 18px 0;display:flex;justify-content:space-between;align-items:center"><strong style="font-size:17px">الإشعارات</strong><div style="display:flex;gap:4px"><button style="min-height:36px;padding:0 10px;border:0;background:transparent;color:#AA4528;font-weight:600;font-size:13px">تعليم الكل كمقروء</button><button aria-label="إعدادات الإشعارات" style="width:36px;height:36px;border:0;background:transparent"><span class="ms" aria-hidden="true" style="font-size:20px">settings</span></button></div></div>
+          <div role="tablist" style="display:flex;padding:8px 10px 0;border-bottom:1px solid #EDECE8"><button role="tab" aria-selected="true" style="min-height:40px;padding:0 10px;border:0;background:transparent;font-size:14px;font-weight:700;box-shadow:inset 0 -3px 0 #F4633A">تحتاج إجراء <bdi>3</bdi></button><button role="tab" aria-selected="false" style="min-height:40px;padding:0 10px;border:0;background:transparent;font-size:14px;color:#5E5D58">الكل</button><button role="tab" aria-selected="false" style="min-height:40px;padding:0 10px;border:0;background:transparent;font-size:14px;color:#5E5D58">إشارات إليّ</button></div>
+          <div style="overflow:hidden;display:flex;flex-direction:column">
+            <sc-for list="{{ notifs }}" as="n" hint-placeholder-count="6">
+              <div style="display:flex;flex-direction:column">
+                <sc-if value="{{ n.hasGroup }}" hint-placeholder-val="{{ false }}"><div style="padding:10px 18px 4px;font-size:12px;font-weight:700;color:#5E5D58">{{ n.group }}</div></sc-if>
+                <a href="#" style="display:grid;grid-template-columns:32px minmax(0,1fr) 10px;gap:10px;padding:12px 18px;text-decoration:none;color:#151513;background:{{ n.bg }}">
+                  <span style="width:32px;height:32px;border-radius:50%;background:{{ n.iconBg }};display:flex;align-items:center;justify-content:center"><span class="ms" aria-hidden="true" style="font-size:18px;color:{{ n.iconFg }}">{{ n.icon }}</span></span>
+                  <span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:14px;line-height:22px;font-weight:{{ n.w }}">{{ n.text }}</span><span style="font-size:12px;color:#5E5D58"><bdi dir="ltr" style="font-family:'IBM Plex Mono'">{{ n.ref }}</bdi> · {{ n.time }}</span></span>
+                  <span aria-label="{{ n.unreadLabel }}" style="width:8px;height:8px;border-radius:4px;background:{{ n.dot }};margin-top:8px"></span>
+                </a>
+              </div>
+            </sc-for>
+          </div>
+          <a href="#" style="padding:12px 18px;border-top:1px solid #EDECE8;text-align:center;font-weight:600;font-size:14px">فتح مركز الإشعارات</a>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P1-Shared-GlobalSearch-Desktop-Results · 1440</div>
+      <div data-screen-label="P1-Shared-GlobalSearch-Desktop-Results" style="width:1440px;height:900px;background:#FAF9F6;display:flex;box-shadow:0 16px 40px rgba(21,21,19,.14);position:relative;overflow:hidden">
+        <dc-import name="LenderSidebar" active="cases" hint-size="264px,100%" style="height:100%"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0"><dc-import name="LenderTopbar" crumb1="الحالات" hint-size="100%,64px"></dc-import></div>
+        <div style="position:absolute;inset:0;background:rgba(21,21,19,.4);display:flex;justify-content:center;padding-top:96px">
+          <div role="dialog" aria-label="البحث الشامل" style="width:720px;height:max-content;background:#FFFFFF;border-radius:14px;box-shadow:0 16px 40px rgba(21,21,19,.14);overflow:hidden;display:flex;flex-direction:column">
+            <div role="combobox" aria-expanded="true" style="display:flex;align-items:center;gap:12px;height:60px;padding:0 20px;border-bottom:1px solid #CBCAC6"><span class="ms" aria-hidden="true" style="font-size:22px;color:#5E5D58">search</span><span dir="ltr" style="flex:1;font:500 18px 'IBM Plex Mono';text-align:right">4172</span><kbd style="font:500 11px 'IBM Plex Mono';color:#5E5D58;border:1px solid #CBCAC6;border-radius:4px;padding:1px 6px">Esc</kbd></div>
+            <div style="padding:8px 20px;font-size:12px;color:#5E5D58;display:flex;gap:6px;align-items:center;background:#FAF9F6"><span class="ms" aria-hidden="true" style="font-size:16px">shield</span>النتائج ضمن مصرف الأفق وحدود صلاحيتك فقط · الهويات والأسماء مخفية</div>
+            <div role="listbox" style="display:flex;flex-direction:column;padding:6px 0 10px">
+              <sc-for list="{{ results }}" as="r" hint-placeholder-count="6">
+                <div style="display:flex;flex-direction:column">
+                  <sc-if value="{{ r.hasGroup }}" hint-placeholder-val="{{ false }}"><div style="padding:10px 20px 4px;font-size:12px;font-weight:700;color:#5E5D58">{{ r.group }}</div></sc-if>
+                  <div role="option" aria-selected="{{ r.sel }}" style="display:flex;gap:12px;align-items:center;min-height:52px;padding:0 20px;background:{{ r.bg }};box-shadow:{{ r.mark }}">
+                    <span class="ms" aria-hidden="true" style="font-size:20px;color:#5E5D58">{{ r.icon }}</span>
+                    <span style="flex:1;display:flex;flex-direction:column"><span style="font-size:14px;font-weight:600">{{ r.title }}</span><span style="font-size:12px;color:#5E5D58">{{ r.meta }}</span></span>
+                    <span style="font-size:12px;color:#5E5D58">{{ r.hint }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;gap:16px;padding:10px 20px;border-top:1px solid #EDECE8;font-size:12px;color:#5E5D58"><span><kbd style="font-family:'IBM Plex Mono'">↑↓</kbd> تنقّل</span><span><kbd style="font-family:'IBM Plex Mono'">Enter</kbd> فتح</span><span>ابحث بالمرجع، رقم العقد، رقم المهمة، أو اسم المستند</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P1-Shared-NotificationCenter-Mobile · 390</div>
+      <div data-screen-label="P1-Shared-NotificationCenter-Mobile" style="width:390px;height:844px;background:#FFFFFF;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 16px 40px rgba(21,21,19,.14)">
+        <div style="height:56px;display:flex;align-items:center;padding:0 8px;gap:4px;border-bottom:1px solid #EDECE8"><button aria-label="رجوع" style="width:44px;height:44px;border:0;background:transparent"><span class="ms" aria-hidden="true" style="font-size:22px">arrow_forward</span></button><strong style="flex:1;font-size:18px">الإشعارات</strong><button style="min-height:44px;padding:0 10px;border:0;background:transparent;color:#AA4528;font-weight:600;font-size:13px">قراءة الكل</button></div>
+        <sc-for list="{{ notifsM }}" as="n" hint-placeholder-count="5">
+          <a href="#" style="display:grid;grid-template-columns:32px minmax(0,1fr) 10px;gap:10px;padding:14px 16px;border-bottom:1px solid #EDECE8;text-decoration:none;color:#151513;background:{{ n.bg }}">
+            <span style="width:32px;height:32px;border-radius:50%;background:{{ n.iconBg }};display:flex;align-items:center;justify-content:center"><span class="ms" aria-hidden="true" style="font-size:18px;color:{{ n.iconFg }}">{{ n.icon }}</span></span>
+            <span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;line-height:22px;font-weight:{{ n.w }}">{{ n.text }}</span><span style="font-size:12px;color:#5E5D58">{{ n.time }}</span></span>
+            <span style="width:8px;height:8px;border-radius:4px;background:{{ n.dot }};margin-top:8px"></span>
+          </a>
+        </sc-for>
+      </div>
+    </div>
+    <aside style="width:380px;background:#FFFFFF;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:22px">
+      <strong style="font-size:18px">S08 الإشعارات · S10 البحث الشامل</strong>
+      <sc-for list="{{ specNotif }}" as="s" hint-placeholder-count="6"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;font-weight:700;color:#5E5D58">{{ s.k }}</span><span>{{ s.v }}</span></div></sc-for>
+    </aside>
+  </section>
+
+  <!-- S09 TASKS + S11 HELP -->
+  <section data-screen-label="S09-S11 Tasks Help" style="display:flex;gap:48px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P1-Shared-Tasks-Desktop-Mine · 1440</div>
+      <div data-screen-label="P1-Shared-Tasks-Desktop-Mine" style="width:1440px;min-height:960px;background:#FAF9F6;display:flex;box-shadow:0 16px 40px rgba(21,21,19,.14)">
+        <dc-import name="LenderSidebar" active="tasks" hint-size="264px,960px" style="min-height:960px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="LenderTopbar" crumb1="مهامي" hint-size="100%,64px"></dc-import>
+          <main style="padding:28px 40px 40px;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:24px">
+            <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+              <div style="display:flex;align-items:center;gap:12px"><h2 style="margin:0;flex:1;font-size:32px;line-height:44px;font-weight:700">المهام</h2><button style="min-height:40px;padding:0 14px;border-radius:6px;border:1px solid #85847F;background:#FFFFFF;font-weight:600;font-size:14px;display:flex;gap:6px;align-items:center"><span class="ms" aria-hidden="true" style="font-size:18px">add</span>مهمة يدوية</button></div>
+              <div role="tablist" style="display:flex;border-bottom:1px solid #CBCAC6"><button role="tab" aria-selected="true" style="min-height:44px;padding:0 14px;border:0;background:transparent;font-size:14px;font-weight:700;box-shadow:inset 0 -3px 0 #F4633A">مهامي <bdi>7</bdi></button><button role="tab" aria-selected="false" style="min-height:44px;padding:0 14px;border:0;background:transparent;font-size:14px;color:#5E5D58">مهام الفريق <bdi>64</bdi></button><button role="tab" aria-selected="false" style="min-height:44px;padding:0 14px;border:0;background:transparent;font-size:14px;color:#5E5D58">غير مسندة <bdi>5</bdi></button><button role="tab" aria-selected="false" style="min-height:44px;padding:0 14px;border:0;background:transparent;font-size:14px;color:#5E5D58">مكتملة</button></div>
+              <sc-for list="{{ taskGroups }}" as="g" hint-placeholder-count="3">
+                <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;overflow:hidden">
+                  <div style="padding:10px 18px;display:flex;gap:8px;align-items:center;background:#FAF9F6;border-bottom:1px solid #EDECE8"><span class="ms" aria-hidden="true" style="font-size:18px;color:{{ g.fg }}">{{ g.icon }}</span><strong style="font-size:14px;color:{{ g.fg }}">{{ g.label }}</strong><span style="font-size:13px;color:#5E5D58">{{ g.n }}</span></div>
+                  <sc-for list="{{ g.items }}" as="t" hint-placeholder-count="2">
+                    <div style="display:grid;grid-template-columns:24px minmax(0,1fr) 170px 120px;gap:14px;align-items:center;padding:12px 18px;border-top:1px solid #EDECE8">
+                      <span style="width:20px;height:20px;border-radius:50%;border:1.5px solid #85847F"></span>
+                      <span style="display:flex;flex-direction:column"><strong style="font-size:15px">{{ t.task }}</strong><span style="font-size:12px;color:#5E5D58">{{ t.src }}</span></span>
+                      <a href="#" style="font:600 13px 'IBM Plex Mono';text-decoration:none"><bdi dir="ltr">{{ t.ref }}</bdi></a>
+                      <span style="font-size:13px;font-weight:600;color:{{ g.fg }}">{{ t.due }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+            <aside style="display:flex;flex-direction:column;gap:16px">
+              <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:12px">
+                <strong style="font-size:15px">عبء الفريق <span style="font-weight:400;color:#5E5D58;font-size:13px">(لمديري الفرق)</span></strong>
+                <sc-for list="{{ workload }}" as="w" hint-placeholder-count="4">
+                  <div style="display:flex;flex-direction:column;gap:4px" aria-label="{{ w.aria }}"><div style="display:flex;justify-content:space-between;font-size:13px"><span>{{ w.name }}</span><span><bdi>{{ w.n }}</bdi> · <span style="color:#B3261E">{{ w.late }} متأخرة</span></span></div><span style="height:8px;border-radius:4px;background:#F2F1ED;display:block"><span style="display:block;height:100%;width:{{ w.w }};background:#22262A;border-radius:4px"></span></span></div>
+                </sc-for>
+              </div>
+              <div style="background:#FAF9F6;border:1px solid #CBCAC6;border-radius:10px;padding:14px;font-size:13px;line-height:20px;display:flex;gap:8px"><span class="ms" aria-hidden="true" style="font-size:18px;color:#5E5D58">info</span>المهام الآلية تنشأ من انتقالات الحالة ولا تُحذف؛ تُغلق عند تحقق شرطها.</div>
+            </aside>
+          </main>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P1-Shared-HelpSupport-Desktop-Default · 1440</div>
+      <div data-screen-label="P1-Shared-HelpSupport-Desktop-Default" style="width:1440px;min-height:960px;background:#FAF9F6;display:flex;box-shadow:0 16px 40px rgba(21,21,19,.14)">
+        <dc-import name="LenderSidebar" active="none" hint-size="264px,960px" style="min-height:960px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="LenderTopbar" crumb1="المساعدة والدعم" hint-size="100%,64px"></dc-import>
+          <main style="padding:32px 40px 40px;display:flex;flex-direction:column;gap:24px">
+            <div style="display:flex;flex-direction:column;gap:12px;max-width:720px"><h2 style="margin:0;font-size:32px;line-height:44px;font-weight:700">كيف يمكننا المساعدة؟</h2><div style="display:flex;align-items:center;gap:10px;height:52px;border:1px solid #85847F;border-radius:6px;padding:0 14px;background:#FFFFFF"><span class="ms" aria-hidden="true" style="font-size:22px;color:#5E5D58">search</span><span style="font-size:16px;color:#5E5D58">ابحث في الأدلة: حدود الموافقة، إعادة إسناد…</span></div></div>
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px">
+              <sc-for list="{{ helpTopics }}" as="h" hint-placeholder-count="6"><a href="#" style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:6px;text-decoration:none;color:#151513"><span class="ms" aria-hidden="true" style="font-size:24px;color:#AA4528">{{ h.i }}</span><strong style="font-size:16px">{{ h.t }}</strong><span style="font-size:14px;line-height:22px;color:#5E5D58">{{ h.d }}</span></a></sc-for>
+            </div>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px">
+              <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px">
+                <strong style="font-size:17px">فتح طلب دعم</strong>
+                <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">نوع المشكلة</label><div style="height:44px;border:1px solid #85847F;border-radius:6px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;font-size:15px">لا يظهر زر الإرسال للموافقة<span class="ms" aria-hidden="true" style="font-size:20px">expand_more</span></div></div>
+                <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">مرجع الحالة (اختياري)</label><input dir="ltr" value="RH-2026-004172" style="height:44px;border:1px solid #85847F;border-radius:6px;padding:0 12px;font:500 15px 'IBM Plex Mono';text-align:right"></div>
+                <div style="background:#EAF2F9;border:1px solid #9DC0DE;border-radius:10px;padding:12px 14px;display:flex;gap:10px;font-size:13px;line-height:20px"><span class="ms" aria-hidden="true" style="font-size:20px;color:#1D5A8C">shield_person</span><span>فريق دعم رهون لا يرى بيانات الحالة. إن احتاج ذلك، سيطلب <strong>وصولاً مؤقتاً مدققاً</strong> يوافق عليه مسؤول منشأتك، وينتهي تلقائياً.</span></div>
+                <button style="align-self:flex-start;min-height:44px;padding:0 18px;border-radius:6px;border:0;background:#AA4528;color:#FFFFFF;font-weight:600;font-size:15px">إرسال الطلب</button>
+              </div>
+              <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;overflow:hidden">
+                <div style="padding:14px 20px;border-bottom:1px solid #EDECE8;font-weight:600;font-size:17px">طلباتي</div>
+                <div style="display:flex;flex-direction:column">
+                  <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:12px 20px"><span style="display:flex;flex-direction:column"><strong style="font-size:14px">تعذر رفع ملف PDF أكبر من 20 م.ب</strong><span style="font-size:12px;color:#5E5D58"><bdi dir="ltr">SUP-2026-1187</bdi> · <bdi dir="ltr">2026-09-21</bdi></span></span><span style="font-size:12px;font-weight:600;color:#1D5A8C;background:#EAF2F9;padding:2px 8px;border-radius:4px;align-self:center">بانتظار ردك</span></div>
+                  <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:12px 20px;border-top:1px solid #EDECE8"><span style="display:flex;flex-direction:column"><strong style="font-size:14px">طلب إضافة قالب رسالة جديد</strong><span style="font-size:12px;color:#5E5D58"><bdi dir="ltr">SUP-2026-1090</bdi> · <bdi dir="ltr">2026-09-08</bdi></span></span><span style="font-size:12px;font-weight:600;color:#1E6A45;background:#EAF4EE;padding:2px 8px;border-radius:4px;align-self:center">مغلق · حُل</span></div>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </div>
+    <aside style="width:380px;background:#FFFFFF;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:22px">
+      <strong style="font-size:18px">S09 المهام · S11 المساعدة</strong>
+      <sc-for list="{{ specTasks }}" as="s" hint-placeholder-count="6"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;font-weight:700;color:#5E5D58">{{ s.k }}</span><span>{{ s.v }}</span></div></sc-for>
+    </aside>
+  </section>
+
+  <!-- S12 ACCESS DENIED -->
+  <section data-screen-label="S12 Access denied" style="display:flex;gap:48px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P1-Shared-AccessDenied-Desktop-Default · 1440</div>
+      <div data-screen-label="P1-Shared-AccessDenied-Desktop-Default" style="width:1440px;height:800px;background:#FAF9F6;display:flex;box-shadow:0 16px 40px rgba(21,21,19,.14);overflow:hidden">
+        <dc-import name="LenderSidebar" active="cases" hint-size="264px,100%" style="height:100%"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="LenderTopbar" crumb1="الحالات" hint-size="100%,64px"></dc-import>
+          <main style="flex:1;display:flex;align-items:center;justify-content:center;padding:40px">
+            <div role="status" style="width:560px;display:flex;flex-direction:column;gap:16px">
+              <span style="width:56px;height:56px;border-radius:50%;background:#EAF2F9;display:flex;align-items:center;justify-content:center"><span class="ms" aria-hidden="true" style="font-size:30px;color:#1D5A8C">visibility_off</span></span>
+              <h1 style="margin:0;font-size:28px;line-height:40px;font-weight:700">لا يمكنك فتح هذه الصفحة</h1>
+              <p style="margin:0;font-size:17px;line-height:28px;color:#22262A">قد لا تكون موجودة، أو أنها خارج صلاحياتك في <strong>مصرف الأفق</strong> بدور <strong>مديرة حالات</strong>. لم نعرض أي بيانات عنها.</p>
+              <div style="display:flex;gap:12px"><button style="min-height:44px;padding:0 18px;border-radius:6px;border:0;background:#AA4528;color:#FFFFFF;font-weight:600;font-size:15px">العودة إلى الحالات</button><button style="min-height:44px;padding:0 16px;border-radius:6px;border:1px solid #85847F;background:#FFFFFF;font-weight:600;font-size:15px">طلب وصول من المسؤول</button></div>
+              <span style="font-size:13px;color:#5E5D58">رمز الخطأ <bdi dir="ltr" style="font-family:'IBM Plex Mono'">403-SCOPE</bdi> · <bdi dir="ltr">2026-09-23 11:04</bdi> · يُسجّل الطلب في سجل الأمان</span>
+            </div>
+          </main>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P1-Shared-AccessDenied-Mobile-ExpiredLink · 390</div>
+      <div data-screen-label="P1-Shared-AccessDenied-Mobile-ExpiredLink" style="width:390px;height:844px;background:#FAF9F6;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 16px 40px rgba(21,21,19,.14)">
+        <div style="height:60px;background:#FFFFFF;border-bottom:1px solid #CBCAC6;display:flex;align-items:center;padding:0 16px"><img src="assets/rahoon-horizontal-full.svg" alt="رهون" style="width:172px"></div>
+        <main role="status" style="padding:48px 24px;display:flex;flex-direction:column;gap:16px">
+          <span style="width:56px;height:56px;border-radius:50%;background:#FBF2DE;display:flex;align-items:center;justify-content:center"><span class="ms" aria-hidden="true" style="font-size:30px;color:#8A5300">link_off</span></span>
+          <h1 style="margin:0;font-size:26px;line-height:38px;font-weight:700">انتهت صلاحية هذا الرابط</h1>
+          <p style="margin:0;font-size:17px;line-height:29px;color:#22262A">لحمايتك، روابط الدعوة صالحة لمدة محددة. يمكنك طلب رابط جديد، وسيُرسل إلى الجوال المسجل لدى جهتك المموّلة.</p>
+          <button style="min-height:52px;border-radius:6px;border:0;background:#AA4528;color:#FFFFFF;font-weight:600;font-size:16px">طلب رابط جديد</button>
+          <a href="#" style="font-size:15px;font-weight:600;min-height:44px;display:flex;align-items:center">التواصل مع الجهة المموّلة</a>
+        </main>
+      </div>
+    </div>
+    <aside style="width:380px;background:#FFFFFF;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:22px">
+      <strong style="font-size:18px">S12 رفض الوصول</strong>
+      <sc-for list="{{ specDenied }}" as="s" hint-placeholder-count="5"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;font-weight:700;color:#5E5D58">{{ s.k }}</span><span>{{ s.v }}</span></div></sc-for>
+    </aside>
+  </section>
+
+  <section style="background:#FFFFFF;border-radius:14px;padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:1440px">
+    <div style="display:flex;flex-direction:column;gap:8px"><strong style="font-size:18px">صُمم في B2</strong><span style="font-size:14px;line-height:24px">S01–S12: 13 إطار سطح مكتب (منها الدخول الإنجليزي LTR) + 7 إطارات جوال (الصفحة التعريفية، نجاح طلب العرض، 3 حالات للتحقق بخطوتين، الإشعارات، الرابط المنتهي).</span></div>
+    <div style="display:flex;flex-direction:column;gap:8px"><strong style="font-size:18px">التالي: B3</strong><span style="font-size:14px;line-height:24px">تبويبات الحالة: الأطراف، التمويل والمديونية، الرهن والضمانات، العقار، المستندات والطلبات، التقييم، التحليل.</span></div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const sp = a => a.map(([k,v]) => ({ k, v }));
+    const how = [['01','إنشاء الحالة','تستورد الجهة المموّلة الحالة أو تنشئها يدوياً، مع فحص التكرار وتحديد المسؤول.'],['02','التحقق والتقييم','مستندات بإصداراتها، وتقييم مستقل عبر مقدم خدمة مكلّف لمدة محددة.'],['03','حل مبرر ومعتمد','يُعدّ المحلل الحل، ويراجعه آخر، ويعتمده معتمد مخوّل. كل إصدار محفوظ.'],['04','رد المالك والإغلاق','يرى المالك خياراته بلغة واضحة ويقبل أو يقترح بديلاً، ثم تُطابق المبالغ وتُغلق الحالة بمستنداتها.']].map(([n,t,d]) => ({ n, t, d }));
+    const gov = [['visibility_lock','عزل البيانات','لكل منشأة بياناتها. المالك يرى حالته فقط، ومقدم الخدمة يرى تكليفه فقط.'],['history','سجل غير قابل للتعديل','كل انتقال وقرار وكشف بيانات يُسجل بفاعله ووقته وسببه.'],['gavel_off','حدود واضحة','لا تعرض رهون قراراً قضائياً ولا تتصرف بالنيابة عن جهة رسمية.']].map(([i,t,d]) => ({ i: i === 'gavel_off' ? 'rule' : i, t, d }));
+    const D = (code, errIdx) => code.split('').map((v,i) => ({ v, bd: errIdx ? '2px solid #B3261E' : (i === code.replace(/ /g,'').length ? '2px solid #151513' : '1px solid #85847F') }));
+    const mfaStates = [
+      { frame:'P1-Shared-MFA-Mobile-Default · 390', icon:'sms', iconBg:'#F2F1ED', iconFg:'#22262A', title:'أدخل رمز التحقق', body:'أرسلنا رمزاً من 6 أرقام إلى +966 5• ••• ••81.', showCode:true, digits:[{v:'4',bd:'1px solid #85847F'},{v:'8',bd:'1px solid #85847F'},{v:'1',bd:'1px solid #85847F'},{v:'',bd:'2px solid #151513'},{v:'',bd:'1px solid #85847F'},{v:'',bd:'1px solid #85847F'}], hint:'إعادة الإرسال بعد 00:42', hintIcon:'schedule', hintFg:'#5E5D58', btn:'تحقق', btnBg:'#AA4528', btnFg:'#FFFFFF', alt:'استخدام تطبيق المصادقة بدلاً من ذلك' },
+      { frame:'P1-Shared-MFA-Mobile-Error · 390', icon:'sms', iconBg:'#F2F1ED', iconFg:'#22262A', title:'أدخل رمز التحقق', body:'أرسلنا رمزاً من 6 أرقام إلى +966 5• ••• ••81.', showCode:true, digits:'481903'.split('').map(v => ({ v, bd:'2px solid #B3261E' })), hint:'الرمز غير صحيح. تبقّت محاولتان.', hintIcon:'error', hintFg:'#B3261E', btn:'تحقق', btnBg:'#AA4528', btnFg:'#FFFFFF', alt:'إعادة إرسال الرمز' },
+      { frame:'P1-Shared-MFA-Mobile-Locked · 390', icon:'lock_clock', iconBg:'#FBF2DE', iconFg:'#8A5300', title:'أُوقف الدخول مؤقتاً', body:'تجاوزت عدد المحاولات المسموح. يمكنك المحاولة بعد 15 دقيقة، أو التواصل مع مسؤول منشأتك. لم يتغير أي شيء في حسابك.', showCode:false, digits:[], hint:'', hintIcon:'', hintFg:'#5E5D58', btn:'العودة لتسجيل الدخول', btnBg:'#FFFFFF', btnFg:'#151513', alt:'التواصل مع الدعم' },
+    ];
+    const orgs = [['أف','مصرف الأفق','مديرة حالات · فريق التحصيل العقاري','آخر استخدام اليوم 08:12 · MFA مفعّل',true,'#151513','#FFFFFF'],['سن','شركة السنبلة للتمويل','محللة ائتمان · قراءة فقط','آخر استخدام 2026-09-18',false,'#F2F1ED','#151513'],['رهـ','إدارة منصة رهون','مدققة امتثال · وصول مقيد','يتطلب إعادة التحقق عند الدخول',false,'#FDF0EB','#8E3920']].map(([abbr,name,role,meta,sel,logoBg,logoFg]) => ({ abbr, name, role, meta, logoBg, logoFg, checked: sel ? 'true' : 'false',
+      style: `display:flex;gap:14px;align-items:center;padding:14px 16px;border-radius:10px;min-height:72px;cursor:pointer;background:#FFFFFF;border:${sel?'2px solid #151513':'1px solid #CBCAC6'}` }));
+    const sessions = [['laptop_windows','Windows · Edge','هذه الجلسة','#1E6A45','الرياض، SA','الآن','مصرف الأفق','—',true],['phone_iphone','iPhone · Safari','','#5E5D58','الرياض، SA','2026-09-23 07:40','مصرف الأفق','إنهاء',false],['laptop_mac','macOS · Chrome','موقع غير معتاد','#8A5300','جدة، SA','2026-09-22 22:15','شركة السنبلة','إنهاء',false]].map(([icon,device,tag,tagFg,loc,last,org,btn,cur]) => ({ icon, device, tag, tagFg, loc, last, org, btn,
+      btnStyle: cur ? 'display:none' : 'min-height:36px;padding:0 12px;border-radius:6px;border:1px solid #85847F;background:#FFFFFF;font-weight:600;font-size:13px' }));
+    const N = [['اليوم','approval','#8A5300','#FBF2DE','أعاد نورة الشهري الحل v2 إلى «موافقة داخلية» بملاحظة','RH-2026-004172','قبل 12 د',true],['','upload_file','#1D5A8C','#EAF2F9','رفعت المالكة كشف حساب جديداً للمراجعة','RH-2026-003988','قبل ساعة',true],['','alarm_off','#B3261E','#FCECEA','تجاوزت مهمة «متابعة رد المالكة» مهلتها','RH-2026-003988','09:00',true],['أمس','alternate_email','#22262A','#F2F1ED','أشار إليك فهد العتيبي في ملاحظة على الحل v2','RH-2026-004172','16:08',false],['','check_circle','#1E6A45','#EAF4EE','تمت مطابقة دفعة بمرجع بنكي مستورد','RH-2026-003870','11:30',false],['','person_add','#22262A','#F2F1ED','أُسندت إليك حالة جديدة','RH-2026-004233','09:15',false]];
+    const notifs = N.map(([group,icon,iconFg,iconBg,text,ref,time,unread]) => ({ group, hasGroup: !!group, icon, iconFg, iconBg, text, ref, time, w: unread ? 700 : 400, bg: unread ? '#FFFFFF' : '#FFFFFF', dot: unread ? '#AA4528' : 'transparent', unreadLabel: unread ? 'غير مقروء' : 'مقروء' }));
+    const results = [['الحالات','folder_open','RH-2026-004172','عبدالله م. · حل مقترح · سارة ق.','Enter',true],['','folder_open','RH-2026-004172-A (حالة مرتبطة مغلقة)','مغلقة 2025-12-04','',false],['المستندات','description','تقرير التقييم v1 — RH-2026-004172','مكتب «ب» · 2026-09-10','',false],['','description','كشف الراتب v2 — RH-2026-004172','متحقق 2026-09-20','',false],['المهام','task_alt','TSK-4172-09 · مراجعة الحل v2','مسندة إليك · يومان','',false],['العقود','receipt_long','MF-88-3317••• (4172)','مرتبط بحالة واحدة','',false]].map(([group,icon,title,meta,hint,sel]) => ({ group, hasGroup: !!group, icon, title, meta, hint, sel: sel ? 'true' : 'false', bg: sel ? '#FDF0EB' : '#FFFFFF', mark: sel ? 'inset -3px 0 0 #F4633A' : 'none' }));
+    const taskGroups = [
+      { label:'متأخرة', n:'1', icon:'alarm_off', fg:'#B3261E', items:[['متابعة رد المالكة على العرض','آلية · من انتقال «بانتظار العميل»','RH-2026-003988','متأخر 3 أيام']] },
+      { label:'خلال يومين', n:'3', icon:'alarm', fg:'#8A5300', items:[['مراجعة الحل v2 وإرساله للموافقة','آلية · أعدّه فهد العتيبي','RH-2026-004172','2026-09-25'],['مراجعة رد على العرض المقابل','آلية · من المالكة','RH-2026-004012','2026-09-25'],['التحقق من إيصال السداد','يدوية · ريم الدوسري','RH-2026-003870','2026-09-24']] },
+      { label:'هذا الأسبوع وبعده', n:'3', icon:'schedule', fg:'#22262A', items:[['مراجعة السجل التجاري المرفوع','آلية','RH-2026-004201','2026-09-27'],['تجديد صورة الهوية قبل انتهائها','آلية · تنبيه صلاحية','RH-2026-004172','2026-10-05'],['جدولة مكالمة مع المالك','يدوية · خالد ز.','RH-2026-004172','2026-09-27']] },
+    ].map(g => ({ ...g, items: g.items.map(([task,src,ref,due]) => ({ task, src, ref, due })) }));
+    const workload = [['سارة القحطاني',38,1],['خالد الزهراني',41,4],['فهد العتيبي',29,0],['ريم الدوسري',22,2]].map(([name,n,late]) => ({ name, n: String(n), late: String(late), w: `${Math.round(n/45*100)}%`, aria: `${name}: ${n} مهمة، ${late} متأخرة` }));
+    const helpTopics = [['folder_open','إدارة الحالات','الإنشاء، الاستيراد، الإسناد، العروض المحفوظة'],['approval','الموافقات','المُعِدّ والمعتمد، الحدود، الإصدارات'],['description','المستندات','الطلب، الرفع، الصلاحية، الإصدارات'],['shield_person','الخصوصية والإخفاء','من يرى ماذا، وكشف البيانات المسجل'],['support_agent','الشكاوى','استلام شكوى المالك ومعالجتها'],['keyboard','الاختصارات وإمكانية الوصول','لوحة المفاتيح وقارئ الشاشة والتكبير']].map(([i,t,d]) => ({ i, t, d }));
+    return { how, gov, mfaStates, orgs, sessions, notifs, notifsM: notifs.slice(0,5), results, taskGroups, workload, helpTopics,
+      specLanding: sp([['هدف المستخدم','فهم ما تفعله رهون وما لا تفعله، وطلب عرض (جهة) أو الاطمئنان لصحة الدعوة (مالك).'],['تسلسل البيانات','العنوان والقيمة ← ما لا تقوم به ← كيف تعمل ← الجمهوران ← الحوكمة.'],['الفهرسة','صفحة عامة: عنوان h1 واحد، عناوين هرمية، نص حقيقي قابل للفهرسة، بيانات وصفية بالعربية والإنجليزية وروابط hreflang.'],['النبرة','بلا صور تهديد أو مزادات أو مطارق أو مفاتيح. لا وعود بنتائج.'],['الإجراءات','أساسي: طلب عرض للمنشأة. ثانوي: صفحة ملاك العقارات، الدخول.'],['التجاوب','1440: عمودان للبطل. 768: عمود واحد، الصورة تحت النص. 390: أزرار بعرض كامل 52px، قائمة منبثقة.']]),
+      specAuth: sp([['هدف المستخدم','دخول آمن وسريع لفرق المؤسسات؛ توجيه المالك إلى رابط دعوته بدلاً من كلمة مرور.'],['الحالات','افتراضي، خطأ بيانات (مع المحاولات المتبقية)، رمز خاطئ، إيقاف مؤقت، دون اتصال، نجاح ← اختيار المنشأة أو الصفحة الافتراضية.'],['الأمان','لا نكشف إن كان البريد مسجلاً. التحقق بخطوتين إلزامي للمؤسسات. قفل 15 دقيقة بعد 5 محاولات (افتراض).'],['لوحة المفاتيح','خانات الرمز حقل واحد منطقياً (autocomplete=one-time-code) يدعم اللصق؛ الأرقام LTR.'],['اللغة','التبديل للإنجليزية يعكس التخطيط ويحافظ على الشعار العربي كما هو.'],['التجاوب','سطح المكتب: نموذج + لوحة داكنة. 768 و390: النموذج وحده، اللوحة تُخفى.']]),
+      specInvite: sp([['هدف المستخدم','قبول دعوة موثوقة وإنشاء حساب بالدور الصحيح، أو الإبلاغ عن دعوة غير متوقعة.'],['البيانات','المنشأة الداعية، الدور، الفريق، تاريخ الانتهاء ظاهرة قبل أي إدخال. البريد مقفل.'],['الحالات','دعوة صالحة، منتهية (S12 جوال)، مستخدمة مسبقاً، ملغاة من المنشأة.'],['اختيار المنشأة','يظهر فقط لمن لديه أكثر من منشأة. التبديل لاحقاً من الشريط الجانبي يعيد فتح الجلسة ويمسح الذاكرة المؤقتة.'],['الصلاحية','إدارة المنصة تتطلب إعادة التحقق عند كل دخول.'],['التجاوب','390: بطاقات بعرض كامل وهدف لمس ≥ 72px.']]),
+      specSec: sp([['هدف المستخدم','التحكم في أمان الحساب ومراجعة الأجهزة وإنهاء أي جلسة مشبوهة.'],['الإجراءات','إنهاء جلسة، إنهاء كل الجلسات الأخرى (شاشة تأكيد مختصرة مع إعادة MFA)، تغيير كلمة المرور، رموز استرداد.'],['الإشارات','«موقع غير معتاد» نصاً ولوناً. الجلسة الحالية لا تُنهى من هنا.'],['الخصوصية','الموقع تقريبي على مستوى المدينة فقط.'],['التجاوب','390: كل جلسة بطاقة مع زر إنهاء بعرض كامل.']]),
+      specNotif: sp([['هدف المستخدم','معرفة ما تغيّر وما يحتاج إجراءً دون مغادرة العمل الحالي.'],['التصنيف','«تحتاج إجراء» افتراضياً، ثم الكل والإشارات. مجمعة زمنياً. غير المقروء: خط أعرض ونقطة ونص مخفي لقارئ الشاشة.'],['البحث','ضمن المنشأة والصلاحية فقط؛ لا يُظهر وجود حالة خارج النطاق. مرجع جزئي «4172» يكفي.'],['لوحة المفاتيح','Ctrl/⌘ K يفتح البحث، الأسهم للتنقل، Enter للفتح، Esc للإغلاق مع إعادة التركيز لموضعه.'],['الحالات','لا نتائج (اقتراح البحث برقم العقد)، تحميل، خطأ اتصال.'],['التجاوب','390: الإشعارات صفحة كاملة؛ البحث شاشة كاملة مع لوحة مفاتيح.']]),
+      specTasks: sp([['هدف المستخدم','ترتيب العمل حسب المهلة، ولمدير الفريق: رؤية العبء وإعادة التوزيع.'],['المصدر','آلية (من انتقال) أو يدوية. الآلية لا تُحذف وتُغلق عند تحقق شرطها.'],['الإجراءات','إكمال المهمة اليدوية، فتح الحالة، إعادة إسناد (للمدير).'],['المساعدة','أدلة قابلة للبحث، طلب دعم مرتبط اختيارياً بمرجع. الدعم لا يرى بيانات الحالة إلا بوصول مؤقت مدقق.'],['الحالات','لا مهام (رسالة إيجابية بلا زخرفة)، تحميل، خطأ.'],['التجاوب','390: المجموعات قابلة للطي، عبء الفريق في تبويب منفصل.']]),
+      specDenied: sp([['هدف المستخدم','فهم سبب المنع ومعرفة ما يمكن فعله، دون كشف أي معلومة عن المورد.'],['الصياغة','«قد لا تكون موجودة أو أنها خارج صلاحياتك» لكل الحالات، حتى لا يُستدل على وجود حالة لمنشأة أخرى.'],['الإجراءات','العودة، طلب وصول (يُرسل للمسؤول مع السبب).'],['الرابط المنتهي','للمدين: طلب رابط جديد إلى الجوال المسجل فقط؛ لا إدخال رقم جديد.'],['التسجيل','كل محاولة وصول مرفوضة تُسجل برمز الخطأ.']]),
+    };
+  }
+}
+</script>
+</body>
+</html>

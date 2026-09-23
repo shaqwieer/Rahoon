@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style data-omelette-injected>html,body{background:transparent}</style><script data-omelette-injected>(()=>{{const n=new URLSearchParams(location.search).get("theme");if(n==="light"||n==="dark"){document.documentElement.dataset.theme=n}}{if(new URLSearchParams(location.search).get("_omthumb")==="1"){const n=(f)=>{const g=f.focus;if(!g)return;f.focus=function(h){g.call(this,{...h,preventScroll:true})}};n(HTMLElement.prototype);n(SVGElement.prototype);if(typeof MathMLElement!=="undefined"){n(MathMLElement.prototype)}const d=(f)=>{f.removeAttribute("autofocus");f.inert=true;if(!(f instanceof HTMLElement))f.removeAttribute("tabindex")};const p=(f)=>{if(f.hasAttribute("autofocus"))d(f);for(const g of f.querySelectorAll("[autofocus]")){d(g)}};p(document.documentElement);new MutationObserver((f)=>{for(const g of f){for(const h of g.addedNodes){if(h.nodeType===1)p(h)}}}).observe(document,{childList:true,subtree:true})}}{const n=()=>{try{if(document.querySelector('meta[name="color-scheme"]'))return;const d=getComputedStyle(document.documentElement).getPropertyValue("color-scheme").trim();if(d&&d!=="normal")return;const p=(y)=>{if(!y)return null;const m=getComputedStyle(y).backgroundColor.match(/^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)(?:[,\s/]+([\d.]+%?))?\s*\)$/);if(!m)return null;const w=m[4]==null?1:parseFloat(m[4])/(m[4].endsWith("%")?100:1);if(w<0.99)return null;return[+m[1],+m[2],+m[3]]};const f=p(document.body)||p(document.documentElement);if(!f)return;const g=(y)=>{const m=y/255;return m<=0.04045?m/12.92:((m+0.055)/1.055)**2.4};const h=0.2126*g(f[0])+0.7152*g(f[1])+0.0722*g(f[2]);document.documentElement.style.setProperty("color-scheme",h<0.4?"dark":"light")}catch{}};if(document.readyState==="complete")n();else window.addEventListener("load",n)}var I=["https://claude.ai","https://preview.claude.ai","https://e63c2df4-10d1-4523-b118-38dc26378701.claudeusercontent.com"];var B=true;var K=false;var C=()=>{};if(K===true){try{const n=setTimeout.bind(window);const d=1e4;const p=15;const f=1e4;const g=120000;const h=200;const y=(o)=>{try{let r;if(typeof o==="string")r=o;else if(o instanceof URL)r=o.href;else if(typeof Request!=="undefined"&&o instanceof Request)r=o.url;else return null;if(!r)return null;const l=document.baseURI;const i=new URL(r,l);if(i.protocol!=="http:"&&i.protocol!=="https:")return null;if(i.origin!==new URL(l).origin)return null;return i.origin+i.pathname}catch{return null}};const m=new Map;const w=(o)=>{let r=m.get(o);if(!r){if(m.size>=h){const l=m.keys().next().value;if(l!==undefined)m.delete(l)}r={fails:[],until:0,cooldown:f,hard:false};m.set(o,r)}return r};const R=(o)=>{const r=m.get(o);return r!==undefined&&r.until>Date.now()};const O=(o,r)=>{const l=Date.now();const i=w(o);if(r)i.hard=true;if(i.until>l)return;i.fails.push(l);while(i.fails.length>0&&i.fails[0]<=l-d)i.fails.shift();if(i.fails.length>=p){i.until=l+i.cooldown;if(i.hard)i.cooldown=Math.min(i.cooldown*2,g);i.fails.length=0;try{n(()=>{try{S(true)}catch{}},i.until-l+100)}catch{}console.warn("[omelette] asset circuit breaker: pausing requests to "+o+" for "+Math.round((i.until-l)/1000)+"s after "+p+" failures in "+d/1000+"s")}};const e=(o)=>{m.delete(o)};const t=100;const a=new WeakMap;const u=new Set;let s=null;const S=(o)=>{for(const r of Array.from(u)){try{const l=a.get(r);if(l===undefined){u.delete(r);continue}if(o){const i=y(l);if(i!==null&&R(i))continue}a.delete(r);u.delete(r);if(s!==null)s.call(r,l)}catch{}}};C=()=>{try{m.clear();S(false)}catch{}};document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")C()});const _=window.fetch;if(typeof _==="function"){const o=function(...r){let l=null;try{l=y(r[0])}catch{}if(l!==null&&R(l)){let c;try{if(r[1]&&r[1].signal!==undefined){c=r[1].signal||undefined}else if(typeof Request!=="undefined"&&r[0]instanceof Request){c=r[0].signal||undefined}}catch{c=undefined}return new Promise((k,b)=>{const E=()=>{try{return c.reason!==undefined?c.reason:new DOMException("The operation was aborted.","AbortError")}catch{return new DOMException("The operation was aborted.","AbortError")}};try{if(c&&c.aborted){b(E());return}}catch{}let T=false;const j=()=>{if(T)return;T=true;b(E())};try{if(c)c.addEventListener("abort",j,{once:true})}catch{}n(()=>{if(T)return;T=true;try{if(c)c.removeEventListener("abort",j)}catch{}let L;try{L=new Response(null,{status:429,statusText:"Too Many Requests",headers:{"Retry-After":"10"}})}catch{L={ok:false,status:429}}k(L)},250)})}const i=_.apply(window,r);if(l!==null){const c=l;i.then((k)=>{try{if(k.ok)e(c);else if(k.status===401||k.status===403||k.status===404||k.status===429){O(c,k.status!==404)}}catch{}},()=>{})}return i};window.fetch=o}const v=Object.getOwnPropertyDescriptor(HTMLImageElement.prototype,"src");if(v!==undefined&&v.set!==undefined&&v.get!==undefined){const o=v.set;s=o;Object.defineProperty(HTMLImageElement.prototype,"src",{configurable:true,enumerable:v.enumerable,get:v.get,set(r){const l=`${r}`;try{const i=y(l);if(i!==null&&R(i)){a.set(this,l);if(u.size<t)u.add(this);return}}catch{}try{a.delete(this);u.delete(this)}catch{}o.call(this,l)}})}try{const o=HTMLImageElement.prototype.setAttribute;HTMLImageElement.prototype.setAttribute=function(r,l){if(arguments.length<2){o.apply(this,arguments);return}if(typeof r==="string"&&r.toLowerCase()==="src"){const i=`${l}`;try{const c=y(i);if(c!==null&&R(c)){a.set(this,i);if(u.size<t)u.add(this);return}a.delete(this);u.delete(this)}catch{}o.call(this,r,i);return}o.call(this,r,l)}}catch{}window.addEventListener("error",(o)=>{try{const r=o.target;if(r instanceof HTMLImageElement){const l=y(r.currentSrc||r.src||"");if(l!==null)O(l,true)}}catch{}},true);window.addEventListener("load",(o)=>{try{const r=o.target;if(r instanceof HTMLImageElement){const l=y(r.currentSrc||r.src||"");if(l!==null)e(l);const i=a.get(r);if(i!==undefined){let c=false;try{c=new URL(i,document.baseURI).href===new URL(r.currentSrc||r.src||"",document.baseURI).href}catch{c=false}if(c){a.delete(r);u.delete(r)}}}}catch{}},true)}catch{}}var J=30000;var G=3000;document.addEventListener("DOMContentLoaded",()=>{const n=window.Babel;const d="om-src-id";if(n&&n.registerPlugin&&!(n.availablePlugins&&n.availablePlugins[d])){n.registerPlugin(d,({types:h})=>({visitor:{JSXOpeningElement(y,m){const w=y.node;if(w.name&&w.name.type==="JSXMemberExpression")return;for(let t=0;t<w.attributes.length;t++){const a=w.attributes[t];if(a.type==="JSXAttribute"&&a.name&&a.name.name==="data-om-id")return}const R=m.file&&m.file.opts&&m.file.opts.filename||"?";const O=w.loc&&w.loc.start;const e=`jsx:${R}:${w.start??0}:${O?O.line:0}:${O?O.column+1:0}`;w.attributes.push(h.jsxAttribute(h.jsxIdentifier("data-om-id"),h.stringLiteral(e)))}}}))}const p="om-text-extract";let f=false;if(B&&n&&n.registerPlugin&&!(n.availablePlugins&&n.availablePlugins[p])){const h=window.React;if(h&&h.useSyncExternalStore&&h.createElement){f=true;const y={};const m=new Set;let w=0;window.__omTextO=y;window.__omTextSet=(e)=>{for(const t in e){const a=e[t];if(a==null)delete y[t];else y[t]=a}w++;m.forEach((t)=>t())};const R=(e)=>{m.add(e);return()=>m.delete(e)};const O=()=>w;window.__OmT=function e(t){h.useSyncExternalStore(R,O,O);return h.createElement("span",{"data-om-text":t.i,className:"__om-t"},t.i in y?y[t.i]:t.children)};n.registerPlugin(p,({types:e})=>{const t={style:1,script:1,noscript:1,textarea:1,title:1,option:1,text:1,tspan:1,textPath:1};const a={placeholder:1,alt:1,title:1,label:1,"aria-label":1,"aria-description":1,"aria-placeholder":1};const u=(o,r)=>e.logicalExpression("??",e.memberExpression(e.logicalExpression("||",e.memberExpression(e.identifier("window"),e.identifier("__omTextO")),e.objectExpression([])),e.stringLiteral(o),true),r);const s=(o)=>o.file&&o.file.opts&&o.file.opts.filename||"?";const S=(o)=>o.file&&o.file.code||"";const _=(o,r)=>{const l=(c)=>c&&c.start!=null&&c.end!=null&&(c.type==="StringLiteral"||c.type==="TemplateLiteral"&&c.expressions.length===0)?[c.start,c.end]:null;const i=l(r);if(i)return i;if(r&&r.type==="Identifier"){const c=o.scope.getBinding(r.name);if(c&&c.constant&&c.path.node.type==="VariableDeclarator"){return l(c.path.node.init)}}return null};const v=(o,r,l)=>{const i=o.node;let c=false;const k=(E,T)=>{c=true;return e.jsxElement(e.jsxOpeningElement(e.jsxIdentifier("__OmT"),[e.jsxAttribute(e.jsxIdentifier("i"),e.stringLiteral(E))],false),e.jsxClosingElement(e.jsxIdentifier("__OmT")),[T],false)};const b=i.children.map((E)=>{if(E.type==="JSXText"){if(E.start==null||E.end==null)return E;const T=l.slice(E.start,E.end);const j=T.length-T.trimStart().length;const L=T.length-T.trimEnd().length;if(j+L>=T.length)return E;return k(`txt:${r}:${E.start+j}:${E.end-L}`,E)}if(E.type==="JSXExpressionContainer"){const T=_(o,E.expression);if(T)return k(`str:${r}:${T[0]}:${T[1]}`,E)}return E});if(c)i.children=b};return{visitor:{JSXOpeningElement(o,r){const l=o.node;const i=s(r);const c={};for(let k=0;k<l.attributes.length;k++){const b=l.attributes[k];if(b.type!=="JSXAttribute"||!b.name)continue;const E=b.name.name;if(!a[E])continue;if(!b.value||b.value.type!=="StringLiteral")continue;if(b.value.start==null||b.value.end==null)continue;const T=`txt:${i}:${b.value.start}:${b.value.end}`;c[E]=T;b.value=e.jsxExpressionContainer(u(T,e.stringLiteral(b.value.value)))}if(Object.keys(c).length){l.attributes.push(e.jsxAttribute(e.jsxIdentifier("data-om-text-attrs"),e.stringLiteral(JSON.stringify(c))))}},JSXElement(o,r){const l=o.node.openingElement;const i=l&&l.name&&l.name.name;if(i==="__OmT")return;if(typeof i==="string"&&t[i])return;v(o,s(r),S(r))},JSXFragment(o,r){v(o,s(r),S(r))}}}})}}const g=f?["transform-react-jsx-source",d,p]:["transform-react-jsx-source",d];document.querySelectorAll('script[type="text/babel"],script[type="text/jsx"]').forEach((h,y)=>{const m=h.getAttribute("data-plugins")||"";const w=g.filter((R)=>m.indexOf(R)<0);if(w.length){h.setAttribute("data-plugins",m?`${m},${w.join(",")}`:w.join(","))}if(!h.hasAttribute("data-filename")){h.setAttribute("data-filename",h.getAttribute("src")||`inline-${y}`)}})});var A=window.parent;var U="not editable here — open the project in the Claude Design editor to save";var W=()=>Promise.resolve({persisted:false,noHost:true,reason:U});var H=W;var M="data/storage.json";var z=()=>{try{const n=new URL(document.baseURI);const d=n.pathname.match(/\/projects\/([^/]+)\/serve\//);if(d)return d[1];return n.hostname.split(".")[0]||""}catch{return location.hostname.split(".")[0]||""}};var Z=()=>{try{const n=new URL(document.baseURI);const d=n.pathname.indexOf("/serve/");if(d>=0)return n.origin+n.pathname.slice(0,d+"/serve/".length)+M}catch{}return"./"+M};var x=null;var N=()=>{if(!x){x=fetch(Z(),{cache:"no-store"}).then((n)=>{if(n.ok)return n.text();return n.status===404?"":null}).catch(()=>null).then((n)=>{if(n===null){x=null;return null}const d=new Map;if(!n)return d;let p;try{p=JSON.parse(n)}catch{console.warn("[omelette.storage] "+M+" is not valid JSON; treating the store as unreadable so a save cannot overwrite the "+"hand-edited bytes. Fix the JSON (or delete the file) to re-enable persistence.");x=null;return null}if(p===null||typeof p!=="object"||Array.isArray(p)){console.warn("[omelette.storage] "+M+" doesn't hold a JSON object; treating the store as unreadable so a save cannot "+"overwrite the hand-edited bytes. Make the top level a JSON object to re-enable persistence.");x=null;return null}const f=p;if("data"in f){const g=f.data;if(g===null||typeof g!=="object"||Array.isArray(g)){console.warn("[omelette.storage] "+M+' has a "data" field that is not a JSON object; treating the store as unreadable so a '+'save cannot overwrite the hand-edited bytes. Make "data" a JSON object to re-enable persistence.');x=null;return null}const h=f._meta;const y=h!==null&&typeof h==="object"?h.project:undefined;if(typeof y==="string"&&y!==""&&y!==z())return d;for(const m of Object.keys(g))d.set(m,g[m]);return d}for(const g of Object.keys(f)){if(g!=="_meta")d.set(g,f[g])}return d})}return x};var F=(n)=>H(M,JSON.stringify({_meta:{project:z(),version:1},data:Object.fromEntries(n)},null,2));var D=Promise.resolve();var $=(n)=>{const d=D.then(n);D=d.then(()=>{return},()=>{return});return d};var V=/sk-(?:ant-)?[A-Za-z0-9_-]{16,}|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{20,}|xox[a-z]-[A-Za-z0-9][A-Za-z0-9-]{9,}|AIza[0-9A-Za-z_-]{30,}|-----BEGIN [A-Z ]*PRIVATE KEY-----/;var Y=/password|passwd|secret|api[_-]?key|access[_-]?token|auth[_-]?token|credential/i;var Q=(n,d,p)=>{if(V.test(d)||Y.test(n)&&typeof p==="string"&&p.length>=8){console.warn('[omelette.storage] the value for "'+n+'" looks like a credential. The storage file is a plaintext project file — visible to '+"everyone with project access and copied when the project is duplicated. Do not store secrets here.")}};var q={persisted:false,reason:"could not load the existing store — not overwriting it"};var X={persisted:false,reason:"stored value changed since a failed read — re-read this key before saving"};var P=new Set;var ee={get:(n)=>{if(typeof n!=="string"){return Promise.reject(new TypeError("storage.get: key must be a string"))}return $(N).then((d)=>{if(d===null){P.add(n);return null}P.delete(n);if(!d.has(n))return null;const p=d.get(n);return p==null?null:JSON.parse(JSON.stringify(p))})},set:(n,d)=>{if(typeof n!=="string"){return Promise.reject(new TypeError("storage.set: key must be a string"))}let p;try{p=JSON.stringify(d)}catch(g){return Promise.reject(new TypeError("storage.set: value must be JSON-serializable ("+String(g)+")"))}if(p===undefined){return Promise.reject(new TypeError("storage.set: value must be JSON-serializable"))}Q(n,p,d);const f=JSON.parse(p);return $(()=>N().then((g)=>{if(g===null)return q;if(P.has(n)){if(g.has(n))return X;P.delete(n)}g.set(n,f);return F(g)}))},delete:(n)=>{if(typeof n!=="string"){return Promise.reject(new TypeError("storage.delete: key must be a string"))}return $(()=>N().then((d)=>{if(d===null)return q;if(P.has(n)){if(d.has(n))return X;P.delete(n)}d.delete(n);return F(d)}))},keys:()=>$(N).then((n)=>n===null?[]:Array.from(n.keys()))};window.omelette={writeFile:(n,d)=>H(n,d).then((p)=>{if(!p.persisted&&!p.noHost){throw new Error(p.reason||"write failed")}}),storage:ee};if(A&&A!==window){const n=(e,t)=>{try{A.postMessage({__omelette_log:true,type:e,data:t},"*")}catch{}};["log","warn","error"].forEach((e)=>{const t=console[e];console[e]=(...a)=>{const u=a.map((s)=>{try{return typeof s==="object"?JSON.stringify(s):String(s)}catch{try{return String(s)}catch{return"[unstringifiable]"}}}).join(" ");n(e,u);t.apply(console,a)}});window.addEventListener("error",(e)=>{const t=e.target;if(t&&t!==window&&t.tagName){const a=t.src||t.href||"";n("resource_error",`${t.tagName} failed to load: ${a}`)}else{n("error",`${e.message||"Unknown error"} at ${e.filename||"?"}:${e.lineno||0}:${e.colno||0}`)}},true);window.addEventListener("unhandledrejection",(e)=>{const t=e.reason;const a=t instanceof Error?`${t.message} ${t.stack}`:String(t);n("error",`Unhandled rejection: ${a}`)});window.addEventListener("click",(e)=>{if(e.defaultPrevented||e.button!==0)return;if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;const t=e.composedPath?e.composedPath():[];const a=["button","input","select","textarea","summary","label"];let u=null;for(const v of t){if(!(v instanceof Element))continue;if(v.localName==="a"){if(!(v instanceof HTMLAnchorElement))return;u=v;break}if(a.indexOf(v.localName)!==-1)return}if(!u)return;if(u.isContentEditable)return;const s=u.closest("[contenteditable]");if(s&&s.getAttribute("contenteditable")!=="false")return;const S=(u.getAttribute("target")||"_self").toLowerCase();if(S!=="_self"&&S!=="_top"&&S!=="_parent")return;let _;try{_=new URL(u.href)}catch{return}if(_.protocol!=="http:"&&_.protocol!=="https:")return;if(location.origin==="null")return;if(_.origin===location.origin)return;e.preventDefault();window.open(_.href,"_blank","noopener,noreferrer")});const d=()=>{try{A.postMessage({type:"omelette:height",height:document.documentElement.scrollHeight},"*")}catch{}};if(window.ResizeObserver)new ResizeObserver(d).observe(document.documentElement);const p=()=>{d();if(!document.querySelector('script[type="text/babel"],script[type="text/jsx"]'))return;const e=()=>document.getElementById("root")||document.querySelector("body > div[id]");const t=e()?.firstElementChild??null;let a=0;const u=()=>{const s=e();if(s&&s.firstElementChild!==t||++a>30){d();return}setTimeout(u,100)};setTimeout(u,100)};if(document.readyState==="complete")p();else window.addEventListener("load",p);const f={};let g=0;const h=(e)=>new Promise((t,a)=>{if(!I.length){a(new Error("claude.complete: no parent origin"));return}const u=`c${++g}`;const s=()=>setTimeout(()=>{delete f[u];a(new Error(`claude.complete: no data for ${J/1000}s`))},J);const S=s();f[u]={resolve:t,reject:a,text:"",t:S,arm:s};try{for(const _ of I){A.postMessage({__om_api:true,id:u,body:e},_)}}catch(_){clearTimeout(S);delete f[u];a(_)}});const y=8;const m=async(e,t)=>{if(!Array.isArray(e.messages)){throw new Error("claude.complete: tools require a messages array")}const a=e.messages.slice();const u={...e,tools:e.tools.map((_)=>{if(_===null||typeof _!=="object")return _;const v={};for(const o of Object.keys(_)){if(typeof _[o]!=="function")v[o]=_[o]}return v})};const s=u.tool_choice;const S=s!=null&&(s.type==="any"||s.type==="tool")?{...u,tool_choice:s.disable_parallel_tool_use!==undefined?{type:"auto",disable_parallel_tool_use:s.disable_parallel_tool_use}:{type:"auto"}}:u;for(let _=0;_<y;_++){const v=await h({..._===0?u:S,messages:a});const o=v.message;const r=o&&Array.isArray(o.content)?o.content:null;const l=r?r.filter((c)=>c?.type==="tool_use"):[];if(o?.stop_reason!=="tool_use"||l.length===0){return v.text}const i=[];for(const c of l){const k=t.get(c.name);if(!k){i.push({type:"tool_result",tool_use_id:c.id,content:`no handler for tool "${c.name}"`,is_error:true});continue}try{const b=await k(c.input);const E=typeof b==="string"?b:O(b)??"";i.push({type:"tool_result",tool_use_id:c.id,content:E})}catch(b){i.push({type:"tool_result",tool_use_id:c.id,content:String(b?.message??b??"tool handler failed"),is_error:true})}}a.push({role:"assistant",content:r},{role:"user",content:i})}throw new Error(`claude.complete: exceeded ${y} tool turns`)};window.claude={complete(e){const t=e;if(t!==null&&typeof t==="object"&&Array.isArray(t.tools)&&t.tools.some((a)=>a!==null&&typeof a==="object"&&typeof a.run==="function")){const a=new Map;for(const u of t.tools){if(u!==null&&typeof u==="object"&&typeof u.run==="function"){a.set(String(u.name),u.run)}}return m(t,a)}return h(e).then((a)=>a.text)}};const w={};let R=0;H=(e,t)=>new Promise((a)=>{if(!I.length){a({persisted:false,noHost:true,reason:U});return}const u=`f${++R}`;const s=setTimeout(()=>{delete w[u];a({persisted:false,noHost:true,reason:U})},G);w[u]={settle:a,t:s};try{for(const S of I){A.postMessage({__om_file:true,id:u,op:"write",path:e,content:t},S)}}catch{clearTimeout(s);delete w[u];a({persisted:false,noHost:true,reason:U})}});const O=(e)=>{try{return JSON.stringify(e)}catch{return JSON.stringify(String(e))}};window.addEventListener("message",(e)=>{if(I.indexOf(e.origin)<0)return;if(e.source!==A)return;const t=e.data;if(!t)return;if(t.type==="omelette-preview-refresh"){if(typeof t.token!=="string"||!/^[0-9a-f.-]+(\.(rc|pr-[0-9]+))?(\.[0-9]+\.[0-9a-f]{16})?$/.test(t.token))return;const s=Math.max(1,Math.floor((t.expiresAt||0)-Date.now()/1000));document.cookie="__Host-omelette-preview="+t.token+"; Path=/; Secure; SameSite=None; Partitioned; Max-Age="+s;C();return}if(t.__om_file_r){const s=w[t.id];if(!s)return;clearTimeout(s.t);delete w[t.id];s.settle(t.ok?{persisted:true}:{persisted:false,reason:t.error||"write failed"});return}if(t.__om_api_r){const s=f[t.id];if(!s)return;if(t.error!=null){clearTimeout(s.t);delete f[t.id];s.reject(new Error(t.error));return}if(t.chunk!=null){clearTimeout(s.t);s.t=s.arm();s.text+=t.chunk;return}if(t.done){clearTimeout(s.t);delete f[t.id];s.resolve({text:t.text!=null?t.text:s.text,message:t.message});return}return}if(!t.__om_eval)return;const a=t;const u=(s)=>{e.source.postMessage({...s,__om_eval_r:1,id:a.id},e.origin)};try{const s=(0,eval)(a.code);if(s&&typeof s.then==="function"){s.then((S)=>u({ok:1,v:O(S)}),(S)=>u({ok:0,e:String(S)}))}else{u({ok:1,v:O(s)})}}catch(s){u({ok:0,e:String(s)})}})}})();
+</script>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>03 Phase 0 — Anchor screens B — رهون</title>
+<meta name="design_doc_mode" content="canvas">
+<link rel="icon" href="assets/rahoon-favicon.svg">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400,0..1,0&display=block">
+<style>
+html,body{margin:0;background:#E7E6E1;color:#151513;font-family:"IBM Plex Sans Arabic","IBM Plex Sans",sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#AA4528;text-underline-offset:3px}a:hover{color:#8E3920}
+*:focus-visible{outline:2px solid #151513;outline-offset:2px}
+button,input,textarea{font-family:inherit}
+.ms{font-family:"Material Symbols Rounded";font-weight:400;font-style:normal;line-height:1;display:inline-block;white-space:nowrap;direction:ltr;font-feature-settings:"liga"}
+</style>
+</helmet>
+<div dir="rtl" lang="ar" style="padding:48px;display:flex;flex-direction:column;gap:96px;width:max-content">
+  <div style="display:flex;align-items:center;gap:24px">
+    <img src="assets/rahoon-horizontal-full.svg" alt="رهون" style="width:200px">
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <h1 style="margin:0;font-size:32px;line-height:44px">المرحلة 0 — الشاشات المرجعية (ب)</h1>
+      <div style="font-size:15px;color:#22262A;display:flex;gap:16px;flex-wrap:wrap"><a href="00 Brief & Assumptions.dc.html">00 الموجز</a><a href="01 Foundations.dc.html">01 الأسس</a><a href="02 Components.dc.html">02 المكونات</a><a href="03 Phase 0 — Blueprint.dc.html">المخطط</a><a href="03 Phase 0 — Anchor Screens.dc.html">أ: المحفظة، الحالات، المعالج</a><strong>ب: مساحة العمل، المراجعة، منشئ الحلول</strong></div>
+    </div>
+  </div>
+
+  <!-- ============ 4. CASE WORKSPACE ============ -->
+  <section data-screen-label="P0-Lender-CaseWorkspace" style="display:flex;gap:48px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P0-Lender-CaseWorkspace-Desktop-Overview · 1440</div>
+      <div data-screen-label="P0-Lender-CaseWorkspace-Desktop-Overview" style="width:1440px;height:1240px;background:#FAF9F6;display:flex;overflow:hidden;box-shadow:0 16px 40px rgba(21,21,19,.14)">
+        <dc-import name="LenderSidebar" active="cases" hint-size="264px,100%" style="height:100%"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="LenderTopbar" crumb1="الحالات" crumb2="RH-2026-004172" hint-size="100%,64px"></dc-import>
+          <header style="background:#FFFFFF;border-bottom:1px solid #CBCAC6;padding:20px 40px 0;display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:flex-start;gap:16px">
+              <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;gap:10px;align-items:center;font-size:13px;color:#5E5D58">
+                  <bdi dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#151513">RH-2026-004172</bdi>
+                  <button aria-label="نسخ المرجع" style="width:28px;height:28px;border:0;background:transparent;border-radius:4px"><span class="ms" aria-hidden="true" style="font-size:16px;color:#5E5D58">content_copy</span></button>
+                  <span>·</span><span>تمويل سكني · مرابحة</span><span>·</span><span>فُتحت <bdi dir="ltr">2026-08-14</bdi></span>
+                </div>
+                <h2 style="margin:0;font-size:28px;line-height:40px;font-weight:700">عبدالله م. — فيلا سكنية، حي النرجس، الرياض</h2>
+                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                  <span style="display:inline-flex;gap:6px;align-items:center;min-height:28px;padding:0 10px;border-radius:999px;font-size:13px;font-weight:600;background:#FDF0EB;color:#8E3920;border:1px solid #F0B8A6"><span class="ms" aria-hidden="true" style="font-size:16px">tips_and_updates</span>حل مقترح</span>
+                  <span style="display:inline-flex;gap:6px;align-items:center;font-size:13px;font-weight:600;color:#8A5300;background:#FBF2DE;padding:3px 8px;border-radius:4px"><span class="ms" aria-hidden="true" style="font-size:16px">alarm</span>مهلة المرحلة: يومان · <bdi dir="ltr">2026-09-25</bdi></span>
+                  <span style="font-size:13px;color:#22262A;display:inline-flex;gap:6px;align-items:center"><span class="ms" aria-hidden="true" style="font-size:16px;color:#5E5D58">person</span>المسؤولة: سارة القحطاني</span>
+                  <span style="font-size:13px;color:#22262A;display:inline-flex;gap:6px;align-items:center"><span class="ms" aria-hidden="true" style="font-size:16px;color:#5E5D58">verified_user</span>المالك متحقق · دعوة مقبولة</span>
+                </div>
+              </div>
+              <button aria-haspopup="menu" style="min-height:40px;padding:0 14px;border-radius:6px;border:1px solid #85847F;background:#FFFFFF;font-weight:600;font-size:14px;display:flex;gap:6px;align-items:center">إجراءات أخرى<span class="ms" aria-hidden="true" style="font-size:18px">expand_more</span></button>
+            </div>
+            <ol aria-label="مراحل الحالة" style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px">
+              <sc-for list="{{ stages }}" as="st" hint-placeholder-count="7">
+                <li aria-current="{{ st.current }}" style="display:flex;flex-direction:column;gap:6px">
+                  <span style="height:5px;border-radius:3px;background:{{ st.bar }}"></span>
+                  <span style="display:flex;gap:4px;align-items:center;font-size:12px;line-height:18px;font-weight:{{ st.w }};color:{{ st.fg }}"><span class="ms" aria-hidden="true" style="font-size:14px">{{ st.icon }}</span>{{ st.label }}</span>
+                </li>
+              </sc-for>
+            </ol>
+            <div role="tablist" aria-label="أقسام الحالة" style="display:flex;gap:0;margin:0 -8px">
+              <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="10">
+                <button role="tab" aria-selected="{{ t.sel }}" style="{{ t.style }}">{{ t.label }}<span style="{{ t.badgeStyle }}">{{ t.badge }}</span></button>
+              </sc-for>
+            </div>
+          </header>
+          <main style="flex:1;padding:24px 40px;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:24px;overflow:hidden">
+            <div style="display:flex;flex-direction:column;gap:20px;min-width:0">
+              <article aria-labelledby="na-title" style="background:#FFFFFF;border:1px solid #CBCAC6;border-top:3px solid #F4633A;border-radius:10px;padding:22px 24px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px 24px;align-items:start">
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <span style="font-size:12px;font-weight:700;color:#5E5D58">الإجراء التالي · لكِ</span>
+                  <h3 id="na-title" style="margin:0;font-size:22px;line-height:32px;font-weight:700">مراجعة الحل v2 وإرساله للموافقة الداخلية</h3>
+                  <span style="font-size:14px;line-height:22px;color:#22262A">أعدّه فهد العتيبي <bdi dir="ltr">2026-09-22 16:05</bdi>. بعد الإرسال يُقفل الإصدار ويُسند إلى نورة الشهري. لا يصل للمالك قبل الاعتماد.</span>
+                  <ul style="margin:6px 0 0;padding:0;list-style:none;display:flex;gap:18px;flex-wrap:wrap;font-size:14px">
+                    <li style="display:flex;gap:6px;align-items:center"><span class="ms" aria-hidden="true" style="font-size:18px;color:#1E6A45">check_circle</span>تقييم صالح</li>
+                    <li style="display:flex;gap:6px;align-items:center"><span class="ms" aria-hidden="true" style="font-size:18px;color:#1E6A45">check_circle</span>تحليل القدرة</li>
+                    <li style="display:flex;gap:6px;align-items:center"><span class="ms" aria-hidden="true" style="font-size:18px;color:#1E6A45">check_circle</span>مبرر التنازل</li>
+                    <li style="display:flex;gap:6px;align-items:center"><span class="ms" aria-hidden="true" style="font-size:18px;color:#1E6A45">check_circle</span>لا شكوى مفتوحة</li>
+                  </ul>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;min-width:220px">
+                  <button style="min-height:44px;padding:0 20px;border-radius:6px;border:0;background:#AA4528;color:#FFFFFF;font-weight:600;font-size:15px">مراجعة وإرسال…</button>
+                  <button style="min-height:40px;padding:0 16px;border-radius:6px;border:1px solid #85847F;background:#FFFFFF;font-weight:600;font-size:14px">معاينة كما يراه المالك</button>
+                </div>
+              </article>
+
+              <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px">
+                <sc-for list="{{ figures }}" as="f" hint-placeholder-count="4">
+                  <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:4px">
+                    <span style="font-size:13px;color:#5E5D58">{{ f.label }}</span>
+                    <span style="font-size:22px;line-height:32px;font-weight:700"><bdi dir="ltr" style="font-variant-numeric:tabular-nums">{{ f.value }}</bdi> <span style="font-size:13px;font-weight:500">{{ f.unit }}</span></span>
+                    <span style="font-size:12px;line-height:18px;color:#5E5D58;display:flex;gap:4px;align-items:center"><span class="ms" aria-hidden="true" style="font-size:14px">{{ f.icon }}</span>{{ f.src }}</span>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;overflow:hidden">
+                <div style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #EDECE8"><h3 style="margin:0;font-size:17px;line-height:26px;font-weight:600">الحلول وإصداراتها</h3><a href="#" style="font-size:14px;font-weight:600">مقارنة الإصدارات</a></div>
+                <div style="display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:16px;align-items:center;padding:14px 20px">
+                  <span dir="ltr" style="font:600 14px 'IBM Plex Mono';padding:6px 0;text-align:center;border-radius:6px;background:#FDF0EB;color:#8E3920">v2</span>
+                  <div style="display:flex;flex-direction:column;gap:2px"><strong style="font-size:15px">إعادة جدولة 84 شهراً · قسط <bdi dir="ltr">15,074.52</bdi> ر.س</strong><span style="font-size:13px;color:#5E5D58">تنازل عن غرامات <bdi dir="ltr">18,300.00</bdi> ر.س · أعدّه فهد العتيبي · <bdi dir="ltr">2026-09-22</bdi></span></div>
+                  <span style="display:inline-flex;align-items:stretch;border-radius:4px;overflow:hidden;font-size:12px;font-weight:600;border:1px solid #CBCAC6"><span style="padding:3px 8px;background:#F2F1ED;color:#5E5D58">موافقة</span><span style="padding:3px 8px;background:#FFFFFF;color:#22262A">لم تُرسل بعد</span></span>
+                </div>
+                <div style="display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:16px;align-items:center;padding:14px 20px;border-top:1px solid #EDECE8">
+                  <span dir="ltr" style="font:600 14px 'IBM Plex Mono';padding:6px 0;text-align:center;border-radius:6px;background:#F2F1ED;color:#5E5D58">v1</span>
+                  <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;color:#22262A">إعادة جدولة 60 شهراً · قسط <bdi dir="ltr">21,409.33</bdi> ر.س</span><span style="font-size:13px;color:#5E5D58">أعادته سارة القحطاني للتعديل <bdi dir="ltr">2026-09-15</bdi> · «القسط يتجاوز القدرة وفق كشف الراتب v2»</span></div>
+                  <span style="display:inline-flex;align-items:stretch;border-radius:4px;overflow:hidden;font-size:12px;font-weight:600;border:1px solid #EFA59C"><span style="padding:3px 8px;background:#F2F1ED;color:#5E5D58">مراجعة</span><span style="padding:3px 8px;background:#FCECEA;color:#B3261E;display:inline-flex;gap:4px;align-items:center"><span class="ms" aria-hidden="true" style="font-size:14px">undo</span>أُعيد</span></span>
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:16px 20px;display:flex;flex-direction:column;gap:10px">
+                  <div style="display:flex;justify-content:space-between"><strong style="font-size:16px">المستندات</strong><a href="#" style="font-size:13px;font-weight:600">كل المستندات (9)</a></div>
+                  <div style="display:flex;gap:10px;align-items:center;font-size:14px"><span class="ms" aria-hidden="true" style="font-size:20px;color:#8A5300">event_upcoming</span><span style="flex:1">صورة الهوية الوطنية · تنتهي خلال 12 يوماً</span><button style="min-height:36px;padding:0 10px;border-radius:6px;border:1px solid #85847F;background:#FFFFFF;font-weight:600;font-size:13px">طلب تحديث</button></div>
+                  <div style="display:flex;gap:10px;align-items:center;font-size:14px"><span class="ms" aria-hidden="true" style="font-size:20px;color:#1E6A45">check_circle</span><span style="flex:1">8 مستندات متحقق منها</span></div>
+                </div>
+                <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:16px 20px;display:flex;flex-direction:column;gap:10px">
+                  <div style="display:flex;justify-content:space-between"><strong style="font-size:16px">المهام المفتوحة</strong><a href="#" style="font-size:13px;font-weight:600">كل المهام (2)</a></div>
+                  <div style="display:flex;gap:10px;align-items:center;font-size:14px"><span class="ms" aria-hidden="true" style="font-size:20px;color:#5E5D58">radio_button_unchecked</span><span style="flex:1">مراجعة الحل v2 · سارة ق.</span><span style="font-size:12px;color:#8A5300;font-weight:600">يومان</span></div>
+                  <div style="display:flex;gap:10px;align-items:center;font-size:14px"><span class="ms" aria-hidden="true" style="font-size:20px;color:#5E5D58">radio_button_unchecked</span><span style="flex:1">جدولة مكالمة مع المالك · خالد ز.</span><span style="font-size:12px;color:#5E5D58;font-weight:600"><bdi dir="ltr">2026-09-27</bdi></span></div>
+                </div>
+              </div>
+            </div>
+
+            <aside style="display:flex;flex-direction:column;gap:16px;min-width:0">
+              <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:12px">
+                <strong style="font-size:16px">الأطراف</strong>
+                <div style="display:flex;gap:10px;align-items:center"><span style="width:36px;height:36px;border-radius:50%;background:#F2F1ED;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">ع م</span><div style="flex:1;display:flex;flex-direction:column"><span style="font-size:14px;font-weight:600">عبدالله م. · المالك والمقترض</span><span style="font-size:12px;color:#5E5D58">الهوية <bdi dir="ltr" style="font-family:'IBM Plex Mono'">1•••••••42</bdi> · يفضّل العربية</span></div><button aria-label="كشف الهوية كاملة (يتطلب سبباً ويُسجَّل)" style="width:36px;height:36px;border:1px solid #CBCAC6;border-radius:6px;background:#FFFFFF"><span class="ms" aria-hidden="true" style="font-size:18px">visibility</span></button></div>
+                <div style="display:flex;gap:10px;align-items:center"><span style="width:36px;height:36px;border-radius:50%;background:#EAF2F9;display:flex;align-items:center;justify-content:center"><span class="ms" aria-hidden="true" style="font-size:18px;color:#1D5A8C">assignment</span></span><div style="flex:1;display:flex;flex-direction:column"><span style="font-size:14px;font-weight:600">مكتب تقييم معتمد «ب»</span><span style="font-size:12px;color:#5E5D58">سلّم <bdi dir="ltr">2026-09-10</bdi> · الوصول انتهى <bdi dir="ltr">2026-09-17</bdi></span></div></div>
+              </div>
+              <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;justify-content:space-between"><strong style="font-size:16px">آخر النشاط</strong><a href="#" style="font-size:13px;font-weight:600">السجل الكامل</a></div>
+                <ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px">
+                  <sc-for list="{{ activity }}" as="a" hint-placeholder-count="4">
+                    <li style="display:flex;gap:10px"><span class="ms" aria-hidden="true" style="font-size:18px;color:{{ a.c }}">{{ a.icon }}</span><div style="display:flex;flex-direction:column"><span style="font-size:13px;line-height:20px;font-weight:600">{{ a.t }}</span><span style="font-size:12px;line-height:18px;color:#5E5D58">{{ a.m }}</span></div></li>
+                  </sc-for>
+                </ol>
+              </div>
+              <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+                <strong style="font-size:16px">إجراءات حساسة</strong>
+                <button style="min-height:40px;padding:0 12px;border-radius:6px;border:1px solid #85847F;background:#FFFFFF;font-weight:600;font-size:14px;display:flex;gap:8px;align-items:center"><span class="ms" aria-hidden="true" style="font-size:18px">pause_circle</span>إيقاف الحالة مؤقتاً…</button>
+                <button style="min-height:40px;padding:0 12px;border-radius:6px;border:1px solid #B3261E;background:#FFFFFF;color:#B3261E;font-weight:600;font-size:14px;display:flex;gap:8px;align-items:center"><span class="ms" aria-hidden="true" style="font-size:18px">cancel</span>إلغاء الحالة…</button>
+                <div style="display:flex;flex-direction:column;gap:4px"><button disabled aria-describedby="vs-why" style="min-height:40px;padding:0 12px;border-radius:6px;border:1px solid #CBCAC6;background:#FAF9F6;color:#6B6A65;font-weight:600;font-size:14px;display:flex;gap:8px;align-items:center"><span class="ms" aria-hidden="true" style="font-size:18px">sell</span>بدء مسار البيع الطوعي</button><span id="vs-why" style="font-size:12px;line-height:18px;color:#5E5D58">معطّل: لا توجد موافقة موثقة من المالك. متاح في المرحلة 2.</span></div>
+                <div style="font-size:12px;line-height:18px;color:#5E5D58;display:flex;gap:6px;border-top:1px solid #EDECE8;padding-top:10px"><span class="ms" aria-hidden="true" style="font-size:16px">info</span>الإحالة القضائية لا تظهر لدورك؛ تبدأها الإدارة القانونية بقرار منفصل.</div>
+              </div>
+            </aside>
+          </main>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P0-Lender-CaseWorkspace-Mobile-Overview · 390</div>
+      <div data-screen-label="P0-Lender-CaseWorkspace-Mobile-Overview" style="width:390px;height:844px;background:#FAF9F6;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 16px 40px rgba(21,21,19,.14)">
+        <div style="background:#FFFFFF;border-bottom:1px solid #CBCAC6;padding:6px 8px 0;display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:2px"><button aria-label="رجوع للحالات" style="width:44px;height:44px;border:0;background:transparent"><span class="ms" aria-hidden="true" style="font-size:22px">arrow_forward</span></button><bdi dir="ltr" style="flex:1;font:600 14px 'IBM Plex Mono'">RH-2026-004172</bdi><button aria-label="إجراءات أخرى" style="width:44px;height:44px;border:0;background:transparent"><span class="ms" aria-hidden="true" style="font-size:22px">more_vert</span></button></div>
+          <div style="padding:0 8px;display:flex;flex-direction:column;gap:6px">
+            <strong style="font-size:18px;line-height:28px">عبدالله م. — فيلا، النرجس</strong>
+            <div style="display:flex;gap:8px;flex-wrap:wrap"><span style="display:inline-flex;gap:4px;align-items:center;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;background:#FDF0EB;color:#8E3920;border:1px solid #F0B8A6"><span class="ms" aria-hidden="true" style="font-size:14px">tips_and_updates</span>حل مقترح</span><span style="display:inline-flex;gap:4px;align-items:center;font-size:12px;font-weight:600;color:#8A5300;background:#FBF2DE;padding:2px 8px;border-radius:4px"><span class="ms" aria-hidden="true" style="font-size:14px">alarm</span>يومان</span><span style="font-size:12px;color:#5E5D58;align-self:center">المرحلة 4 من 7</span></div>
+          </div>
+          <div role="tablist" style="display:flex;overflow:hidden;gap:0">
+            <button role="tab" aria-selected="true" style="flex:none;min-height:44px;padding:0 12px;border:0;background:transparent;font-weight:700;font-size:14px;box-shadow:inset 0 -3px 0 #F4633A">نظرة عامة</button>
+            <button role="tab" aria-selected="false" style="flex:none;min-height:44px;padding:0 12px;border:0;background:transparent;font-size:14px;color:#5E5D58">الحلول</button>
+            <button role="tab" aria-selected="false" style="flex:none;min-height:44px;padding:0 12px;border:0;background:transparent;font-size:14px;color:#5E5D58">المستندات</button>
+            <button role="tab" aria-selected="false" style="flex:none;min-height:44px;padding:0 12px;border:0;background:transparent;font-size:14px;color:#5E5D58">التمويل</button>
+            <button role="tab" aria-selected="false" style="flex:none;min-height:44px;padding:0 12px;border:0;background:transparent;font-size:14px;color:#5E5D58">الأطراف</button>
+          </div>
+        </div>
+        <div style="flex:1;overflow:hidden;padding:16px;display:flex;flex-direction:column;gap:12px">
+          <article style="background:#FFFFFF;border:1px solid #CBCAC6;border-top:3px solid #F4633A;border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px">
+            <span style="font-size:12px;font-weight:700;color:#5E5D58">الإجراء التالي · لكِ</span>
+            <strong style="font-size:17px;line-height:26px">مراجعة الحل v2 وإرساله للموافقة</strong>
+            <span style="font-size:13px;line-height:20px;color:#22262A">4 من 4 شروط مكتملة · يُسند إلى نورة الشهري</span>
+            <button style="min-height:48px;border-radius:6px;border:0;background:#AA4528;color:#FFFFFF;font-weight:600;font-size:15px">مراجعة وإرسال…</button>
+          </article>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <sc-for list="{{ figures }}" as="f" hint-placeholder-count="4">
+              <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:2px">
+                <span style="font-size:12px;color:#5E5D58">{{ f.label }}</span>
+                <span style="font-size:17px;line-height:26px;font-weight:700"><bdi dir="ltr">{{ f.value }}</bdi> <span style="font-size:11px;font-weight:500">{{ f.unit }}</span></span>
+              </div>
+            </sc-for>
+          </div>
+          <span style="font-size:11px;line-height:16px;color:#5E5D58">المصدر: نظام التمويل <bdi dir="ltr">2026-09-22 18:40</bdi> · التقييم <bdi dir="ltr">2026-09-10</bdi></span>
+          <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:center;min-height:44px"><span class="ms" aria-hidden="true" style="font-size:20px;color:#8A5300">event_upcoming</span><span style="flex:1;font-size:14px">صورة الهوية تنتهي خلال 12 يوماً</span><span class="ms" aria-hidden="true" style="font-size:20px;color:#5E5D58">chevron_left</span></div>
+        </div>
+      </div>
+    </div>
+
+    <aside style="width:380px;background:#FFFFFF;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:22px">
+      <strong style="font-size:18px">مساحة عمل الحالة — المواصفة</strong>
+      <sc-for list="{{ spec4 }}" as="s" hint-placeholder-count="8"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;font-weight:700;color:#5E5D58">{{ s.k }}</span><span>{{ s.v }}</span></div></sc-for>
+    </aside>
+  </section>
+
+  <!-- ============ 4b. HIGH-IMPACT REVIEW ============ -->
+  <section data-screen-label="P0-Lender-SubmitApprovalReview" style="display:flex;gap:48px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P0-Lender-CaseWorkspace-Desktop-SubmitApprovalReview · 1440</div>
+      <div data-screen-label="P0-Lender-CaseWorkspace-Desktop-SubmitApprovalReview" style="width:1440px;height:1120px;background:#FAF9F6;display:flex;overflow:hidden;box-shadow:0 16px 40px rgba(21,21,19,.14)">
+        <dc-import name="LenderSidebar" active="cases" hint-size="264px,100%" style="height:100%"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="LenderTopbar" crumb1="RH-2026-004172" crumb2="مراجعة قبل الإرسال" hint-size="100%,64px"></dc-import>
+          <main style="flex:1;padding:32px 40px 0;display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:32px;overflow:hidden">
+            <div style="display:flex;flex-direction:column;gap:20px;max-width:760px">
+              <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:13px;color:#5E5D58">إجراء عالي الأثر · يُسجَّل في السجل</span><h2 style="margin:0;font-size:28px;line-height:40px;font-weight:700">مراجعة قبل إرسال الحل v2 للموافقة الداخلية</h2></div>
+              <section aria-labelledby="r1" style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px">
+                <h3 id="r1" style="margin:0;font-size:17px;font-weight:600;display:flex;gap:8px;align-items:center"><span style="width:24px;height:24px;border-radius:50%;background:#151513;color:#FFFFFF;font-size:13px;display:inline-flex;align-items:center;justify-content:center">1</span>ما سيحدث</h3>
+                <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;font-size:15px;line-height:24px">
+                  <li style="display:flex;gap:10px"><span class="ms" aria-hidden="true" style="font-size:20px;color:#5E5D58">swap_horiz</span><span>تنتقل الحالة من <strong>حل مقترح</strong> إلى <strong>موافقة داخلية</strong>.</span></li>
+                  <li style="display:flex;gap:10px"><span class="ms" aria-hidden="true" style="font-size:20px;color:#5E5D58">edit_off</span><span>يُقفل الإصدار v2 للتعديل. أي تغيير لاحق ينشئ v3 ويعيد السلسلة.</span></li>
+                  <li style="display:flex;gap:10px"><span class="ms" aria-hidden="true" style="font-size:20px;color:#5E5D58">person</span><span>يُسند إلى <strong>نورة الشهري</strong> (حدها 2,000,000 ر.س، التنازل حتى 5%) · المهلة 3 أيام: <bdi dir="ltr">2026-09-26</bdi>.</span></li>
+                  <li style="display:flex;gap:10px"><span class="ms" aria-hidden="true" style="font-size:20px;color:#5E5D58">visibility_off</span><span>لن يرى المالك أي عرض قبل الاعتماد. لا يُرسل له إشعار الآن.</span></li>
+                </ul>
+              </section>
+              <section aria-labelledby="r2" style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px">
+                <h3 id="r2" style="margin:0;font-size:17px;font-weight:600;display:flex;gap:8px;align-items:center"><span style="width:24px;height:24px;border-radius:50%;background:#151513;color:#FFFFFF;font-size:13px;display:inline-flex;align-items:center;justify-content:center">2</span>الأدلة المرفقة تلقائياً</h3>
+                <sc-for list="{{ evidence }}" as="e" hint-placeholder-count="4">
+                  <div style="display:flex;gap:10px;align-items:center;font-size:14px;min-height:36px"><span class="ms" aria-hidden="true" style="font-size:20px;color:#1E6A45">check_circle</span><span style="flex:1">{{ e.name }}</span><span style="font-size:13px;color:#5E5D58">{{ e.meta }}</span><a href="#" style="font-size:13px;font-weight:600">معاينة</a></div>
+                </sc-for>
+              </section>
+              <section aria-labelledby="r3" style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px">
+                <h3 id="r3" style="margin:0;font-size:17px;font-weight:600;display:flex;gap:8px;align-items:center"><span style="width:24px;height:24px;border-radius:50%;background:#151513;color:#FFFFFF;font-size:13px;display:inline-flex;align-items:center;justify-content:center">3</span>ملاحظتك للمعتمد <span style="font-size:13px;font-weight:400;color:#5E5D58">(إلزامية)</span></h3>
+                <textarea aria-label="ملاحظة للمعتمد" style="min-height:84px;border:1px solid #85847F;border-radius:6px;padding:10px 12px;font-size:15px;line-height:24px;resize:vertical">راجعت الحل مع كشف الراتب v2. القسط ضمن حد الاستقطاع، والتنازل محصور في غرامات التأخير فقط.</textarea>
+                <label style="display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:22px"><span style="flex:none;width:20px;height:20px;border-radius:4px;background:#151513;display:flex;align-items:center;justify-content:center;margin-top:1px"><span class="ms" aria-hidden="true" style="font-size:16px;color:#FFFFFF">check</span></span>أؤكد أنني راجعت شروط الحل والأدلة، وأنني لست مُعِدّة هذا الإصدار.</label>
+              </section>
+            </div>
+            <aside style="display:flex;flex-direction:column;gap:16px">
+              <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px;font-size:14px">
+                <div style="display:flex;justify-content:space-between;align-items:center"><strong style="font-size:15px">ملخص الحل v2</strong><span dir="ltr" style="font:500 11px 'IBM Plex Mono';color:#5E5D58">RH-2026-004172</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:#5E5D58">النوع</span><span>إعادة جدولة</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:#5E5D58">المبلغ المعاد جدولته</span><span><bdi dir="ltr">1,266,260.00</bdi> ر.س</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:#5E5D58">المدة</span><span>84 شهراً</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:#5E5D58">القسط الشهري</span><strong><bdi dir="ltr">15,074.52</bdi> ر.س</strong></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:#5E5D58">التنازل</span><span><bdi dir="ltr">18,300.00</bdi> (1.42%)</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:#5E5D58">نسبة الاستقطاع</span><span style="color:#1E6A45;font-weight:600;display:flex;gap:4px;align-items:center"><span class="ms" aria-hidden="true" style="font-size:16px">check_circle</span>46.5%</span></div>
+              </div>
+              <div style="background:#EAF2F9;border:1px solid #9DC0DE;border-radius:10px;padding:14px;display:flex;gap:10px;font-size:13px;line-height:20px"><span class="ms" aria-hidden="true" style="font-size:20px;color:#1D5A8C">info</span><span>القيم أعلاه نسخة مقفلة ستُرسل كما هي. قاعدة إشعار الامتثال عند التنازل > 1% — <strong>افتراض يتطلب تأكيد المنتج</strong>.</span></div>
+            </aside>
+          </main>
+          <div style="height:76px;background:#FFFFFF;border-top:1px solid #CBCAC6;display:flex;align-items:center;gap:12px;padding:0 40px">
+            <button style="min-height:44px;padding:0 16px;border-radius:6px;border:1px solid #85847F;background:#FFFFFF;font-weight:600;font-size:15px">رجوع للحالة</button>
+            <span style="margin-inline-start:auto;font-size:13px;color:#5E5D58">سيُسجل: الفاعل، الوقت، الملاحظة، نسخة v2</span>
+            <button style="min-height:44px;padding:0 22px;border-radius:6px;border:0;background:#AA4528;color:#FFFFFF;font-weight:600;font-size:15px">إرسال للموافقة</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <aside style="width:380px;background:#FFFFFF;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:22px">
+      <strong style="font-size:18px">نمط شاشة المراجعة — المواصفة</strong>
+      <sc-for list="{{ specR }}" as="s" hint-placeholder-count="6"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;font-weight:700;color:#5E5D58">{{ s.k }}</span><span>{{ s.v }}</span></div></sc-for>
+    </aside>
+  </section>
+
+  <!-- ============ 5. SOLUTION BUILDER ============ -->
+  <section data-screen-label="P0-Lender-SolutionBuilder" style="display:flex;gap:48px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P0-Lender-SolutionBuilder-Desktop-Default · 1440</div>
+      <div data-screen-label="P0-Lender-SolutionBuilder-Desktop-Default" style="width:1440px;height:1160px;background:#FAF9F6;display:flex;overflow:hidden;box-shadow:0 16px 40px rgba(21,21,19,.14)">
+        <dc-import name="LenderSidebar" active="cases" user-name="فهد العتيبي" user-role="محلل ائتمان" initials="ف ع" hint-size="264px,100%" style="height:100%"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="LenderTopbar" crumb1="RH-2026-004172" crumb2="الحلول · v2" hint-size="100%,64px"></dc-import>
+          <main style="flex:1;padding:28px 40px 0;display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:28px;overflow:hidden">
+            <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+              <div style="display:flex;align-items:flex-end;gap:12px">
+                <div style="flex:1;display:flex;flex-direction:column;gap:4px"><span style="font-size:13px;color:#5E5D58">عبدالله م. · القائم <bdi dir="ltr">1,284,560.00</bdi> ر.س · التقييم <bdi dir="ltr">1,650,000.00</bdi> ر.س</span><h2 style="margin:0;font-size:28px;line-height:40px;font-weight:700">منشئ الحل — الإصدار v2</h2></div>
+                <span style="display:inline-flex;gap:6px;align-items:center;font-size:12px;color:#5E5D58"><span class="ms" aria-hidden="true" style="font-size:16px;color:#1E6A45">cloud_done</span>مسودة محفوظة <bdi dir="ltr">16:05</bdi></span>
+              </div>
+              <fieldset style="border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:8px">
+                <legend style="font-size:15px;font-weight:600;margin-bottom:8px">نوع الحل</legend>
+                <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">
+                  <sc-for list="{{ types }}" as="t" hint-placeholder-count="4">
+                    <label style="{{ t.style }}"><span style="display:flex;gap:8px;align-items:center;font-weight:700;font-size:14px"><span style="{{ t.radio }}"></span>{{ t.label }}</span><span style="font-size:12px;line-height:18px;color:#5E5D58">{{ t.desc }}</span></label>
+                  </sc-for>
+                </div>
+              </fieldset>
+              <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:20px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 20px">
+                <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">المبلغ المعاد جدولته</label><div style="display:flex;height:44px;border:1px solid #CBCAC6;border-radius:6px;overflow:hidden;background:#F2F1ED"><span dir="ltr" style="flex:1;display:flex;align-items:center;justify-content:flex-end;padding:0 12px;font:600 15px 'IBM Plex Sans';font-variant-numeric:tabular-nums">1,266,260.00</span><span style="display:flex;align-items:center;padding:0 12px;font-size:14px;color:#5E5D58;border-inline-start:1px solid #CBCAC6">ر.س</span></div><span style="font-size:12px;color:#5E5D58">محسوب: القائم − التنازل</span></div>
+                <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">المدة</label><div style="display:flex;height:44px;border:2px solid #151513;border-radius:6px;overflow:hidden;background:#FFFFFF"><input dir="ltr" value="84" style="flex:1;min-width:0;border:0;padding:0 11px;font:600 15px 'IBM Plex Sans';text-align:right"><span style="display:flex;align-items:center;padding:0 12px;background:#F2F1ED;font-size:14px;color:#5E5D58">شهراً</span></div><span style="font-size:12px;color:#5E5D58">حتى 120 شهراً وعمر المالك ≤ 65 عند النهاية (افتراض)</span></div>
+                <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">أول قسط</label><div style="display:flex;height:44px;border:1px solid #85847F;border-radius:6px;align-items:center;padding:0 12px;gap:8px;background:#FFFFFF"><span class="ms" aria-hidden="true" style="font-size:18px;color:#5E5D58">calendar_month</span><bdi dir="ltr" style="font:500 15px 'IBM Plex Sans'">2026-11-01</bdi></div><span style="font-size:12px;color:#5E5D58">10 جمادى الأولى 1448هـ</span></div>
+                <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">التنازل عن غرامات التأخير</label><div style="display:flex;height:44px;border:1px solid #85847F;border-radius:6px;overflow:hidden;background:#FFFFFF"><input dir="ltr" value="18,300.00" style="flex:1;min-width:0;border:0;padding:0 12px;font:600 15px 'IBM Plex Sans';text-align:right"><span style="display:flex;align-items:center;padding:0 12px;background:#F2F1ED;font-size:14px;color:#5E5D58">ر.س</span></div><span style="font-size:12px;color:#5E5D58">1.42% من القائم · كامل الغرامات المستحقة</span></div>
+                <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">دفعة مقدمة</label><div style="display:flex;height:44px;border:1px solid #85847F;border-radius:6px;overflow:hidden;background:#FFFFFF"><input dir="ltr" value="0.00" style="flex:1;min-width:0;border:0;padding:0 12px;font:600 15px 'IBM Plex Sans';text-align:right"><span style="display:flex;align-items:center;padding:0 12px;background:#F2F1ED;font-size:14px;color:#5E5D58">ر.س</span></div></div>
+                <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">فترة سماح</label><div style="display:flex;height:44px;border:1px solid #85847F;border-radius:6px;overflow:hidden;background:#FFFFFF"><input dir="ltr" value="0" style="flex:1;min-width:0;border:0;padding:0 12px;font:600 15px 'IBM Plex Sans';text-align:right"><span style="display:flex;align-items:center;padding:0 12px;background:#F2F1ED;font-size:14px;color:#5E5D58">شهر</span></div></div>
+                <div style="grid-column:1 / -1;display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">مبرر الحل <span style="font-weight:400;color:#5E5D58">(يظهر للمراجِع والمعتمد، لا للمالك)</span></label><textarea style="min-height:72px;border:1px solid #85847F;border-radius:6px;padding:10px 12px;font-size:15px;line-height:24px;resize:vertical">تمديد المدة إلى 84 شهراً يخفض القسط إلى ما دون حد الاستقطاع وفق كشف الراتب v2. التنازل محصور في غرامات التأخير دون المساس بالأصل.</textarea></div>
+              </div>
+              <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:16px 20px;display:flex;flex-direction:column;gap:10px">
+                <strong style="font-size:15px">شروط الحل</strong>
+                <div style="display:flex;gap:10px;font-size:14px;line-height:22px"><span class="ms" aria-hidden="true" style="font-size:20px;color:#5E5D58">rule</span><span>عند تأخر قسطين متتاليين: تعود الحالة إلى <strong>مراجعة الإخلال</strong> مع إشعار المالك ومهلة تصحيح 15 يوماً. <span style="color:#5E5D58">لا إحالة تلقائية.</span></span></div>
+                <div style="display:flex;gap:10px;font-size:14px;line-height:22px"><span class="ms" aria-hidden="true" style="font-size:20px;color:#5E5D58">event_available</span><span>صلاحية العرض للمالك: 10 أيام من إرساله (قابلة للتهيئة).</span></div>
+              </div>
+            </div>
+
+            <aside aria-label="أثر الحل" aria-live="polite" style="display:flex;flex-direction:column;gap:14px">
+              <div style="background:#151513;color:#FFFFFF;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:6px">
+                <span style="font-size:13px;color:#B5B3AD">القسط الشهري المقترح</span>
+                <span style="font-size:36px;line-height:48px;font-weight:700"><bdi dir="ltr" style="font-variant-numeric:tabular-nums">15,074.52</bdi> <span style="font-size:16px;font-weight:500">ر.س</span></span>
+                <span style="font-size:13px;color:#B5B3AD">84 قسطاً · من <bdi dir="ltr">2026-11-01</bdi> إلى <bdi dir="ltr">2033-10-01</bdi></span>
+              </div>
+              <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;justify-content:space-between;align-items:baseline"><strong style="font-size:15px">القدرة على السداد</strong><span style="font-size:12px;color:#5E5D58">كشف الراتب v2 · <bdi dir="ltr">2026-09-20</bdi></span></div>
+                <div style="display:flex;justify-content:space-between;font-size:14px"><span style="color:#5E5D58">صافي الدخل الشهري المتحقق</span><span><bdi dir="ltr">32,400.00</bdi> ر.س</span></div>
+                <div role="meter" aria-valuenow="46.5" aria-valuemin="0" aria-valuemax="100" aria-label="نسبة الاستقطاع 46.5 بالمئة، الحد 55" style="position:relative;height:12px;border-radius:6px;background:#F2F1ED;margin-top:8px">
+                  <span style="position:absolute;inset-inline-start:0;top:0;bottom:0;width:46.5%;background:#22262A;border-radius:6px"></span>
+                  <span style="position:absolute;inset-inline-start:55%;top:-6px;bottom:-6px;width:2px;background:#B3261E"></span>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:#1E6A45;font-weight:600;display:flex;gap:4px;align-items:center"><span class="ms" aria-hidden="true" style="font-size:16px">check_circle</span>الاستقطاع 46.5% — ضمن الحد</span><span style="color:#5E5D58">حد السياسة 55% (افتراض)</span></div>
+              </div>
+              <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;overflow:hidden">
+                <div style="padding:12px 18px;font-weight:600;font-size:15px;border-bottom:1px solid #EDECE8">مقارنة بالإصدار السابق</div>
+                <div role="table" style="font-size:13px">
+                  <div role="row" style="display:grid;grid-template-columns:1.3fr 1fr 1fr;padding:8px 18px;background:#FAF9F6;color:#5E5D58;font-weight:600"><span role="columnheader">البند</span><span role="columnheader">v1</span><span role="columnheader">v2</span></div>
+                  <div role="row" style="display:grid;grid-template-columns:1.3fr 1fr 1fr;padding:8px 18px;border-top:1px solid #EDECE8"><span role="cell">المدة</span><span role="cell">60</span><span role="cell" style="font-weight:600">84</span></div>
+                  <div role="row" style="display:grid;grid-template-columns:1.3fr 1fr 1fr;padding:8px 18px;border-top:1px solid #EDECE8"><span role="cell">القسط</span><bdi role="cell" dir="ltr" style="text-align:right">21,409.33</bdi><bdi role="cell" dir="ltr" style="text-align:right;font-weight:600">15,074.52</bdi></div>
+                  <div role="row" style="display:grid;grid-template-columns:1.3fr 1fr 1fr;padding:8px 18px;border-top:1px solid #EDECE8"><span role="cell">الاستقطاع</span><span role="cell" style="color:#B3261E;font-weight:600">66.1% ✕</span><span role="cell" style="color:#1E6A45;font-weight:600">46.5% ✓</span></div>
+                  <div role="row" style="display:grid;grid-template-columns:1.3fr 1fr 1fr;padding:8px 18px;border-top:1px solid #EDECE8"><span role="cell">التنازل</span><span role="cell">0.00</span><bdi role="cell" dir="ltr" style="text-align:right;font-weight:600">18,300.00</bdi></div>
+                </div>
+              </div>
+              <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:20px">
+                <strong style="font-size:15px">مسار الموافقة المطلوب</strong>
+                <span style="display:flex;gap:8px"><span class="ms" aria-hidden="true" style="font-size:18px;color:#5E5D58">person</span>مراجعة: سارة القحطاني</span>
+                <span style="display:flex;gap:8px"><span class="ms" aria-hidden="true" style="font-size:18px;color:#5E5D58">approval</span>اعتماد: نورة الشهري — ضمن حدها (المبلغ ≤ 2M، التنازل ≤ 5%)</span>
+                <span style="display:flex;gap:8px;color:#5E5D58"><span class="ms" aria-hidden="true" style="font-size:18px">block</span>أنت المُعِدّ: لا يمكنك المراجعة أو الاعتماد.</span>
+              </div>
+            </aside>
+          </main>
+          <div style="height:76px;background:#FFFFFF;border-top:1px solid #CBCAC6;display:flex;align-items:center;gap:12px;padding:0 40px">
+            <button style="min-height:44px;padding:0 16px;border-radius:6px;border:1px solid #85847F;background:#FFFFFF;font-weight:600;font-size:15px">حفظ المسودة</button>
+            <button style="min-height:44px;padding:0 16px;border-radius:6px;border:1px solid #85847F;background:#FFFFFF;font-weight:600;font-size:15px;display:flex;gap:6px;align-items:center"><span class="ms" aria-hidden="true" style="font-size:18px">smartphone</span>معاينة كما يراه المالك</button>
+            <span style="margin-inline-start:auto;font-size:13px;color:#5E5D58">كل الحقول الإلزامية مكتملة</span>
+            <button style="min-height:44px;padding:0 22px;border-radius:6px;border:0;background:#AA4528;color:#FFFFFF;font-weight:600;font-size:15px">تسليم لمديرة الحالة للمراجعة</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P0-Lender-SolutionBuilder-Mobile-Default · 390</div>
+      <div data-screen-label="P0-Lender-SolutionBuilder-Mobile-Default" style="width:390px;height:844px;background:#FAF9F6;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 16px 40px rgba(21,21,19,.14)">
+        <div style="background:#FFFFFF;border-bottom:1px solid #CBCAC6;padding:6px 8px 10px;display:flex;align-items:center;gap:2px"><button aria-label="رجوع" style="width:44px;height:44px;border:0;background:transparent"><span class="ms" aria-hidden="true" style="font-size:22px">arrow_forward</span></button><div style="flex:1;display:flex;flex-direction:column"><strong style="font-size:16px">الحل v2 · مسودة</strong><bdi dir="ltr" style="font:500 12px 'IBM Plex Mono';color:#5E5D58;text-align:right">RH-2026-004172</bdi></div></div>
+        <div style="flex:1;overflow:hidden;padding:16px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:14px;font-weight:600">نوع الحل</span><div style="height:48px;border:1px solid #85847F;border-radius:6px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;background:#FFFFFF;font-size:16px;font-weight:600">إعادة جدولة<span class="ms" aria-hidden="true" style="font-size:20px">expand_more</span></div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">المدة (شهر)</label><input dir="ltr" value="84" style="height:48px;border:2px solid #151513;border-radius:6px;padding:0 11px;font:600 16px 'IBM Plex Sans';text-align:right"></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">أول قسط</label><div style="height:48px;border:1px solid #85847F;border-radius:6px;padding:0 12px;display:flex;align-items:center;background:#FFFFFF"><bdi dir="ltr" style="font:500 15px 'IBM Plex Sans'">2026-11-01</bdi></div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600">التنازل عن الغرامات (ر.س)</label><input dir="ltr" value="18,300.00" style="height:48px;border:1px solid #85847F;border-radius:6px;padding:0 12px;font:600 16px 'IBM Plex Sans';text-align:right"><span style="font-size:12px;color:#5E5D58">1.42% من القائم</span></div>
+          <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;font-size:13px">
+            <strong style="font-size:14px">مقارنة v1 ← v2</strong>
+            <span>القسط <bdi dir="ltr">21,409.33</bdi> ← <bdi dir="ltr" style="font-weight:700">15,074.52</bdi></span>
+            <span>الاستقطاع <span style="color:#B3261E">66.1% ✕</span> ← <span style="color:#1E6A45;font-weight:700">46.5% ✓</span></span>
+          </div>
+          <div style="font-size:12px;line-height:18px;color:#5E5D58;display:flex;gap:6px"><span class="ms" aria-hidden="true" style="font-size:16px">desktop_windows</span>المبرر والشروط والمقارنة الكاملة متاحة في الأقسام أدناه؛ يُفضّل البناء على شاشة أوسع.</div>
+        </div>
+        <div style="background:#151513;color:#FFFFFF;padding:12px 16px 20px;display:flex;flex-direction:column;gap:10px">
+          <div aria-live="polite" style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:13px;color:#B5B3AD">القسط الشهري</span><span style="font-size:20px;font-weight:700"><bdi dir="ltr">15,074.52</bdi> <span style="font-size:12px;font-weight:500">ر.س</span></span></div>
+          <button style="min-height:48px;border-radius:6px;border:0;background:#FFFFFF;color:#151513;font-weight:700;font-size:15px">تسليم للمراجعة</button>
+        </div>
+      </div>
+    </div>
+
+    <aside style="width:380px;background:#FFFFFF;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:22px">
+      <strong style="font-size:18px">منشئ الحلول — المواصفة</strong>
+      <sc-for list="{{ spec5 }}" as="s" hint-placeholder-count="8"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;font-weight:700;color:#5E5D58">{{ s.k }}</span><span>{{ s.v }}</span></div></sc-for>
+    </aside>
+  </section>
+
+  <section style="background:#FFFFFF;border-radius:14px;padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:1440px">
+    <div style="display:flex;flex-direction:column;gap:8px"><strong style="font-size:18px">صُمم في هذه الدفعة (B1)</strong><span style="font-size:14px;line-height:24px">الأسس والرموز وتقرير التباين · 12 مكوّناً بحالاتها · خريطة الموقع وخريطة الحالات والانتقالات والمخطط الخدمي و4 تدفقات · 5 شاشات مرجعية بسطح المكتب والجوال (10 إطارات) + شاشة المراجعة عالية الأثر · tokens.css / tokens.json.</span></div>
+    <div style="display:flex;flex-direction:column;gap:8px"><strong style="font-size:18px">المتبقي من المرحلة 0</strong><span style="font-size:14px;line-height:24px">إطارات 768 للشاشات الخمس · حالات التحميل/الفارغ/الخطأ/دون اتصال لكل شاشة مرجعية على مستوى الإطار (مغطاة كمكونات) · النسخ الإنجليزية LTR للشاشات الرئيسية. <strong>الدفعة التالية B2:</strong> العامة والمشتركة للمرحلة 1.</span></div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const stages = [['الاستلام','done'],['التحقق','done'],['التقييم','done'],['إعداد الحل','current'],['الموافقة الداخلية','todo'],['رد المالك','todo'],['التنفيذ والإغلاق','todo']].map(([label,s]) => ({ label, current: s==='current' ? 'step' : 'false',
+      bar: s==='done' ? '#22262A' : s==='current' ? '#F4633A' : '#E4E3DF', icon: s==='done' ? 'check_circle' : s==='current' ? 'radio_button_checked' : 'radio_button_unchecked',
+      fg: s==='todo' ? '#5E5D58' : '#151513', w: s==='current' ? 700 : 500 }));
+    const tabs = [['نظرة عامة','',true],['الأطراف','',false],['التمويل والمديونية','',false],['العقار والرهن','',false],['المستندات','1',false],['التقييم','',false],['الحلول','v2',false],['المدفوعات','',false],['التواصل والمهام','2',false],['السجل','',false]].map(([label,badge,sel]) => ({ label, badge, sel: sel ? 'true' : 'false',
+      style: `min-height:44px;padding:0 12px;border:0;background:transparent;font-size:14px;font-weight:${sel?700:500};color:${sel?'#151513':'#5E5D58'};box-shadow:${sel?'inset 0 -3px 0 #F4633A':'none'};display:flex;gap:6px;align-items:center;white-space:nowrap`,
+      badgeStyle: badge ? `font-size:11px;font-weight:600;padding:0 6px;border-radius:999px;line-height:18px;background:${badge==='1'?'#FBF2DE':'#F2F1ED'};color:${badge==='1'?'#8A5300':'#22262A'}` : 'display:none' }));
+    const figures = [
+      ['المديونية القائمة','1,284,560.00','ر.س','database','نظام التمويل · 2026-09-22 18:40'],
+      ['المتأخرات','96,420.00','ر.س','event_busy','7 أقساط · منذ 2026-02'],
+      ['القيمة السوقية','1,650,000.00','ر.س','query_stats','تقييم مكتب «ب» · 2026-09-10'],
+      ['التمويل إلى القيمة','77.9','%','percent','محسوب من القيمتين أعلاه'],
+    ].map(([label,value,unit,icon,src]) => ({ label, value, unit, icon, src }));
+    const activity = [
+      ['edit','#22262A','إنشاء الحل v2','فهد العتيبي · 2026-09-22 16:05'],
+      ['upload_file','#1E6A45','قبول كشف الراتب v2','سارة القحطاني · 2026-09-20'],
+      ['undo','#B3261E','إعادة الحل v1 للتعديل','سارة القحطاني · 2026-09-15'],
+      ['query_stats','#1D5A8C','استلام تقرير التقييم','مكتب «ب» · 2026-09-10'],
+    ].map(([icon,c,t,m]) => ({ icon, c, t, m }));
+    const evidence = [['الحل v2 (نسخة مقفلة)','16:05 · فهد العتيبي'],['تحليل القدرة على السداد','46.5% استقطاع'],['تقرير التقييم v1','صالح حتى 2026-12-09'],['كشف الراتب v2','متحقق 2026-09-20']].map(([name,meta]) => ({ name, meta }));
+    const types = [['إعادة جدولة','تمديد المدة وتعديل القسط',true,false],['سداد مخفض','دفعة واحدة بخصم معتمد',false,false],['فترة سماح','تأجيل مؤقت ثم استئناف',false,false],['بيع طوعي','يتطلب موافقة المالك · مسار المرحلة 2',false,true]].map(([label,desc,sel,dis]) => ({ label, desc,
+      style: `display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:10px;min-height:72px;border:${sel?'2px solid #151513':'1px solid '+(dis?'#CBCAC6':'#85847F')};background:${sel?'#FDF0EB':dis?'#FAF9F6':'#FFFFFF'};color:${dis?'#6B6A65':'#151513'};cursor:${dis?'not-allowed':'pointer'}`,
+      radio: `width:16px;height:16px;border-radius:50%;box-sizing:border-box;flex:none;border:${sel?'5px solid #151513':'1px solid #85847F'}` }));
+    const sp = a => a.map(([k,v]) => ({ k, v }));
+    return { stages, tabs, figures, activity, evidence, types,
+      spec4: sp([
+        ['هدف المستخدم','فهم وضع الحالة في ثوانٍ وتنفيذ الإجراء المخوَّل التالي دون بحث.'],
+        ['تسلسل البيانات','الترويسة الثابتة (المرجع، المالك المخفي، الحالة، المهلة، المسؤول، المراحل) ← الإجراء التالي ← الأرقام بمصادرها ← الحلول بإصداراتها ← المستندات والمهام.'],
+        ['الإجراءات','أساسي واحد: «مراجعة وإرسال…» يفتح شاشة مراجعة. ثانوي: المعاينة. الحساسة في لوحة منفصلة بـ «…».'],
+        ['مخفي أم معطّل','الإحالة مخفية (ليست من صلاحية الدور). البيع الطوعي معطّل مع السبب (الدور مخوّل، الحالة غير مؤهلة).'],
+        ['التبويبات','ثابتة الترتيب. «البيع» و«الإحالة» تظهر فقط عند فتح مسارها. الأرقام على التبويب تعني عناصر تحتاج انتباهاً وتُعلن نصاً.'],
+        ['السجل','كل إصدار سابق للحل والمستندات محفوظ ومرئي؛ لا حذف.'],
+        ['الحالات','تحميل: هيكل للترويسة والأرقام. ممنوع: صفحة «لا تملك صلاحية» دون كشف أي بيانات. دون اتصال: قراءة فقط.'],
+        ['التجاوب','1440: عمودان. 768: الجانب ينتقل أسفل المحتوى، التبويبات قابلة للتمرير. 390: ترويسة مختصرة، الإجراء التالي أولاً، الإجراءات الحساسة في قائمة «المزيد».'],
+      ]),
+      specR: sp([
+        ['متى يُستخدم','الاعتماد، الإرسال للموافقة، الإلغاء، الإحالة، قبول عرض شراء، الإغلاق. لا حوار «نعم/لا».'],
+        ['البنية','1) ما سيحدث (الانتقال، القفل، الإسناد، المهلة، ما يراه المالك) 2) الأدلة 3) السبب وإقرار التفويض.'],
+        ['التفويض','الزر الأساسي معطّل حتى يُكتب السبب ويُحدد الإقرار. للإلغاء والإحالة: إعادة إدخال رمز MFA.'],
+        ['فصل المهام','إن كان المستخدم مُعِدّ الإصدار، يُمنع ويظهر السبب بدلاً من الإقرار.'],
+        ['بعد الإرسال','إشعار نجاح + عودة لمساحة العمل؛ بطاقة الإجراء التالي تتحول إلى «بانتظار المعتمد».'],
+        ['الوصول','عنوان الصفحة يعلن الإجراء. الأقسام معنونة ومرقمة. خطأ الإرسال يعيد التركيز لأول حقل ناقص.'],
+      ]),
+      spec5: sp([
+        ['هدف المستخدم','بناء حل قابل للسداد ومبرر، ومعرفة أثره ومسار موافقته قبل التسليم.'],
+        ['تسلسل البيانات','نوع الحل ← المعاملات ← المبرر والشروط | الأثر المباشر: القسط، القدرة، المقارنة، مسار الموافقة.'],
+        ['الإجراءات','أساسي: تسليم للمراجعة. ثانوي: حفظ، معاينة كما يراه المالك.'],
+        ['التحقق','الحقل المحسوب للقراءة فقط مع مصدره. تجاوز حد التنازل يغيّر مسار الموافقة ويظهر المعتمد الأعلى بدلاً من منع الإدخال.'],
+        ['اللغة الإنسانية','شرط الإخلال يقود لمراجعة وتصحيح، لا لإحالة تلقائية.'],
+        ['الصلاحية','المحلل ومدير الحالات. المُعِدّ لا يراجع ولا يعتمد. البيع الطوعي معطّل حتى وجود موافقة المالك.'],
+        ['الوصول','لوحة الأثر aria-live مهذبة؛ مؤشر الاستقطاع meter بقيمة نصية.'],
+        ['التجاوب','1440: نموذج + لوحة أثر ثابتة. 768: الأثر يتحول لشريط سفلي قابل للتوسيع. 390: حقول مكدسة وشريط قسط ثابت.'],
+      ]),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+/* رهون design tokens — v0.1 (Phase 0). Primitives → semantic aliases. RTL default. */
+:root {
+  /* ── Primitives: color ── */
+  --p-orange-500: #F4633A;   /* brand.orange — accent only, never small text (3.14:1 on white) */
+  --p-rust-600:   #AA4528;   /* brand.rust — primary action / link (5.85:1 on white) */
+  --p-rust-700:   #8E3920;   /* hover/pressed (7.62:1) */
+  --p-rust-50:    #FDF0EB;   /* selected tint */
+  --p-charcoal-900:#22262A;  /* brand.charcoal */
+  --p-ink-950:    #151513;   /* text.primary, inverse surface */
+  --p-neutral-0:  #FFFFFF;
+  --p-neutral-25: #FAF9F6;   /* surface.warm */
+  --p-neutral-50: #F2F1ED;   /* surface.subtle */
+  --p-neutral-200:#CBCAC6;   /* decorative border 1.64:1 — not for control edges */
+  --p-neutral-400:#85847F;   /* control border 3.75:1 */
+  --p-neutral-600:#6B6A65;   /* text.secondary 5.42:1 */
+  --p-neutral-700:#5E5D58;   /* secondary text on subtle 5.84:1 */
+  --p-gold-300:   #D5BD8D;   /* optional premium accent; never a status */
+  --p-green-700:#1E6A45; --p-green-50:#EAF4EE; --p-green-300:#9CCBB0;
+  --p-amber-700:#8A5300; --p-amber-50:#FBF2DE; --p-amber-300:#E2C27A;
+  --p-red-700:  #B3261E; --p-red-50:  #FCECEA; --p-red-300:  #EFA59C;
+  --p-blue-700: #1D5A8C; --p-blue-50: #EAF2F9; --p-blue-300: #9DC0DE;
+
+  /* ── Semantic: color ── */
+  --color-text-primary: var(--p-ink-950);
+  --color-text-strong: var(--p-charcoal-900);
+  --color-text-secondary: var(--p-neutral-600);
+  --color-text-link: var(--p-rust-600);
+  --color-text-inverse: var(--p-neutral-0);
+  --color-surface-canvas: var(--p-neutral-0);
+  --color-surface-warm: var(--p-neutral-25);
+  --color-surface-subtle: var(--p-neutral-50);
+  --color-surface-inverse: var(--p-ink-950);
+  --color-border-default: var(--p-neutral-200);
+  --color-border-strong: var(--p-neutral-400);
+  --color-action-primary-bg: var(--p-rust-600);
+  --color-action-primary-bg-hover: var(--p-rust-700);
+  --color-action-primary-fg: var(--p-neutral-0);
+  --color-action-strong-bg: var(--p-ink-950);
+  --color-accent: var(--p-orange-500);
+  --color-selected-bg: var(--p-rust-50);
+  --color-success-fg: var(--p-green-700); --color-success-bg: var(--p-green-50); --color-success-border: var(--p-green-300);
+  --color-warning-fg: var(--p-amber-700); --color-warning-bg: var(--p-amber-50); --color-warning-border: var(--p-amber-300);
+  --color-error-fg:   var(--p-red-700);   --color-error-bg:   var(--p-red-50);   --color-error-border:   var(--p-red-300);
+  --color-info-fg:    var(--p-blue-700);  --color-info-bg:    var(--p-blue-50);  --color-info-border:    var(--p-blue-300);
+  --color-focus-ring: var(--p-ink-950);
+
+  /* ── Inverse (dark surface) tokens — prepared, not a full dark mode ── */
+  --inv-surface: #151513; --inv-surface-raised: #22262A; --inv-text: #FFFFFF;
+  --inv-text-secondary: #B5B3AD; --inv-border: #3A3D40; --inv-accent: #F4633A; --inv-focus: #FFFFFF;
+
+  /* ── Typography ── */
+  --font-ar: "IBM Plex Sans Arabic", "Noto Sans Arabic", Tahoma, sans-serif;
+  --font-latin: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace; /* references, IDs */
+  --fs-display: 40px; --lh-display: 56px;
+  --fs-h1: 32px; --lh-h1: 44px;
+  --fs-h2: 24px; --lh-h2: 36px;
+  --fs-h3: 20px; --lh-h3: 30px;
+  --fs-body-lg: 18px; --lh-body-lg: 30px;   /* debtor reading */
+  --fs-body: 16px; --lh-body: 26px;
+  --fs-body-sm: 14px; --lh-body-sm: 22px;   /* dense tables */
+  --fs-caption: 12px; --lh-caption: 18px;   /* metadata only, never sole carrier of meaning */
+  --fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; --fw-bold: 700;
+
+  /* ── Spacing (4/8) ── */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px;
+  --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px; --space-16: 64px; --space-20: 80px;
+
+  /* ── Layout ── */
+  --bp-sm: 390px; --bp-md: 768px; --bp-lg: 1440px;
+  --grid-cols-sm: 4; --grid-cols-md: 8; --grid-cols-lg: 12;
+  --grid-gutter-sm: 16px; --grid-gutter-md: 24px; --grid-gutter-lg: 24px;
+  --grid-margin-sm: 16px; --grid-margin-md: 32px; --grid-margin-lg: 40px;
+  --shell-sidenav: 264px; --shell-sidenav-collapsed: 72px; --shell-topbar: 64px;
+
+  /* ── Shape ── */
+  --radius-xs: 4px; --radius-sm: 6px; --radius-md: 10px; --radius-lg: 14px; --radius-pill: 999px;
+  --border-hairline: 1px; --border-control: 1px; --border-emphasis: 2px;
+
+  /* ── Elevation ── */
+  --shadow-0: none;
+  --shadow-1: 0 1px 2px rgba(21,21,19,.06), 0 0 0 1px rgba(21,21,19,.04);
+  --shadow-2: 0 4px 12px rgba(21,21,19,.08), 0 0 0 1px rgba(21,21,19,.05);
+  --shadow-3: 0 16px 40px rgba(21,21,19,.14), 0 0 0 1px rgba(21,21,19,.06);
+
+  /* ── Icons ── */
+  --icon-sm: 16px; --icon-md: 20px; --icon-lg: 24px;
+
+  /* ── Motion ── */
+  --dur-fast: 120ms; --dur-base: 200ms; --dur-slow: 320ms;
+  --ease-standard: cubic-bezier(.2,0,0,1); --ease-exit: cubic-bezier(.3,0,1,1);
+  /* prefers-reduced-motion: durations → 0ms, no slide/scale */
+
+  /* ── Focus ── */
+  --focus-width: 2px; --focus-offset: 2px;  /* outline: 2px solid ink, offset 2px; inverse uses white */
+
+  /* ── Density ── */
+  --control-h-comfortable: 48px; --control-h-default: 40px; --control-h-compact: 32px;
+  --row-h-comfortable: 56px; --row-h-default: 48px; --row-h-compact: 40px;
+  --touch-min: 44px;
+}

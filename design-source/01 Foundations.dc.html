@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style data-omelette-injected>html,body{background:transparent}</style><script data-omelette-injected>(()=>{{const n=new URLSearchParams(location.search).get("theme");if(n==="light"||n==="dark"){document.documentElement.dataset.theme=n}}{if(new URLSearchParams(location.search).get("_omthumb")==="1"){const n=(f)=>{const g=f.focus;if(!g)return;f.focus=function(h){g.call(this,{...h,preventScroll:true})}};n(HTMLElement.prototype);n(SVGElement.prototype);if(typeof MathMLElement!=="undefined"){n(MathMLElement.prototype)}const d=(f)=>{f.removeAttribute("autofocus");f.inert=true;if(!(f instanceof HTMLElement))f.removeAttribute("tabindex")};const p=(f)=>{if(f.hasAttribute("autofocus"))d(f);for(const g of f.querySelectorAll("[autofocus]")){d(g)}};p(document.documentElement);new MutationObserver((f)=>{for(const g of f){for(const h of g.addedNodes){if(h.nodeType===1)p(h)}}}).observe(document,{childList:true,subtree:true})}}{const n=()=>{try{if(document.querySelector('meta[name="color-scheme"]'))return;const d=getComputedStyle(document.documentElement).getPropertyValue("color-scheme").trim();if(d&&d!=="normal")return;const p=(y)=>{if(!y)return null;const m=getComputedStyle(y).backgroundColor.match(/^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)(?:[,\s/]+([\d.]+%?))?\s*\)$/);if(!m)return null;const w=m[4]==null?1:parseFloat(m[4])/(m[4].endsWith("%")?100:1);if(w<0.99)return null;return[+m[1],+m[2],+m[3]]};const f=p(document.body)||p(document.documentElement);if(!f)return;const g=(y)=>{const m=y/255;return m<=0.04045?m/12.92:((m+0.055)/1.055)**2.4};const h=0.2126*g(f[0])+0.7152*g(f[1])+0.0722*g(f[2]);document.documentElement.style.setProperty("color-scheme",h<0.4?"dark":"light")}catch{}};if(document.readyState==="complete")n();else window.addEventListener("load",n)}var I=["https://claude.ai","https://preview.claude.ai","https://e63c2df4-10d1-4523-b118-38dc26378701.claudeusercontent.com"];var B=true;var K=false;var C=()=>{};if(K===true){try{const n=setTimeout.bind(window);const d=1e4;const p=15;const f=1e4;const g=120000;const h=200;const y=(o)=>{try{let r;if(typeof o==="string")r=o;else if(o instanceof URL)r=o.href;else if(typeof Request!=="undefined"&&o instanceof Request)r=o.url;else return null;if(!r)return null;const l=document.baseURI;const i=new URL(r,l);if(i.protocol!=="http:"&&i.protocol!=="https:")return null;if(i.origin!==new URL(l).origin)return null;return i.origin+i.pathname}catch{return null}};const m=new Map;const w=(o)=>{let r=m.get(o);if(!r){if(m.size>=h){const l=m.keys().next().value;if(l!==undefined)m.delete(l)}r={fails:[],until:0,cooldown:f,hard:false};m.set(o,r)}return r};const R=(o)=>{const r=m.get(o);return r!==undefined&&r.until>Date.now()};const O=(o,r)=>{const l=Date.now();const i=w(o);if(r)i.hard=true;if(i.until>l)return;i.fails.push(l);while(i.fails.length>0&&i.fails[0]<=l-d)i.fails.shift();if(i.fails.length>=p){i.until=l+i.cooldown;if(i.hard)i.cooldown=Math.min(i.cooldown*2,g);i.fails.length=0;try{n(()=>{try{S(true)}catch{}},i.until-l+100)}catch{}console.warn("[omelette] asset circuit breaker: pausing requests to "+o+" for "+Math.round((i.until-l)/1000)+"s after "+p+" failures in "+d/1000+"s")}};const e=(o)=>{m.delete(o)};const t=100;const a=new WeakMap;const u=new Set;let s=null;const S=(o)=>{for(const r of Array.from(u)){try{const l=a.get(r);if(l===undefined){u.delete(r);continue}if(o){const i=y(l);if(i!==null&&R(i))continue}a.delete(r);u.delete(r);if(s!==null)s.call(r,l)}catch{}}};C=()=>{try{m.clear();S(false)}catch{}};document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")C()});const _=window.fetch;if(typeof _==="function"){const o=function(...r){let l=null;try{l=y(r[0])}catch{}if(l!==null&&R(l)){let c;try{if(r[1]&&r[1].signal!==undefined){c=r[1].signal||undefined}else if(typeof Request!=="undefined"&&r[0]instanceof Request){c=r[0].signal||undefined}}catch{c=undefined}return new Promise((k,b)=>{const E=()=>{try{return c.reason!==undefined?c.reason:new DOMException("The operation was aborted.","AbortError")}catch{return new DOMException("The operation was aborted.","AbortError")}};try{if(c&&c.aborted){b(E());return}}catch{}let T=false;const j=()=>{if(T)return;T=true;b(E())};try{if(c)c.addEventListener("abort",j,{once:true})}catch{}n(()=>{if(T)return;T=true;try{if(c)c.removeEventListener("abort",j)}catch{}let L;try{L=new Response(null,{status:429,statusText:"Too Many Requests",headers:{"Retry-After":"10"}})}catch{L={ok:false,status:429}}k(L)},250)})}const i=_.apply(window,r);if(l!==null){const c=l;i.then((k)=>{try{if(k.ok)e(c);else if(k.status===401||k.status===403||k.status===404||k.status===429){O(c,k.status!==404)}}catch{}},()=>{})}return i};window.fetch=o}const v=Object.getOwnPropertyDescriptor(HTMLImageElement.prototype,"src");if(v!==undefined&&v.set!==undefined&&v.get!==undefined){const o=v.set;s=o;Object.defineProperty(HTMLImageElement.prototype,"src",{configurable:true,enumerable:v.enumerable,get:v.get,set(r){const l=`${r}`;try{const i=y(l);if(i!==null&&R(i)){a.set(this,l);if(u.size<t)u.add(this);return}}catch{}try{a.delete(this);u.delete(this)}catch{}o.call(this,l)}})}try{const o=HTMLImageElement.prototype.setAttribute;HTMLImageElement.prototype.setAttribute=function(r,l){if(arguments.length<2){o.apply(this,arguments);return}if(typeof r==="string"&&r.toLowerCase()==="src"){const i=`${l}`;try{const c=y(i);if(c!==null&&R(c)){a.set(this,i);if(u.size<t)u.add(this);return}a.delete(this);u.delete(this)}catch{}o.call(this,r,i);return}o.call(this,r,l)}}catch{}window.addEventListener("error",(o)=>{try{const r=o.target;if(r instanceof HTMLImageElement){const l=y(r.currentSrc||r.src||"");if(l!==null)O(l,true)}}catch{}},true);window.addEventListener("load",(o)=>{try{const r=o.target;if(r instanceof HTMLImageElement){const l=y(r.currentSrc||r.src||"");if(l!==null)e(l);const i=a.get(r);if(i!==undefined){let c=false;try{c=new URL(i,document.baseURI).href===new URL(r.currentSrc||r.src||"",document.baseURI).href}catch{c=false}if(c){a.delete(r);u.delete(r)}}}}catch{}},true)}catch{}}var J=30000;var G=3000;document.addEventListener("DOMContentLoaded",()=>{const n=window.Babel;const d="om-src-id";if(n&&n.registerPlugin&&!(n.availablePlugins&&n.availablePlugins[d])){n.registerPlugin(d,({types:h})=>({visitor:{JSXOpeningElement(y,m){const w=y.node;if(w.name&&w.name.type==="JSXMemberExpression")return;for(let t=0;t<w.attributes.length;t++){const a=w.attributes[t];if(a.type==="JSXAttribute"&&a.name&&a.name.name==="data-om-id")return}const R=m.file&&m.file.opts&&m.file.opts.filename||"?";const O=w.loc&&w.loc.start;const e=`jsx:${R}:${w.start??0}:${O?O.line:0}:${O?O.column+1:0}`;w.attributes.push(h.jsxAttribute(h.jsxIdentifier("data-om-id"),h.stringLiteral(e)))}}}))}const p="om-text-extract";let f=false;if(B&&n&&n.registerPlugin&&!(n.availablePlugins&&n.availablePlugins[p])){const h=window.React;if(h&&h.useSyncExternalStore&&h.createElement){f=true;const y={};const m=new Set;let w=0;window.__omTextO=y;window.__omTextSet=(e)=>{for(const t in e){const a=e[t];if(a==null)delete y[t];else y[t]=a}w++;m.forEach((t)=>t())};const R=(e)=>{m.add(e);return()=>m.delete(e)};const O=()=>w;window.__OmT=function e(t){h.useSyncExternalStore(R,O,O);return h.createElement("span",{"data-om-text":t.i,className:"__om-t"},t.i in y?y[t.i]:t.children)};n.registerPlugin(p,({types:e})=>{const t={style:1,script:1,noscript:1,textarea:1,title:1,option:1,text:1,tspan:1,textPath:1};const a={placeholder:1,alt:1,title:1,label:1,"aria-label":1,"aria-description":1,"aria-placeholder":1};const u=(o,r)=>e.logicalExpression("??",e.memberExpression(e.logicalExpression("||",e.memberExpression(e.identifier("window"),e.identifier("__omTextO")),e.objectExpression([])),e.stringLiteral(o),true),r);const s=(o)=>o.file&&o.file.opts&&o.file.opts.filename||"?";const S=(o)=>o.file&&o.file.code||"";const _=(o,r)=>{const l=(c)=>c&&c.start!=null&&c.end!=null&&(c.type==="StringLiteral"||c.type==="TemplateLiteral"&&c.expressions.length===0)?[c.start,c.end]:null;const i=l(r);if(i)return i;if(r&&r.type==="Identifier"){const c=o.scope.getBinding(r.name);if(c&&c.constant&&c.path.node.type==="VariableDeclarator"){return l(c.path.node.init)}}return null};const v=(o,r,l)=>{const i=o.node;let c=false;const k=(E,T)=>{c=true;return e.jsxElement(e.jsxOpeningElement(e.jsxIdentifier("__OmT"),[e.jsxAttribute(e.jsxIdentifier("i"),e.stringLiteral(E))],false),e.jsxClosingElement(e.jsxIdentifier("__OmT")),[T],false)};const b=i.children.map((E)=>{if(E.type==="JSXText"){if(E.start==null||E.end==null)return E;const T=l.slice(E.start,E.end);const j=T.length-T.trimStart().length;const L=T.length-T.trimEnd().length;if(j+L>=T.length)return E;return k(`txt:${r}:${E.start+j}:${E.end-L}`,E)}if(E.type==="JSXExpressionContainer"){const T=_(o,E.expression);if(T)return k(`str:${r}:${T[0]}:${T[1]}`,E)}return E});if(c)i.children=b};return{visitor:{JSXOpeningElement(o,r){const l=o.node;const i=s(r);const c={};for(let k=0;k<l.attributes.length;k++){const b=l.attributes[k];if(b.type!=="JSXAttribute"||!b.name)continue;const E=b.name.name;if(!a[E])continue;if(!b.value||b.value.type!=="StringLiteral")continue;if(b.value.start==null||b.value.end==null)continue;const T=`txt:${i}:${b.value.start}:${b.value.end}`;c[E]=T;b.value=e.jsxExpressionContainer(u(T,e.stringLiteral(b.value.value)))}if(Object.keys(c).length){l.attributes.push(e.jsxAttribute(e.jsxIdentifier("data-om-text-attrs"),e.stringLiteral(JSON.stringify(c))))}},JSXElement(o,r){const l=o.node.openingElement;const i=l&&l.name&&l.name.name;if(i==="__OmT")return;if(typeof i==="string"&&t[i])return;v(o,s(r),S(r))},JSXFragment(o,r){v(o,s(r),S(r))}}}})}}const g=f?["transform-react-jsx-source",d,p]:["transform-react-jsx-source",d];document.querySelectorAll('script[type="text/babel"],script[type="text/jsx"]').forEach((h,y)=>{const m=h.getAttribute("data-plugins")||"";const w=g.filter((R)=>m.indexOf(R)<0);if(w.length){h.setAttribute("data-plugins",m?`${m},${w.join(",")}`:w.join(","))}if(!h.hasAttribute("data-filename")){h.setAttribute("data-filename",h.getAttribute("src")||`inline-${y}`)}})});var A=window.parent;var U="not editable here — open the project in the Claude Design editor to save";var W=()=>Promise.resolve({persisted:false,noHost:true,reason:U});var H=W;var M="data/storage.json";var z=()=>{try{const n=new URL(document.baseURI);const d=n.pathname.match(/\/projects\/([^/]+)\/serve\//);if(d)return d[1];return n.hostname.split(".")[0]||""}catch{return location.hostname.split(".")[0]||""}};var Z=()=>{try{const n=new URL(document.baseURI);const d=n.pathname.indexOf("/serve/");if(d>=0)return n.origin+n.pathname.slice(0,d+"/serve/".length)+M}catch{}return"./"+M};var x=null;var N=()=>{if(!x){x=fetch(Z(),{cache:"no-store"}).then((n)=>{if(n.ok)return n.text();return n.status===404?"":null}).catch(()=>null).then((n)=>{if(n===null){x=null;return null}const d=new Map;if(!n)return d;let p;try{p=JSON.parse(n)}catch{console.warn("[omelette.storage] "+M+" is not valid JSON; treating the store as unreadable so a save cannot overwrite the "+"hand-edited bytes. Fix the JSON (or delete the file) to re-enable persistence.");x=null;return null}if(p===null||typeof p!=="object"||Array.isArray(p)){console.warn("[omelette.storage] "+M+" doesn't hold a JSON object; treating the store as unreadable so a save cannot "+"overwrite the hand-edited bytes. Make the top level a JSON object to re-enable persistence.");x=null;return null}const f=p;if("data"in f){const g=f.data;if(g===null||typeof g!=="object"||Array.isArray(g)){console.warn("[omelette.storage] "+M+' has a "data" field that is not a JSON object; treating the store as unreadable so a '+'save cannot overwrite the hand-edited bytes. Make "data" a JSON object to re-enable persistence.');x=null;return null}const h=f._meta;const y=h!==null&&typeof h==="object"?h.project:undefined;if(typeof y==="string"&&y!==""&&y!==z())return d;for(const m of Object.keys(g))d.set(m,g[m]);return d}for(const g of Object.keys(f)){if(g!=="_meta")d.set(g,f[g])}return d})}return x};var F=(n)=>H(M,JSON.stringify({_meta:{project:z(),version:1},data:Object.fromEntries(n)},null,2));var D=Promise.resolve();var $=(n)=>{const d=D.then(n);D=d.then(()=>{return},()=>{return});return d};var V=/sk-(?:ant-)?[A-Za-z0-9_-]{16,}|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{20,}|xox[a-z]-[A-Za-z0-9][A-Za-z0-9-]{9,}|AIza[0-9A-Za-z_-]{30,}|-----BEGIN [A-Z ]*PRIVATE KEY-----/;var Y=/password|passwd|secret|api[_-]?key|access[_-]?token|auth[_-]?token|credential/i;var Q=(n,d,p)=>{if(V.test(d)||Y.test(n)&&typeof p==="string"&&p.length>=8){console.warn('[omelette.storage] the value for "'+n+'" looks like a credential. The storage file is a plaintext project file — visible to '+"everyone with project access and copied when the project is duplicated. Do not store secrets here.")}};var q={persisted:false,reason:"could not load the existing store — not overwriting it"};var X={persisted:false,reason:"stored value changed since a failed read — re-read this key before saving"};var P=new Set;var ee={get:(n)=>{if(typeof n!=="string"){return Promise.reject(new TypeError("storage.get: key must be a string"))}return $(N).then((d)=>{if(d===null){P.add(n);return null}P.delete(n);if(!d.has(n))return null;const p=d.get(n);return p==null?null:JSON.parse(JSON.stringify(p))})},set:(n,d)=>{if(typeof n!=="string"){return Promise.reject(new TypeError("storage.set: key must be a string"))}let p;try{p=JSON.stringify(d)}catch(g){return Promise.reject(new TypeError("storage.set: value must be JSON-serializable ("+String(g)+")"))}if(p===undefined){return Promise.reject(new TypeError("storage.set: value must be JSON-serializable"))}Q(n,p,d);const f=JSON.parse(p);return $(()=>N().then((g)=>{if(g===null)return q;if(P.has(n)){if(g.has(n))return X;P.delete(n)}g.set(n,f);return F(g)}))},delete:(n)=>{if(typeof n!=="string"){return Promise.reject(new TypeError("storage.delete: key must be a string"))}return $(()=>N().then((d)=>{if(d===null)return q;if(P.has(n)){if(d.has(n))return X;P.delete(n)}d.delete(n);return F(d)}))},keys:()=>$(N).then((n)=>n===null?[]:Array.from(n.keys()))};window.omelette={writeFile:(n,d)=>H(n,d).then((p)=>{if(!p.persisted&&!p.noHost){throw new Error(p.reason||"write failed")}}),storage:ee};if(A&&A!==window){const n=(e,t)=>{try{A.postMessage({__omelette_log:true,type:e,data:t},"*")}catch{}};["log","warn","error"].forEach((e)=>{const t=console[e];console[e]=(...a)=>{const u=a.map((s)=>{try{return typeof s==="object"?JSON.stringify(s):String(s)}catch{try{return String(s)}catch{return"[unstringifiable]"}}}).join(" ");n(e,u);t.apply(console,a)}});window.addEventListener("error",(e)=>{const t=e.target;if(t&&t!==window&&t.tagName){const a=t.src||t.href||"";n("resource_error",`${t.tagName} failed to load: ${a}`)}else{n("error",`${e.message||"Unknown error"} at ${e.filename||"?"}:${e.lineno||0}:${e.colno||0}`)}},true);window.addEventListener("unhandledrejection",(e)=>{const t=e.reason;const a=t instanceof Error?`${t.message} ${t.stack}`:String(t);n("error",`Unhandled rejection: ${a}`)});window.addEventListener("click",(e)=>{if(e.defaultPrevented||e.button!==0)return;if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;const t=e.composedPath?e.composedPath():[];const a=["button","input","select","textarea","summary","label"];let u=null;for(const v of t){if(!(v instanceof Element))continue;if(v.localName==="a"){if(!(v instanceof HTMLAnchorElement))return;u=v;break}if(a.indexOf(v.localName)!==-1)return}if(!u)return;if(u.isContentEditable)return;const s=u.closest("[contenteditable]");if(s&&s.getAttribute("contenteditable")!=="false")return;const S=(u.getAttribute("target")||"_self").toLowerCase();if(S!=="_self"&&S!=="_top"&&S!=="_parent")return;let _;try{_=new URL(u.href)}catch{return}if(_.protocol!=="http:"&&_.protocol!=="https:")return;if(location.origin==="null")return;if(_.origin===location.origin)return;e.preventDefault();window.open(_.href,"_blank","noopener,noreferrer")});const d=()=>{try{A.postMessage({type:"omelette:height",height:document.documentElement.scrollHeight},"*")}catch{}};if(window.ResizeObserver)new ResizeObserver(d).observe(document.documentElement);const p=()=>{d();if(!document.querySelector('script[type="text/babel"],script[type="text/jsx"]'))return;const e=()=>document.getElementById("root")||document.querySelector("body > div[id]");const t=e()?.firstElementChild??null;let a=0;const u=()=>{const s=e();if(s&&s.firstElementChild!==t||++a>30){d();return}setTimeout(u,100)};setTimeout(u,100)};if(document.readyState==="complete")p();else window.addEventListener("load",p);const f={};let g=0;const h=(e)=>new Promise((t,a)=>{if(!I.length){a(new Error("claude.complete: no parent origin"));return}const u=`c${++g}`;const s=()=>setTimeout(()=>{delete f[u];a(new Error(`claude.complete: no data for ${J/1000}s`))},J);const S=s();f[u]={resolve:t,reject:a,text:"",t:S,arm:s};try{for(const _ of I){A.postMessage({__om_api:true,id:u,body:e},_)}}catch(_){clearTimeout(S);delete f[u];a(_)}});const y=8;const m=async(e,t)=>{if(!Array.isArray(e.messages)){throw new Error("claude.complete: tools require a messages array")}const a=e.messages.slice();const u={...e,tools:e.tools.map((_)=>{if(_===null||typeof _!=="object")return _;const v={};for(const o of Object.keys(_)){if(typeof _[o]!=="function")v[o]=_[o]}return v})};const s=u.tool_choice;const S=s!=null&&(s.type==="any"||s.type==="tool")?{...u,tool_choice:s.disable_parallel_tool_use!==undefined?{type:"auto",disable_parallel_tool_use:s.disable_parallel_tool_use}:{type:"auto"}}:u;for(let _=0;_<y;_++){const v=await h({..._===0?u:S,messages:a});const o=v.message;const r=o&&Array.isArray(o.content)?o.content:null;const l=r?r.filter((c)=>c?.type==="tool_use"):[];if(o?.stop_reason!=="tool_use"||l.length===0){return v.text}const i=[];for(const c of l){const k=t.get(c.name);if(!k){i.push({type:"tool_result",tool_use_id:c.id,content:`no handler for tool "${c.name}"`,is_error:true});continue}try{const b=await k(c.input);const E=typeof b==="string"?b:O(b)??"";i.push({type:"tool_result",tool_use_id:c.id,content:E})}catch(b){i.push({type:"tool_result",tool_use_id:c.id,content:String(b?.message??b??"tool handler failed"),is_error:true})}}a.push({role:"assistant",content:r},{role:"user",content:i})}throw new Error(`claude.complete: exceeded ${y} tool turns`)};window.claude={complete(e){const t=e;if(t!==null&&typeof t==="object"&&Array.isArray(t.tools)&&t.tools.some((a)=>a!==null&&typeof a==="object"&&typeof a.run==="function")){const a=new Map;for(const u of t.tools){if(u!==null&&typeof u==="object"&&typeof u.run==="function"){a.set(String(u.name),u.run)}}return m(t,a)}return h(e).then((a)=>a.text)}};const w={};let R=0;H=(e,t)=>new Promise((a)=>{if(!I.length){a({persisted:false,noHost:true,reason:U});return}const u=`f${++R}`;const s=setTimeout(()=>{delete w[u];a({persisted:false,noHost:true,reason:U})},G);w[u]={settle:a,t:s};try{for(const S of I){A.postMessage({__om_file:true,id:u,op:"write",path:e,content:t},S)}}catch{clearTimeout(s);delete w[u];a({persisted:false,noHost:true,reason:U})}});const O=(e)=>{try{return JSON.stringify(e)}catch{return JSON.stringify(String(e))}};window.addEventListener("message",(e)=>{if(I.indexOf(e.origin)<0)return;if(e.source!==A)return;const t=e.data;if(!t)return;if(t.type==="omelette-preview-refresh"){if(typeof t.token!=="string"||!/^[0-9a-f.-]+(\.(rc|pr-[0-9]+))?(\.[0-9]+\.[0-9a-f]{16})?$/.test(t.token))return;const s=Math.max(1,Math.floor((t.expiresAt||0)-Date.now()/1000));document.cookie="__Host-omelette-preview="+t.token+"; Path=/; Secure; SameSite=None; Partitioned; Max-Age="+s;C();return}if(t.__om_file_r){const s=w[t.id];if(!s)return;clearTimeout(s.t);delete w[t.id];s.settle(t.ok?{persisted:true}:{persisted:false,reason:t.error||"write failed"});return}if(t.__om_api_r){const s=f[t.id];if(!s)return;if(t.error!=null){clearTimeout(s.t);delete f[t.id];s.reject(new Error(t.error));return}if(t.chunk!=null){clearTimeout(s.t);s.t=s.arm();s.text+=t.chunk;return}if(t.done){clearTimeout(s.t);delete f[t.id];s.resolve({text:t.text!=null?t.text:s.text,message:t.message});return}return}if(!t.__om_eval)return;const a=t;const u=(s)=>{e.source.postMessage({...s,__om_eval_r:1,id:a.id},e.origin)};try{const s=(0,eval)(a.code);if(s&&typeof s.then==="function"){s.then((S)=>u({ok:1,v:O(S)}),(S)=>u({ok:0,e:String(S)}))}else{u({ok:1,v:O(s)})}}catch(s){u({ok:0,e:String(s)})}})}})();
+</script>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>01 Foundations — رهون</title>
+<link rel="icon" href="assets/rahoon-favicon.svg">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400,0..1,0&display=block">
+<style>
+html,body{margin:0;background:#FAF9F6;color:#151513;font-family:"IBM Plex Sans Arabic","IBM Plex Sans",sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#AA4528;text-underline-offset:3px}a:hover{color:#8E3920}
+*:focus-visible{outline:2px solid #151513;outline-offset:2px}
+.ms{font-family:"Material Symbols Rounded";font-weight:400;font-style:normal;line-height:1;display:inline-block;white-space:nowrap;direction:ltr;font-feature-settings:"liga"}
+</style>
+</helmet>
+<div dir="rtl" lang="ar" style="min-height:100vh">
+  <header style="background:#FFFFFF;border-bottom:1px solid #CBCAC6;position:sticky;top:0;z-index:5">
+    <div style="max-width:1280px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+      <img src="assets/rahoon-horizontal-full.svg" alt="رهون" style="width:176px;height:auto;display:block">
+      <nav aria-label="صفحات ملف التصميم" style="display:flex;gap:4px;flex-wrap:wrap;font-size:14px">
+        <a href="00 Brief & Assumptions.dc.html" style="white-space:nowrap;flex:none;padding:8px 12px;border-radius:6px;color:#151513;text-decoration:none">00 الموجز</a>
+        <a href="01 Foundations.dc.html" aria-current="page" style="white-space:nowrap;flex:none;padding:8px 12px;border-radius:6px;background:#FDF0EB;color:#8E3920;font-weight:600;text-decoration:none">01 الأسس</a>
+        <a href="02 Components.dc.html" style="white-space:nowrap;flex:none;padding:8px 12px;border-radius:6px;color:#151513;text-decoration:none">02 المكونات</a>
+        <a href="03 Phase 0 — Blueprint.dc.html" style="white-space:nowrap;flex:none;padding:8px 12px;border-radius:6px;color:#151513;text-decoration:none">03 المرحلة 0 — المخطط</a>
+        <a href="03 Phase 0 — Anchor Screens.dc.html" style="white-space:nowrap;flex:none;padding:8px 12px;border-radius:6px;color:#151513;text-decoration:none">03 المرحلة 0 — الشاشات</a>
+      </nav>
+    </div>
+  </header>
+
+  <main style="max-width:1280px;margin:0 auto;padding:40px 24px 96px;display:flex;flex-direction:column;gap:64px">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div dir="ltr" style="font:500 13px/18px 'IBM Plex Mono',monospace;color:#6B6A65;text-align:right">01 Foundations · tokens v0.1 · <a href="09 Handoff/tokens.css">tokens.css</a> · <a href="09 Handoff/tokens.json">tokens.json</a></div>
+      <h1 style="margin:0;font-size:40px;line-height:56px;font-weight:700">الأسس</h1>
+      <p style="margin:0;font-size:18px;line-height:30px;color:#22262A;max-width:64ch">أسطح دافئة هادئة ومساحة سخية حول القرارات الحساسة، مع كثافة فعّالة في عروض البيانات المؤسسية. البرتقالي لمسة مضبوطة، والصدئي للإجراء الأساسي والروابط.</p>
+    </div>
+
+    <!-- Logo -->
+    <section aria-labelledby="h-logo" style="display:flex;flex-direction:column;gap:20px">
+      <h2 id="h-logo" style="margin:0;font-size:24px;line-height:36px;font-weight:600">الشعار — المفهوم 02 «مراحل متراصفة»</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:16px">
+        <figure style="margin:0;display:flex;flex-direction:column;gap:10px">
+          <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;height:200px;display:flex;align-items:center;justify-content:center;position:relative">
+            <div style="position:relative;padding:14px;outline:1px dashed #F4633A;outline-offset:0">
+              <img src="assets/rahoon-horizontal-full.svg" alt="رهون — الشعار الأفقي" style="width:240px;display:block">
+            </div>
+          </div>
+          <figcaption style="font-size:14px;line-height:22px;color:#5E5D58">أساسي على الأبيض أو الدافئ. الخط المنقط = مساحة الحماية X (ربع ارتفاع الرمز). حد أدنى 170px عرضاً.</figcaption>
+        </figure>
+        <figure style="margin:0;display:flex;flex-direction:column;gap:10px">
+          <div style="background:#151513;border-radius:14px;height:200px;display:flex;align-items:center;justify-content:center">
+            <img src="assets/rahoon-horizontal-dark.svg" alt="رهون — نسخة الأسطح الداكنة" style="width:240px;display:block">
+          </div>
+          <figcaption style="font-size:14px;line-height:22px;color:#5E5D58">معكوس على <span dir="ltr">#151513</span>: كلمة بيضاء، ولمسة برتقالية (5.83:1 على الداكن).</figcaption>
+        </figure>
+        <figure style="margin:0;display:flex;flex-direction:column;gap:10px">
+          <div style="background:#FAF9F6;border:1px solid #CBCAC6;border-radius:14px;height:200px;display:flex;align-items:center;justify-content:center;gap:28px">
+            <img src="assets/rahoon-stacked-full.svg" alt="رهون — الشعار العمودي" style="width:110px;display:block">
+            <img src="assets/rahoon-symbol-full.svg" alt="رمز رهون" style="width:40px;display:block">
+            <img src="assets/rahoon-app-icon.svg" alt="أيقونة التطبيق" style="width:56px;display:block;border-radius:12px">
+          </div>
+          <figcaption style="font-size:14px;line-height:22px;color:#5E5D58">عمودي ≥ 100px · الرمز ≥ 24px · أيقونة ≥ 48px. في الجوال يُستخدم الرمز وحده في الشريط العلوي.</figcaption>
+        </figure>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:14px">
+        <span style="display:flex;gap:6px;align-items:center;padding:6px 12px;border-radius:999px;background:#FCECEA;color:#B3261E;border:1px solid #EFA59C"><span class="ms" aria-hidden="true" style="font-size:18px">block</span>لا إعادة رسم أو كتابة الكلمة بخط الواجهة</span>
+        <span style="display:flex;gap:6px;align-items:center;padding:6px 12px;border-radius:999px;background:#FCECEA;color:#B3261E;border:1px solid #EFA59C"><span class="ms" aria-hidden="true" style="font-size:18px">block</span>لا تغيير النسب أو مواضع اللون</span>
+        <span style="display:flex;gap:6px;align-items:center;padding:6px 12px;border-radius:999px;background:#FCECEA;color:#B3261E;border:1px solid #EFA59C"><span class="ms" aria-hidden="true" style="font-size:18px">block</span>لا ترجمة الاسم في الشعار الإنجليزي</span>
+      </div>
+    </section>
+
+    <!-- Color -->
+    <section aria-labelledby="h-color" style="display:flex;flex-direction:column;gap:20px">
+      <h2 id="h-color" style="margin:0;font-size:24px;line-height:36px;font-weight:600">الألوان — الأساسيات</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,190px),1fr));gap:12px">
+        <sc-for list="{{ primitives }}" as="c" hint-placeholder-count="10">
+          <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:10px;overflow:hidden;display:flex;flex-direction:column">
+            <div style="height:72px;background:{{ c.hex }};border-bottom:1px solid #E4E3DF"></div>
+            <div style="padding:10px 12px;display:flex;flex-direction:column;gap:2px">
+              <span dir="ltr" style="font:500 12px/18px 'IBM Plex Mono',monospace;text-align:right">{{ c.token }}</span>
+              <span dir="ltr" style="font:600 13px/18px 'IBM Plex Mono',monospace;color:#22262A;text-align:right">{{ c.hex }}</span>
+              <span style="font-size:13px;line-height:20px;color:#5E5D58">{{ c.use }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <h3 style="margin:16px 0 0;font-size:20px;line-height:30px;font-weight:600">الألوان الدلالية للحالات</h3>
+      <p style="margin:0;font-size:15px;line-height:24px;color:#5E5D58;max-width:70ch">البرتقالي ليس لوناً للتنبيه. كل حالة تُنقل بالنص والأيقونة معاً، واللون داعم فقط. الذهبي لا يُستخدم لأي حالة مالية أو قانونية.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px">
+        <sc-for list="{{ semantics }}" as="s" hint-placeholder-count="4">
+          <div style="border-radius:10px;border:1px solid {{ s.border }};background:{{ s.bg }};padding:16px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;gap:8px;align-items:center;color:{{ s.fg }};font-weight:700"><span class="ms" aria-hidden="true" style="font-size:22px">{{ s.icon }}</span>{{ s.label }}</div>
+            <div style="font-size:14px;line-height:22px;color:#151513">{{ s.example }}</div>
+            <div dir="ltr" style="display:flex;gap:6px;flex-wrap:wrap;font:500 11px/16px 'IBM Plex Mono',monospace;color:#22262A;justify-content:flex-end">
+              <span style="padding:2px 6px;background:#FFFFFF;border-radius:4px">fg {{ s.fg }}</span><span style="padding:2px 6px;background:#FFFFFF;border-radius:4px">bg {{ s.bg }}</span><span style="padding:2px 6px;background:#FFFFFF;border-radius:4px">border {{ s.border }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <h3 style="margin:16px 0 0;font-size:20px;line-height:30px;font-weight:600">الأسطح المعكوسة (جاهزة، بلا وضع داكن كامل)</h3>
+      <div style="background:#151513;border-radius:14px;padding:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px;color:#FFFFFF">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <img src="assets/rahoon-horizontal-dark.svg" alt="رهون" style="width:176px">
+          <div style="font-size:15px;line-height:24px;color:#B5B3AD">نص ثانوي معكوس <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:12px">#B5B3AD · 8.72:1</span></div>
+        </div>
+        <div style="background:#22262A;border:1px solid #3A3D40;border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px">
+          <div style="font-weight:600">سطح مرتفع <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#B5B3AD">#22262A</span></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button style="min-height:40px;padding:0 16px;border-radius:6px;border:0;background:#FFFFFF;color:#151513;font:600 14px 'IBM Plex Sans Arabic';outline:2px solid #FFFFFF;outline-offset:2px">تركيز معكوس</button>
+            <span style="display:inline-flex;align-items:center;gap:6px;color:#F4633A;font-weight:600;font-size:14px"><span style="width:8px;height:8px;border-radius:50%;background:#F4633A"></span>لمسة برتقالية</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contrast report -->
+    <section aria-labelledby="h-contrast" style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <h2 id="h-contrast" style="margin:0;font-size:24px;line-height:36px;font-weight:600">تقرير التباين — WCAG 2.2 AA</h2>
+        <span style="font-size:14px;color:#5E5D58">محسوب من القيم الفعلية للرموز. نص عادي ≥ 4.5 · نص كبير ورسوميات أساسية ≥ 3.</span>
+      </div>
+      <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;overflow-x:auto">
+        <div role="table" aria-label="تقرير التباين" style="min-width:820px;font-size:14px;line-height:22px">
+          <div role="row" style="display:grid;grid-template-columns:120px 190px minmax(0,1fr) 100px 180px;gap:12px;padding:10px 12px;background:#F2F1ED;color:#5E5D58;font-weight:600"><span role="columnheader">عينة</span><span role="columnheader">الزوج</span><span role="columnheader">الاستخدام</span><span role="columnheader">النسبة</span><span role="columnheader">النتيجة</span></div>
+          <sc-for list="{{ contrast }}" as="c" hint-placeholder-count="12">
+            <div role="row" style="display:grid;grid-template-columns:120px 190px minmax(0,1fr) 100px 180px;gap:12px;padding:8px 12px;border-top:1px solid #E4E3DF;align-items:center">
+              <span role="cell"><span style="display:inline-flex;align-items:center;justify-content:center;min-width:72px;height:36px;padding:0 10px;border-radius:6px;background:{{ c.bg }};color:{{ c.fg }};border:1px solid #E4E3DF;font-weight:600">رهون Aa</span></span>
+              <span role="cell"><span dir="ltr" style="font:500 12px 'IBM Plex Mono',monospace">{{ c.fg }} / {{ c.bg }}</span></span>
+              <span role="cell">{{ c.use }}</span>
+              <span role="cell"><span dir="ltr" style="font:600 14px 'IBM Plex Mono',monospace">{{ c.ratio }}:1</span></span>
+              <span role="cell"><span style="{{ c.badge }}"><span class="ms" aria-hidden="true" style="font-size:16px">{{ c.icon }}</span>{{ c.verdict }}</span></span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <!-- Typography -->
+    <section aria-labelledby="h-type" style="display:flex;flex-direction:column;gap:16px">
+      <h2 id="h-type" style="margin:0;font-size:24px;line-height:36px;font-weight:600">الطباعة</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px">
+        <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:13px;color:#5E5D58">عربي — الواجهة</span>
+          <span style="font-size:28px;line-height:40px;font-weight:600">IBM Plex Sans Arabic</span>
+          <span style="font-size:14px;line-height:22px;color:#5E5D58">تغطية كاملة للعربية والفارسية، أوزان 400–700، ترخيص OFL.</span>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:6px" dir="ltr">
+          <span style="font-size:13px;color:#5E5D58;font-family:'IBM Plex Sans'">Latin &amp; numerals</span>
+          <span style="font-size:28px;line-height:40px;font-weight:600;font-family:'IBM Plex Sans'">IBM Plex Sans · 0123456789</span>
+          <span style="font-size:14px;line-height:22px;color:#5E5D58;font-family:'IBM Plex Sans'">Same skeleton; tabular figures (tnum) in tables and amounts.</span>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:6px" dir="ltr">
+          <span style="font-size:13px;color:#5E5D58;font-family:'IBM Plex Sans'">References &amp; IDs</span>
+          <span style="font:500 24px/40px 'IBM Plex Mono',monospace">RH-2026-004172</span>
+          <span style="font-size:14px;line-height:22px;color:#5E5D58;font-family:'IBM Plex Sans'">Always isolated LTR inside RTL (&lt;bdi dir="ltr"&gt;).</span>
+        </div>
+      </div>
+      <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;overflow:hidden">
+        <sc-for list="{{ typeScale }}" as="t" hint-placeholder-count="8">
+          <div style="display:grid;grid-template-columns:minmax(120px,180px) minmax(0,1fr);gap:16px;align-items:baseline;padding:14px 20px;border-top:1px solid #EDECE8">
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span dir="ltr" style="font:500 12px 'IBM Plex Mono',monospace;text-align:right">{{ t.token }}</span>
+              <span dir="ltr" style="font:400 12px 'IBM Plex Mono',monospace;color:#6B6A65;text-align:right">{{ t.spec }}</span>
+            </div>
+            <div style="font-size:{{ t.size }};line-height:{{ t.lh }};font-weight:{{ t.w }};text-wrap:pretty">{{ t.sample }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px">
+        <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px">
+          <div style="font-weight:600">اتجاه النص الثنائي — ما لا يُعكس</div>
+          <div style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 16px;font-size:15px;line-height:24px">
+            <span style="color:#5E5D58">المرجع</span><bdi dir="ltr" style="font-family:'IBM Plex Mono',monospace">RH-2026-004172</bdi>
+            <span style="color:#5E5D58">المبلغ</span><span><bdi dir="ltr" style="font-variant-numeric:tabular-nums;font-weight:600">1,284,560.00</bdi> ر.س</span>
+            <span style="color:#5E5D58">الهوية</span><bdi dir="ltr" style="font-family:'IBM Plex Mono',monospace">1•••••••42</bdi>
+            <span style="color:#5E5D58">الجوال</span><bdi dir="ltr" style="font-family:'IBM Plex Mono',monospace">+966 5• ••• ••81</bdi>
+            <span style="color:#5E5D58">البريد</span><bdi dir="ltr" style="font-family:'IBM Plex Mono',monospace">a•••@example.sa</bdi>
+            <span style="color:#5E5D58">التاريخ</span><span><bdi dir="ltr">2026-09-23</bdi> · 11 ربيع الآخر 1448هـ</span>
+          </div>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px">
+          <div style="font-weight:600">قاعدة عرض المبلغ</div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <span style="font-size:13px;color:#5E5D58">إجمالي المديونية القائمة</span>
+            <span style="font-size:32px;line-height:44px;font-weight:700"><bdi dir="ltr" style="font-variant-numeric:tabular-nums">1,284,560.00</bdi> <span style="font-size:18px;font-weight:500">ر.س</span></span>
+            <span style="font-size:13px;line-height:20px;color:#5E5D58;display:flex;gap:6px;align-items:center"><span class="ms" aria-hidden="true" style="font-size:16px">database</span>المصدر: نظام التمويل الأساسي · آخر تحديث <bdi dir="ltr">2026-09-22 18:40</bdi></span>
+          </div>
+          <div style="font-size:13px;line-height:20px;color:#5E5D58">كل مبلغ: القيمة + العملة + المصدر + وقت التحديث. خانتان عشريتان في المالية، وتقريب للألف فقط في الرسوم البيانية مع ذكر ذلك.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Spacing / radius / elevation / grid -->
+    <section aria-labelledby="h-space" style="display:flex;flex-direction:column;gap:16px">
+      <h2 id="h-space" style="margin:0;font-size:24px;line-height:36px;font-weight:600">المسافات والأشكال والارتفاع</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:16px">
+        <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:8px">
+          <div style="font-weight:600;margin-bottom:4px">مسافات 4/8</div>
+          <sc-for list="{{ spaces }}" as="s" hint-placeholder-count="11">
+            <div style="display:grid;grid-template-columns:90px 50px minmax(0,1fr);gap:12px;align-items:center">
+              <span dir="ltr" style="font:500 12px 'IBM Plex Mono',monospace;text-align:right">{{ s.token }}</span>
+              <span dir="ltr" style="font:400 12px 'IBM Plex Mono',monospace;color:#6B6A65;text-align:right">{{ s.v }}</span>
+              <span style="height:12px;width:{{ s.v }};background:#F4633A;border-radius:2px"></span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px">
+            <div style="font-weight:600">الزوايا</div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap">
+              <sc-for list="{{ radii }}" as="r" hint-placeholder-count="5">
+                <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+                  <div style="width:64px;height:48px;border:2px solid #22262A;border-radius:{{ r.v }};background:#FAF9F6"></div>
+                  <span dir="ltr" style="font:500 11px 'IBM Plex Mono',monospace">{{ r.token }}</span>
+                  <span style="font-size:12px;color:#5E5D58">{{ r.use }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="background:#FAF9F6;border:1px solid #CBCAC6;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px">
+            <div style="font-weight:600">الارتفاع</div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap">
+              <sc-for list="{{ shadows }}" as="s" hint-placeholder-count="4">
+                <div style="width:120px;height:72px;border-radius:10px;background:#FFFFFF;box-shadow:{{ s.v }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
+                  <span dir="ltr" style="font:500 11px 'IBM Plex Mono',monospace">{{ s.token }}</span>
+                  <span style="font-size:12px;color:#5E5D58">{{ s.use }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:16px">
+        <div style="font-weight:600">الشبكة ونقاط التوقف</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px">
+          <sc-for list="{{ grids }}" as="g" hint-placeholder-count="3">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;justify-content:space-between;font-size:14px"><strong dir="ltr">{{ g.bp }}</strong><span style="color:#5E5D58">{{ g.name }}</span></div>
+              <div style="display:grid;grid-template-columns:repeat({{ g.cols }},1fr);gap:4px;height:48px;padding:0 6px;background:#FAF9F6;border-radius:6px;align-items:stretch">
+                <sc-for list="{{ g.colList }}" as="c" hint-placeholder-count="4"><span style="background:#FDF0EB;border-inline:1px solid #F4633A"></span></sc-for>
+              </div>
+              <span style="font-size:13px;line-height:20px;color:#5E5D58">{{ g.spec }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <!-- Icons, motion, focus, density -->
+    <section aria-labelledby="h-misc" style="display:flex;flex-direction:column;gap:16px">
+      <h2 id="h-misc" style="margin:0;font-size:24px;line-height:36px;font-weight:600">الأيقونات والحركة والتركيز والكثافة</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:16px">
+        <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px">
+          <div style="font-weight:600">الأيقونات 16 / 20 / 24</div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;color:#22262A">
+            <sc-for list="{{ icons }}" as="i" hint-placeholder-count="12"><span class="ms" title="{{ i }}" aria-hidden="true" style="font-size:24px">{{ i }}</span></sc-for>
+          </div>
+          <div style="font-size:13px;line-height:20px;color:#5E5D58">خط 1.5px مستدير. الأسهم والتقدم تنعكس في RTL؛ الساعة والتحقق والعملة لا تنعكس. مستبعد: السقف، المفتاح، المطرقة، القفل.</div>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px">
+          <div style="font-weight:600">الحركة</div>
+          <div style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 12px;font-size:14px;line-height:22px">
+            <bdi dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:12px">fast 120ms</bdi><span>حالات التحويم والضغط</span>
+            <bdi dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:12px">base 200ms</bdi><span>القوائم والتبويبات والإشعارات</span>
+            <bdi dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:12px">slow 320ms</bdi><span>اللوحات الجانبية والحوارات</span>
+            <bdi dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:12px">reduced 0ms</bdi><span>عند تفضيل تقليل الحركة: لا انزلاق</span>
+          </div>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px">
+          <div style="font-weight:600">حلقة التركيز</div>
+          <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+            <button style="min-height:44px;padding:0 20px;border-radius:6px;border:0;background:#AA4528;color:#FFFFFF;font:600 15px 'IBM Plex Sans Arabic';outline:2px solid #151513;outline-offset:2px">إجراء أساسي</button>
+            <span style="display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border:1px solid #85847F;border-radius:6px;outline:2px solid #151513;outline-offset:2px;font-size:15px;background:#FFFFFF">حقل</span>
+          </div>
+          <div style="font-size:13px;line-height:20px;color:#5E5D58">2px حبر + إزاحة 2px (18.28:1). على الداكن: أبيض. لا تُزال عند النقر بالفأرة إلا بـ focus-visible.</div>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:10px">
+          <div style="font-weight:600">الكثافة</div>
+          <sc-for list="{{ density }}" as="d" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:12px">
+              <span style="height:{{ d.h }};flex:0 0 120px;border:1px solid #85847F;border-radius:6px;display:flex;align-items:center;padding:0 10px;font-size:14px;box-sizing:border-box">{{ d.name }}</span>
+              <span style="font-size:13px;line-height:20px;color:#5E5D58">{{ d.use }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  lum(h) { return [1,3,5].map(i => parseInt(h.slice(i,i+2),16)/255).map(v => v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4)).reduce((a,v,i) => a + v*[0.2126,0.7152,0.0722][i], 0); }
+  ratio(a,b) { const x = this.lum(a), y = this.lum(b); return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05); }
+  renderVals() {
+    const P = [
+      ['brand.orange','#F4633A','لمسة: تمييز، تقدم، تفاصيل أيقونات'],['brand.rust','#AA4528','الإجراء الأساسي والروابط'],['rust.700','#8E3920','تحويم/ضغط الإجراء'],['rust.50','#FDF0EB','خلفية العنصر المحدد'],
+      ['brand.charcoal','#22262A','الكلمة ونص قوي'],['text.primary','#151513','العناوين والنص والسطح المعكوس'],['surface.white','#FFFFFF','اللوحة والبطاقات'],['surface.warm','#FAF9F6','خلفية الأقسام'],
+      ['surface.subtle','#F2F1ED','اللوحات الثانوية والحقول'],['border.default','#CBCAC6','فواصل زخرفية فقط'],['border.strong','#85847F','حدود الحقول والتحكم (مشتق)'],['text.secondary','#6B6A65','النص الداعم'],['accent.gold','#D5BD8D','اختياري ومحدود جداً'],
+    ].map(([token,hex,use]) => ({ token, hex, use }));
+    const semantics = [
+      { label:'نجاح / مكتمل', icon:'check_circle', fg:'#1E6A45', bg:'#EAF4EE', border:'#9CCBB0', example:'تم التحقق من صك الملكية · 2026-09-18' },
+      { label:'تحذير / قريب من المهلة', icon:'schedule', fg:'#8A5300', bg:'#FBF2DE', border:'#E2C27A', example:'متبقٍ يومان على رد المالك' },
+      { label:'خطأ / متأخر / مرفوض', icon:'error', fg:'#B3261E', bg:'#FCECEA', border:'#EFA59C', example:'تجاوزت المهلة بـ 3 أيام — مطلوب تصعيد' },
+      { label:'معلومة / بانتظار طرف', icon:'info', fg:'#1D5A8C', bg:'#EAF2F9', border:'#9DC0DE', example:'بانتظار تقرير المقيّم المكلّف' },
+    ];
+    const C = [
+      ['#151513','#FFFFFF','النص الأساسي'],['#22262A','#FFFFFF','نص قوي والكلمة'],['#6B6A65','#FFFFFF','النص الثانوي'],['#6B6A65','#F2F1ED','ثانوي على سطح فرعي'],
+      ['#FFFFFF','#AA4528','زر أساسي أبيض على صدئي'],['#FFFFFF','#8E3920','زر أساسي — تحويم'],['#AA4528','#FFFFFF','رابط'],['#AA4528','#FAF9F6','رابط على دافئ'],['#8E3920','#FDF0EB','نص عنصر محدد'],
+      ['#F4633A','#FFFFFF','البرتقالي كنص — ممنوع للنص الصغير', 'ui'],['#F4633A','#FAF9F6','البرتقالي على دافئ', 'ui'],['#85847F','#FFFFFF','حد الحقول (رسومي)', 'ui'],['#CBCAC6','#FFFFFF','فاصل زخرفي', 'deco'],
+      ['#1E6A45','#EAF4EE','نجاح'],['#8A5300','#FBF2DE','تحذير'],['#B3261E','#FCECEA','خطأ'],['#1D5A8C','#EAF2F9','معلومة'],
+      ['#FFFFFF','#151513','معكوس أساسي'],['#B5B3AD','#151513','معكوس ثانوي'],['#F4633A','#151513','برتقالي على داكن'],
+    ];
+    const contrast = C.map(([fg,bg,use,kind]) => {
+      const r = this.ratio(fg,bg);
+      let verdict, ok;
+      if (kind === 'deco') { verdict = 'زخرفي فقط — مستثنى'; ok = 'n'; }
+      else if (kind === 'ui') { ok = r >= 3 ? 'w' : 'f'; verdict = r >= 3 ? 'رسومي/كبير فقط ≥ 3' : 'فشل'; }
+      else { ok = r >= 7 ? 'y' : r >= 4.5 ? 'y' : 'f'; verdict = r >= 7 ? 'AAA' : r >= 4.5 ? 'AA' : 'فشل'; }
+      const col = { y:['#1E6A45','#EAF4EE','#9CCBB0','check_circle'], w:['#8A5300','#FBF2DE','#E2C27A','warning'], f:['#B3261E','#FCECEA','#EFA59C','cancel'], n:['#5E5D58','#F2F1ED','#CBCAC6','remove'] }[ok];
+      return { fg, bg, use, ratio: r.toFixed(2), verdict, icon: col[3],
+        badge: `display:inline-flex;gap:4px;align-items:center;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;color:${col[0]};background:${col[1]};border:1px solid ${col[2]}` };
+    });
+    const typeScale = [
+      ['display','40/56 · 700','40px','56px',700,'حلول واضحة لكل حالة'],
+      ['h1','32/44 · 700','32px','44px',700,'مساحة عمل الحالة'],
+      ['h2','24/36 · 600','24px','36px',600,'الحلول المقترحة'],
+      ['h3','20/30 · 600','20px','30px',600,'الإجراء التالي'],
+      ['body-lg (debtor)','18/30 · 400','18px','30px',400,'نريد مساعدتك في الوصول إلى حل مناسب. يمكنك مراجعة الخيارات المتاحة والرد خلال 10 أيام، أو طلب مساعدة.'],
+      ['body','16/26 · 400','16px','26px',400,'أُرسل طلب المستندات إلى المالك، وسيصلك إشعار عند رفع أي ملف.'],
+      ['body-sm (tables)','14/22 · 400','14px','22px',400,'تحقق · سارة القحطاني · متبقٍ 3 أيام · 1,284,560.00 ر.س'],
+      ['caption','12/18 · 500','12px','18px',500,'آخر تحديث 2026-09-22 18:40 · المصدر: نظام التمويل'],
+    ].map(([token,spec,size,lh,w,sample]) => ({ token, spec, size, lh, w, sample }));
+    const spaces = [1,2,3,4,5,6,8,10,12,16,20].map(n => ({ token:`space-${n}`, v:`${n*4}px` }));
+    const radii = [['xs','4px','شارات'],['sm','6px','أزرار وحقول'],['md','10px','بطاقات'],['lg','14px','لوحات'],['pill','999px','رقاقات']].map(([t,v,use]) => ({ token:`radius-${t}`, v, use }));
+    const shadows = [['shadow-0','none','مسطح'],['shadow-1','0 1px 2px rgba(21,21,19,.06), 0 0 0 1px rgba(21,21,19,.04)','بطاقة'],['shadow-2','0 4px 12px rgba(21,21,19,.08), 0 0 0 1px rgba(21,21,19,.05)','قائمة'],['shadow-3','0 16px 40px rgba(21,21,19,.14), 0 0 0 1px rgba(21,21,19,.06)','حوار']].map(([token,v,use]) => ({ token, v, use }));
+    const grids = [['390','جوال',4,'4 أعمدة · فاصل 16 · هامش 16 · تنقل سفلي'],['768','لوحي',8,'8 أعمدة · فاصل 24 · هامش 32 · قائمة جانبية مطوية 72'],['1440','سطح المكتب',12,'12 عموداً · فاصل 24 · هامش 40 · قائمة جانبية 264']].map(([bp,name,cols,spec]) => ({ bp, name, cols, spec, colList: Array.from({length: cols}, (_, i) => i) }));
+    const density = [['مريح 48','48px','المدين، النماذج الطويلة'],['افتراضي 40','40px','الواجهات المؤسسية'],['مضغوط 32','32px','الجداول الكثيفة فقط (سطح المكتب)']].map(([name,h,use]) => ({ name, h, use }));
+    const icons = ['arrow_back','arrow_forward','chevron_left','check_circle','schedule','error','info','description','upload_file','payments','account_balance','person','group','task_alt','flag','approval','history','forum','search','filter_list','download','visibility_off','support_agent','calendar_month'];
+    return { primitives: P, semantics, contrast, typeScale, spaces, radii, shadows, grids, density, icons };
+  }
+}
+</script>
+</body>
+</html>

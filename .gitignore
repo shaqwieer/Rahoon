@@ -1,0 +1,34 @@
+# Secrets and local environment
+.env
+.env.local
+*.env.local
+server/src/Rahoon.Api/appsettings.Development.local.json
+
+# Local runtime data (document storage, data-protection keys)
+.data/
+server/src/Rahoon.Api/.data/
+
+# .NET
+bin/
+obj/
+*.user
+.vs/
+TestResults/
+
+# Node / Next.js
+node_modules/
+web/.next/
+web/out/
+web/next-env.d.ts
+web/test-results/
+web/playwright-report/
+web/playwright/.cache/
+*.tsbuildinfo
+
+# Derived design extracts (regenerable from design-source via scripts/condense_design.py)
+design-source/_condensed/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
