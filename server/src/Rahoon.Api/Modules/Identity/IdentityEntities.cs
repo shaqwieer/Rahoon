@@ -142,7 +142,7 @@ public sealed class OtpChallenge : Entity
     public DateTimeOffset? ConsumedAt { get; set; }
 }
 
-public enum InvitationStatus { Pending, Accepted, Expired, Cancelled }
+public enum InvitationStatus { Pending, Accepted, Expired, Cancelled, Reported }
 
 public sealed class Invitation : Entity, IOrgOwned
 {

@@ -16,7 +16,24 @@ public sealed class TestClient(HttpClient http)
 
     public string? Csrf => _cookies.GetValueOrDefault("rahoon_csrf");
 
-    public async Task<(HttpStatusCode Status, JsonNode? Body)> SendAsync(HttpMethod method, string path, object? body = null,
+    public Task<(HttpStatusCode Status, JsonNode? Body)> SendAsync(HttpMethod method, string path, object? body = null,
+        string? idempotencyKey = null, bool includeCsrf = true, string? origin = Origin, bool autoKey = true) =>
+        SendContentAsync(method, path, body is null ? null : JsonContent.Create(body), idempotencyKey, includeCsrf, origin, autoKey);
+
+    /// <summary>Multipart upload with the same cookie, CSRF, Origin and Idempotency-Key handling.</summary>
+    public Task<(HttpStatusCode Status, JsonNode? Body)> PostMultipartAsync(string path, MultipartFormDataContent content, string? key = null) =>
+        SendContentAsync(HttpMethod.Post, path, content, key);
+
+    /// <summary>Raw GET (file downloads): status and body bytes.</summary>
+    public async Task<(HttpStatusCode Status, byte[] Bytes, string? ContentType)> GetBytesAsync(string path)
+    {
+        using var msg = new HttpRequestMessage(HttpMethod.Get, path);
+        if (_cookies.Count > 0) msg.Headers.Add("Cookie", string.Join("; ", _cookies.Select(kv => $"{kv.Key}={kv.Value}")));
+        using var res = await http.SendAsync(msg);
+        return (res.StatusCode, await res.Content.ReadAsByteArrayAsync(), res.Content.Headers.ContentType?.MediaType);
+    }
+
+    private async Task<(HttpStatusCode Status, JsonNode? Body)> SendContentAsync(HttpMethod method, string path, HttpContent? content,
         string? idempotencyKey = null, bool includeCsrf = true, string? origin = Origin, bool autoKey = true)
     {
         using var msg = new HttpRequestMessage(method, path);
@@ -24,7 +41,7 @@ public sealed class TestClient(HttpClient http)
         if (_cookies.Count > 0) msg.Headers.Add("Cookie", string.Join("; ", _cookies.Select(kv => $"{kv.Key}={kv.Value}")));
         if (includeCsrf && Csrf is not null) msg.Headers.Add("X-CSRF-Token", Csrf);
         if (method != HttpMethod.Get && (idempotencyKey is not null || autoKey)) msg.Headers.Add("Idempotency-Key", idempotencyKey ?? Guid.NewGuid().ToString());
-        if (body is not null) msg.Content = JsonContent.Create(body);
+        if (content is not null) msg.Content = content;
         using var res = await http.SendAsync(msg);
         if (res.Headers.TryGetValues("Set-Cookie", out var setCookies))
         {

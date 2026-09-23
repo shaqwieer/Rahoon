@@ -64,7 +64,7 @@ public sealed class Notification : Entity
     public DateTimeOffset? ReadAt { get; set; }
 }
 
-public enum TemplateStatus { Draft, PendingCompliance, Published }
+public enum TemplateStatus { Draft, PendingCompliance, Published, Superseded }
 
 public sealed class CommunicationTemplate : Entity
 {

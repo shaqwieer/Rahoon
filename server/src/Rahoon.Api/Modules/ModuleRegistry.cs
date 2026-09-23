@@ -5,6 +5,7 @@ using Rahoon.Api.Modules.Owner;
 using Rahoon.Api.Modules.Communications;
 using Rahoon.Api.Modules.Documents;
 using Rahoon.Api.Modules.Identity;
+using Rahoon.Api.Modules.Providers;
 using Rahoon.Api.Modules.Solutions;
 
 namespace Rahoon.Api.Modules;
@@ -24,6 +25,7 @@ public static class ModuleRegistry
         services.AddScoped<ComplaintService>();
         services.AddScoped<BreachMonitor>();
         services.AddHostedService<BreachMonitorService>();
+        services.AddScoped<ProviderAssignmentService>();
         return services;
     }
 
@@ -40,6 +42,8 @@ public static class ModuleRegistry
         ComplaintEndpoints.Map(app);
         OwnerEndpoints.Map(app);
         WorkspaceEndpoints.Map(app);
+        AssignmentEndpoints.Map(app);
+        ProviderPortalEndpoints.Map(app);
         return app;
     }
 }
