@@ -137,6 +137,8 @@ public sealed class CasePartiesTests(ApiFixture api)
         Assert.NotEqual(token1, token2);
         Assert.Equal("invalid", TestClient.Str((await owner.GetAsync($"/api/public/invitations/{token1}")).Body, "status"));
         Assert.Equal("active", TestClient.Str((await owner.GetAsync($"/api/public/invitations/{token2}")).Body, "status"));
+        // Refreshing the link does not end the owner's signed-in session.
+        Assert.Equal(HttpStatusCode.OK, (await owner.GetAsync("/api/owner/home")).Status);
         await api.WithDbAsync(async db =>
         {
             var a = await db.OwnerAccesses.FirstAsync(o => o.CaseId == stored.CaseId);

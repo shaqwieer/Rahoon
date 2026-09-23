@@ -64,7 +64,7 @@ The existing reveal endpoint (`POST /parties/{id}/reveal`) is unchanged.
 Entities: `CaseParty`, `OwnerAccess` (+CommunicationNeeds), `CaseDocument`, `DocumentRequest`, `OutboundMessage` (through `ISmsGateway`).
 
 Decisions:
-- **Refreshing an invitation** replaces the hash, which immediately invalidates the old link. It also sets the status back to `Sent`, even for an owner who had already accepted. The auth flow only enforces expiry for `Sent`, so this is what makes the 14-day expiry apply to every issued link. On the next sign-in the owner is marked `Accepted` again.
+- **Refreshing an invitation** replaces the hash, which immediately invalidates the old link. It also sets the status back to `Sent`, even for an owner who had already accepted. The auth flow only enforces expiry for `Sent`, so this is what makes the 14-day expiry apply to every issued link. On the next sign-in the owner is marked `Accepted` again. A refresh does not end an owner session that is already signed in, because session resolution does not read the invitation status (this is tested). While the new link is pending, the workspace header shows «دعوة مرسلة».
 - **The primary owner's name, national ID and phone cannot be edited through PATCH** (400). They drive owner sign-in (invitation + last 4 digits + OTP), so letting a staff member change the phone would let them redirect the owner's OTP. Corrections go through the source instead. For other parties, the national ID can only be *added* once and never changed.
 - «آخر تواصل» is derived from the latest non-internal case message.
 
@@ -361,4 +361,5 @@ Other cases:
 2. **Permissions** would ideally gain `mortgage.legal_review` and `audit.export` (auditor-only export per design). Both are left out to keep `Permissions.cs` and `SystemRoles.cs` untouched.
 3. The **providers module** should emit assignment audit events that follow the timeline convention above, and create the valuer assignment from a `revaluation` task.
 4. **Import:** XLSX parsing, and `PUT /imports/{id}/file` (replace the file), are not implemented. The UI can upload a new batch instead.
-5. The watermark stamping on downloads (existing) and `POST /documents/versions/{vid}/download` from the spec are unchanged.
+5. **Invitation links at rest in the SMS log.** The sandbox gateway stores full SMS bodies in `comms.outbound_messages`, so the plaintext invitation link (token) sits next to its hash. The last 4 digits of the ID plus the OTP are still required to sign in. A production SMS adapter must not persist bodies that contain invitation links, or must redact them.
+6. The watermark stamping on downloads (existing) and `POST /documents/versions/{vid}/download` from the spec are unchanged.
