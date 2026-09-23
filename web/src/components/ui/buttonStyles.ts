@@ -43,7 +43,7 @@ export function buttonClasses({
   className?: string;
 }) {
   return cn(
-    "relative inline-grid place-items-center font-semibold no-underline transition-colors duration-[var(--dur-fast)] select-none",
+    "relative inline-grid grid-flow-col items-center justify-center gap-1.5 font-semibold no-underline transition-colors duration-[var(--dur-fast)] select-none",
     variant === "text" ? TEXT_SIZE[size] : SIZE[size],
     disabled ? cn(VARIANT[variant].off, "cursor-not-allowed") : VARIANT[variant].on,
     fullWidth && "w-full",
