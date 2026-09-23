@@ -225,7 +225,7 @@ public sealed class OfferService(RahoonDbContext db, IClock clock, Notifier noti
                 : $"قسط {v.InstallmentAmount:N2} ريال لمدة {v.TermMonths} شهراً، يبدأ {v.FirstDueDate:yyyy-MM-dd}" + (v.WaiverAmount > 0 ? "، مع إلغاء غرامات التأخير." : "."),
         });
 
-        var template = await db.Templates.AsNoTracking().Where(t => t.Code == "TPL-OFFER-01" && t.Status == TemplateStatus.Published).OrderByDescending(t => t.VersionNo).FirstOrDefaultAsync();
+        var template = await db.Templates.AsNoTracking().Where(t => t.Code == "TPL-OFFER-01" && t.Status == TemplateStatus.Published && (t.OrganizationId == null || t.OrganizationId == c.OrganizationId)).OrderByDescending(t => t.OrganizationId != null).ThenByDescending(t => t.VersionNo).FirstOrDefaultAsync();
         var access = await db.OwnerAccesses.FirstOrDefaultAsync(o => o.CaseId == c.Id);
         var party = await db.Parties.FirstOrDefaultAsync(p => p.CaseId == c.Id && p.IsPrimary);
         if (access?.UserId is { } ownerUser)

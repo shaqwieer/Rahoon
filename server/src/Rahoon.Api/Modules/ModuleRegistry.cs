@@ -1,3 +1,4 @@
+using Rahoon.Api.Modules.Administration;
 using Rahoon.Api.Modules.Agreements;
 using Rahoon.Api.Modules.Cases;
 using Rahoon.Api.Modules.Complaints;
@@ -26,6 +27,11 @@ public static class ModuleRegistry
         services.AddScoped<BreachMonitor>();
         services.AddHostedService<BreachMonitorService>();
         services.AddScoped<ProviderAssignmentService>();
+        services.AddScoped<StaffInvitationService>();
+        services.AddScoped<TemplateService>();
+        services.AddScoped<PlatformMinima>();
+        services.AddScoped<TempAccessService>();
+        services.AddHostedService<TempAccessExpiryService>();
         return services;
     }
 
@@ -44,6 +50,15 @@ public static class ModuleRegistry
         WorkspaceEndpoints.Map(app);
         AssignmentEndpoints.Map(app);
         ProviderPortalEndpoints.Map(app);
+        StaffInvitationEndpoints.Map(app);
+        OrganizationSettingsEndpoints.Map(app);
+        DocumentRuleEndpoints.Map(app);
+        ApprovalLimitEndpoints.Map(app);
+        TemplateEndpoints.Map(app);
+        InstitutionAdminEndpoints.Map(app);
+        InstitutionApplicationEndpoints.Map(app);
+        TempAccessEndpoints.Map(app);
+        PlatformEndpoints.Map(app);
         return app;
     }
 }

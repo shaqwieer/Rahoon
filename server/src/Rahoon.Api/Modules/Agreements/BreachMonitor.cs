@@ -56,6 +56,7 @@ public sealed class BreachMonitor(RahoonDbContext db, IClock clock, Notifier not
             await db.SaveChangesAsync(ct);
             await tx.CommitAsync(ct);
         }
+        await Administration.JobHeartbeats.TouchAsync(db, "breach_monitor", clock.UtcNow, $"opened {opened}");
         return opened;
     }
 
