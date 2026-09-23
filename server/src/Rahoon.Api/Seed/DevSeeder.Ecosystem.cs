@@ -71,6 +71,7 @@ public sealed partial class DevSeeder
         db.Set<ProviderProfile>().Add(e);
         SeedLicense(e, LicenseRules.PracticeLicense, "1100924471", D("2028-02-01"), LicenseReviewStatus.Pending);
         SeedLicense(e, LicenseRules.Insurance, "INS-0044", D("2026-10-07"), LicenseReviewStatus.Pending);
+        SeedLicense(e, LicenseRules.CommercialRegister, "2050114471", D("2027-05-30"), LicenseReviewStatus.Pending);
 
         // V06a sample: draft at step 3, autosaved.
         var t = new ProviderProfile
@@ -102,10 +103,10 @@ public sealed partial class DevSeeder
                 AddedByUserId = d.org == "alufuq" ? UserId("layla") : UserId("maha"), CreatedAt = DemoToday.AddMonths(-9),
             });
 
-        // ── 12-month assignment history → computed performance (V05 / V07) ──
+        // ── 12-month assignment history → computed performance (V05 / V07); «ب» at alufuq also has the canonical ASG-2026-0418 ──
         (string org, string provider, AssignmentType type, int delivered, int late, int reworked, int avgDays)[] history =
         [
-            ("alufuq", "valuer-b", AssignmentType.Valuation, 25, 1, 1, 9), ("sunbula", "valuer-b", AssignmentType.Valuation, 23, 1, 3, 9),
+            ("alufuq", "valuer-b", AssignmentType.Valuation, 24, 1, 1, 9), ("sunbula", "valuer-b", AssignmentType.Valuation, 23, 1, 3, 9),
             ("alufuq", "valuer-w", AssignmentType.Valuation, 25, 3, 2, 10), ("alufuq", "valuer-h", AssignmentType.Valuation, 19, 5, 3, 13),
             ("alufuq", "broker-a", AssignmentType.Brokerage, 38, 3, 0, 46), ("alufuq", "broker-c", AssignmentType.Brokerage, 21, 2, 0, 58),
             ("alufuq", "broker-d", AssignmentType.Brokerage, 12, 2, 0, 52), ("alufuq", "inspect-z", AssignmentType.Inspection, 20, 0, 0, 6),
@@ -114,7 +115,7 @@ public sealed partial class DevSeeder
         var sunbulaCases = _cases.Values.Where(c => c.OrganizationId == sunbula.Id).OrderBy(c => c.Reference).ToList();
         var reserved = new Dictionary<(string, int), string> // invoice samples reuse these references
         {
-            [("alufuq:valuer-b", 22)] = "ASG-2026-0830", [("alufuq:valuer-b", 23)] = "ASG-2026-0842", [("alufuq:valuer-b", 24)] = "ASG-2026-0851",
+            [("alufuq:valuer-b", 21)] = "ASG-2026-0830", [("alufuq:valuer-b", 22)] = "ASG-2026-0842", [("alufuq:valuer-b", 23)] = "ASG-2026-0851",
             [("sunbula:valuer-b", 22)] = "ASG-2026-0859",
         };
         var refs = new Dictionary<string, ProviderAssignment>();
@@ -254,6 +255,6 @@ public sealed partial class DevSeeder
         {
             ProviderProfileId = p.Id, ProviderOrganizationId = p.ProviderOrganizationId, Kind = kind, Number = number, ExpiresOn = expires,
             FileName = $"{kind}.pdf", ContentType = "application/pdf", SizeBytes = 2048, UploadedAt = (p.SubmittedAt ?? p.CreatedAt).AddDays(-1),
-            UploadedByUserId = UserId("hessa"), ReviewStatus = review,
+            UploadedByUserId = p.ProviderOrganizationId == _orgs["valuer-e"].Id ? UserId("nader") : p.ProviderOrganizationId == _orgs["inspect-t"].Id ? UserId("tariq") : UserId("hatem"), ReviewStatus = review,
         });
 }

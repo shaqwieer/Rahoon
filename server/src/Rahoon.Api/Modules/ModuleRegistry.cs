@@ -28,6 +28,7 @@ public static class ModuleRegistry
         services.AddHostedService<BreachMonitorService>();
         services.AddScoped<SaleService>();
         services.AddScoped<ProviderDirectory>();
+        services.AddScoped<ConditionalIntegrations>();
         return services;
     }
 
@@ -48,6 +49,14 @@ public static class ModuleRegistry
         SaleApprovalEndpoints.Map(app);
         BrokerSaleEndpoints.Map(app);
         OwnerSaleEndpoints.Map(app);
+        ProviderOnboardingEndpoints.Map(app);
+        PlatformProviderEndpoints.Map(app);
+        InstitutionProviderEndpoints.Map(app);
+        ProviderInvoiceEndpoints.Map(app);
+        WorkflowDesignerEndpoints.Map(app);
+        ReportingEndpoints.Map(app);
+        BillingEndpoints.Map(app);
+        ConditionalIntegrationEndpoints.Map(app);
         return app;
     }
 }
