@@ -16,8 +16,10 @@ export function useOwnerCopy() {
  * Amount with the owner unit: «15,074.52 ريال» (ar) / «SAR 15,074.52» (en). The number is always an LTR
  * isolate; the unit stays in the reading direction.
  */
-export function Amount({ value, fractionDigits = 2, className, numberClassName, unitClassName }: {
+export function Amount({ value, fractionDigits = 2, className, numberClassName, unitClassName, hideUnit }: {
   value: number | null | undefined;
+  /** Number only (rows under a total that already states the unit). */
+  hideUnit?: boolean;
   fractionDigits?: 0 | 2;
   className?: string;
   numberClassName?: string;
@@ -32,6 +34,7 @@ export function Amount({ value, fractionDigits = 2, className, numberClassName, 
     </bdi>
   );
   const unit = <span className={unitClassName}>{c.unit}</span>;
+  if (hideUnit) return <span className={className}>{num}</span>;
   return (
     <span className={cn("whitespace-nowrap", className)}>
       {locale === "en" ? (

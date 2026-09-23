@@ -25,7 +25,8 @@ export function useSubmit() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function run<T>(fn: (idempotencyKey: string) => Promise<T>, onError?: (e: unknown) => string | null): Promise<{ ok: true; data: T } | { ok: false; error: unknown }> {
+  /** `onError` may return a message, `null` (handled — show nothing) or `undefined` (default message). */
+  async function run<T>(fn: (idempotencyKey: string) => Promise<T>, onError?: (e: unknown) => string | null | undefined): Promise<{ ok: true; data: T } | { ok: false; error: unknown }> {
     setBusy(true);
     setError(null);
     try {
