@@ -83,6 +83,25 @@ public sealed class CommunicationTemplate : Entity
     public Guid? PublishedByUserId { get; set; }
 }
 
+/// <summary>Owner-initiated hardship notice (D11). Reason is optional and visible to the case team only.</summary>
+public sealed class HardshipRequest : OrgEntity
+{
+    public Guid CaseId { get; set; }
+    public string? ReasonKey { get; set; } // income_loss | health | family | other | prefer_not_say
+    public bool CallbackRequested { get; set; } = true;
+    public string Status { get; set; } = "open"; // open | contacted | closed
+}
+
+/// <summary>Owner's notice that a transfer was made (D10). Never counts as payment until finance matches it.</summary>
+public sealed class PaymentNotice : OrgEntity
+{
+    public Guid CaseId { get; set; }
+    public int InstallmentNo { get; set; }
+    public DateOnly TransferDate { get; set; }
+    public decimal Amount { get; set; }
+    public string? Reference { get; set; }
+}
+
 public enum OutboundStatus { Queued, Sent, Failed, Simulated }
 
 /// <summary>Outbound SMS/e-mail. In development every row is Simulated — no message leaves the system.</summary>

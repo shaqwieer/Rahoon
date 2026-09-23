@@ -59,7 +59,8 @@ public sealed class CaseWorkflow(RahoonDbContext db, RequestContext rc, IClock c
         new("return_to_solution", [CaseStatus.InternalApproval], CaseStatus.ProposedSolution, "إعادة للتعديل", P.SolutionApprove, false, RequiresReason: true),
         new("owner_counteroffer", [CaseStatus.AwaitingCustomer], CaseStatus.Negotiation, "عرض مقابل من المالك", "", false),
         new("owner_declined", [CaseStatus.AwaitingCustomer], CaseStatus.ProposedSolution, "رفض المالك للعرض", "", false),
-        new("counter_declined", [CaseStatus.Negotiation], CaseStatus.AwaitingCustomer, "الإبقاء على العرض القائم", P.NegotiationManage, false, RequiresReason: true),
+        // L18: apologising for a counteroffer returns to «حل مقترح» — never to referral.
+        new("counter_declined", [CaseStatus.Negotiation], CaseStatus.ProposedSolution, "الاعتذار عن الطلب", P.NegotiationManage, false, RequiresReason: true),
         new("activate_agreement", [CaseStatus.AwaitingCustomer], CaseStatus.ActiveSettlement, "تفعيل الاتفاق", P.AgreementActivate, false,
             RequiresReason: false, Guards: ["consent_recorded", "agreement_ready"]),
         new("restructure_after_breach", [CaseStatus.ActiveSettlement], CaseStatus.ProposedSolution, "إعادة الهيكلة بعد الإخلال", P.BreachManage, true,

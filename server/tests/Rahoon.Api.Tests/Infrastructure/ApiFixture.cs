@@ -34,7 +34,10 @@ public sealed class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
         var db = scope.ServiceProvider.GetRequiredService<RahoonDbContext>();
         using (db.Request.BeginSystemScope())
         {
-            await db.Database.MigrateAsync();
+            // Parallel feature branches may add entities before the consolidated migration exists;
+            // RAHOON_TEST_ENSURE_CREATED=1 lets them test against the model. CI always uses migrations.
+            if (Environment.GetEnvironmentVariable("RAHOON_TEST_ENSURE_CREATED") == "1") await db.Database.EnsureCreatedAsync();
+            else await db.Database.MigrateAsync();
             await scope.ServiceProvider.GetRequiredService<DevSeeder>().SeedAsync();
         }
     }
@@ -55,6 +58,7 @@ public sealed class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
             ["Security:PiiLookupKey"] = "test-lookup-key",
             ["Database:MigrateOnStartup"] = "false",
             ["Auth:RateLimitPerMinute"] = "10000",
+            ["Jobs:BreachMonitor"] = "false",
         }));
     }
 

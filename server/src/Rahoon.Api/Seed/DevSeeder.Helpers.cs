@@ -88,10 +88,13 @@ public sealed partial class DevSeeder
             });
         }
 
+        // Dev-only deterministic invitation link: /invite/demo-<reference> (see docs/demo-roles.md).
         db.OwnerAccesses.Add(new OwnerAccess
         {
             OrganizationId = org.Id, CaseId = c.Id, PartyId = party.Id,
-            InvitationStatus = s.Status >= CaseStatus.Verification ? OwnerInvitationStatus.Accepted : OwnerInvitationStatus.NotSent,
+            InvitationTokenHash = Infrastructure.Security.Tokens.Sha256(DemoInviteToken(s.Reference)),
+            InvitationExpiresAt = DemoToday.AddDays(60),
+            InvitationStatus = s.Status >= CaseStatus.Verification ? OwnerInvitationStatus.Accepted : OwnerInvitationStatus.Sent,
             InvitedAt = s.Status >= CaseStatus.Verification ? At("2026-08-18T10:00:00") : null,
             AcceptedAt = s.Status >= CaseStatus.Verification ? At("2026-08-20T19:30:00") : null,
             IdentityVerifiedAt = s.Status >= CaseStatus.Verification ? At("2026-08-20T19:31:00") : null,
@@ -104,6 +107,8 @@ public sealed partial class DevSeeder
             from: "draft", to: "awaiting_data", detail: "إنشاء الحالة", reason: "اكتملت البيانات الإلزامية");
         return c;
     }
+
+    public static string DemoInviteToken(string reference) => $"demo-{reference}";
 
     private static string RegionOf(string city) => city switch
     {

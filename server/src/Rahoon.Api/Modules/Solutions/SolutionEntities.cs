@@ -57,7 +57,7 @@ public sealed class SolutionVersion : OrgEntity, IConcurrencyVersioned
 }
 
 public enum ApprovalStatus { Pending, Approved, Returned, Rejected, Superseded, Escalated }
-public enum ApprovalSubject { Solution, Sale, Referral, Closure, Cancellation, Distribution, Reconciliation }
+public enum ApprovalSubject { Solution, Sale, Referral, Closure, Cancellation, Distribution, Reconciliation, OfferExtension }
 
 /// <summary>Maker-checker approval (C08). Approver ≠ preparer ≠ reviewer; amount within approver's tier.</summary>
 public sealed class ApprovalRequest : OrgEntity, IConcurrencyVersioned

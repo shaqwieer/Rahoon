@@ -86,6 +86,8 @@ public sealed class RahoonDbContext(DbContextOptions<RahoonDbContext> options, R
     public DbSet<CommunicationTemplate> Templates => Set<CommunicationTemplate>();
     public DbSet<OutboundMessage> OutboundMessages => Set<OutboundMessage>();
     public DbSet<Complaint> Complaints => Set<Complaint>();
+    public DbSet<HardshipRequest> HardshipRequests => Set<HardshipRequest>();
+    public DbSet<PaymentNotice> PaymentNotices => Set<PaymentNotice>();
 
     // Referral & closure
     public DbSet<JudicialReferral> Referrals => Set<JudicialReferral>();

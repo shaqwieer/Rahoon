@@ -1,4 +1,7 @@
+using Rahoon.Api.Modules.Agreements;
 using Rahoon.Api.Modules.Cases;
+using Rahoon.Api.Modules.Complaints;
+using Rahoon.Api.Modules.Owner;
 using Rahoon.Api.Modules.Communications;
 using Rahoon.Api.Modules.Documents;
 using Rahoon.Api.Modules.Identity;
@@ -16,6 +19,11 @@ public static class ModuleRegistry
         services.AddScoped<CaseAccess>();
         services.AddScoped<NextActionBuilder>();
         services.AddScoped<Notifier>();
+        services.AddScoped<OfferService>();
+        services.AddScoped<AgreementService>();
+        services.AddScoped<ComplaintService>();
+        services.AddScoped<BreachMonitor>();
+        services.AddHostedService<BreachMonitorService>();
         return services;
     }
 
@@ -27,6 +35,11 @@ public static class ModuleRegistry
         CaseEndpoints.Map(app);
         SolutionEndpoints.Map(app);
         DocumentEndpoints.Map(app);
+        ApprovalEndpoints.Map(app);
+        AgreementEndpoints.Map(app);
+        ComplaintEndpoints.Map(app);
+        OwnerEndpoints.Map(app);
+        WorkspaceEndpoints.Map(app);
         return app;
     }
 }

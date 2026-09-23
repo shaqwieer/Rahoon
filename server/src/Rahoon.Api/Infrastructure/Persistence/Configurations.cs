@@ -448,6 +448,16 @@ internal sealed class TemplateConfig : IEntityTypeConfiguration<CommunicationTem
     }
 }
 
+internal sealed class HardshipConfig : IEntityTypeConfiguration<HardshipRequest>
+{
+    public void Configure(EntityTypeBuilder<HardshipRequest> b) => b.ToTable("hardship_requests", "comms");
+}
+
+internal sealed class PaymentNoticeConfig : IEntityTypeConfiguration<PaymentNotice>
+{
+    public void Configure(EntityTypeBuilder<PaymentNotice> b) => b.ToTable("payment_notices", "comms");
+}
+
 internal sealed class OutboundConfig : IEntityTypeConfiguration<OutboundMessage>
 {
     public void Configure(EntityTypeBuilder<OutboundMessage> b) => b.ToTable("outbound_messages", "comms");

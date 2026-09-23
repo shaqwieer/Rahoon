@@ -185,7 +185,7 @@ public sealed partial class DevSeeder(
         User("layla", "l.alghamdi@alufuq.example", "ليلى الغامدي", "0550000107", (alufuq, SystemRoles.OrgAdmin, "مسؤولة المنشأة"));
         User("aziz", "a.alshammari@alufuq.example", "عبدالعزيز الشمري", "0550000108", (alufuq, SystemRoles.Finance, "المالية"));
         User("salman", "s.alomari@alufuq.example", "سلمان العمري", "0550000109", (alufuq, SystemRoles.SeniorApprover, "معتمد أول"));
-        User("dana", "d.alfaisal@alufuq.example", "دانة الفيصل", "0550000110", (alufuq, SystemRoles.Compliance, "الامتثال"));
+        User("hind", "h.almutairi@alufuq.example", "هند المطيري", "0550000110", (alufuq, SystemRoles.Compliance, "الامتثال · مراجِعة شكاوى"));
         User("mansour", "m.alqarni@alufuq.example", "منصور القرني", "0550000111", (alufuq, SystemRoles.Auditor, "مدقق"));
         User("badr", "b.alsalem@alufuq.example", "بدر السالم", "0550000112", (alufuq, SystemRoles.CaseManager, "مدير حالات"));
         User("maha", "m.alshahrani@sunbula.example", "مها الشهراني", "0550000201", (_orgs["sunbula"], SystemRoles.CaseManager, "مديرة حالات"));

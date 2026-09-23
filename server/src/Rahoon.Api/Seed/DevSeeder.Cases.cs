@@ -17,7 +17,7 @@ public sealed partial class DevSeeder
         // RH-2026-004172 — the anchor case used throughout the design (working-notes.md canon).
         var c = await BuildCaseAsync(new CaseSpec("RH-2026-004172", "alufuq", "عبدالله محمد السبيعي", "1098734542", "0551234581",
             "الرياض", "حي النرجس", "فيلا سكنية · دوران", CaseStatus.ProposedSolution, "sara",
-            1_284_560.00m, 1_178_400.00m, 87_860.00m, 18_300.00m, 96_420.00m, 7, "2026-02-01", "2026-08-14", "MF-88-3317406", 13_774.29m,
+            1_284_560.00m, 1_121_840.00m, 144_420.00m, 18_300.00m, 96_420.00m, 7, "2026-02-01", "2026-08-14", "MF-88-3317406", 13_774.29m,
             "2026-09-25", "2026-09-10T11:00:00", ShortLabel: "فيلا سكنية، حي النرجس، الرياض"));
         _cases[c.Reference] = c;
         await SeedAnchorCaseDetailsAsync(c);
