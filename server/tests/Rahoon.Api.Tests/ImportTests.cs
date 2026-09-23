@@ -111,6 +111,19 @@ public sealed class ImportTests(ApiFixture api)
     }
 
     [Fact]
+    public async Task Seeded_batch_is_at_validation_step_with_row_errors()
+    {
+        var sara = await B3Scenarios.SaraAsync(api);
+        var (_, list) = await sara.GetAsync("/api/cases/imports");
+        var seeded = list!.AsArray().First(b => TestClient.Str(b, "fileName") == "محفظة_سبتمبر_2026.csv")!;
+        var (s, detail) = await sara.GetAsync($"/api/cases/imports/{TestClient.Str(seeded, "id")}");
+        Assert.Equal(HttpStatusCode.OK, s);
+        var counts = detail!["batch"]!["counts"]!;
+        Assert.Equal((9, 3, 1, 5), (counts["total"]!.GetValue<int>(), counts["ready"]!.GetValue<int>(), counts["duplicates"]!.GetValue<int>(), counts["errors"]!.GetValue<int>()));
+        Assert.Contains(detail["rows"]!.AsArray(), r => TestClient.Str(r, "duplicateOf") == "RH-2026-004172");
+    }
+
+    [Fact]
     public async Task Same_owner_in_a_closed_case_needs_a_documented_reason()
     {
         var sara = await B3Scenarios.SaraAsync(api);
