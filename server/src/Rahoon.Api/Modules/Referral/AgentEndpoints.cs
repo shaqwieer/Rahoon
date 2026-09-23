@@ -39,21 +39,28 @@ public static class AgentEndpoints
         g.MapPost("/assignments/{assignmentRef}/result/submit", SubmitResult).Idempotent();
     }
 
-    private static IQueryable<ProviderAssignment> Mine(RahoonDbContext db, RequestContext rc) =>
-        db.Assignments.Where(a => a.ProviderOrganizationId == rc.OrganizationId && a.Type == AssignmentType.JudicialSale && a.Status != AssignmentStatus.Cancelled);
-
-    private static async Task<ProviderAssignment> LoadAsync(RahoonDbContext db, RequestContext rc, string assignmentRef, bool track = false)
+    /// <summary>
+    /// Assignments of this agent office that are still accessible. Expiry is checked per assignment: another live
+    /// assignment with the same lender keeps that lender in the data scope, so the org-level filter is not enough.
+    /// </summary>
+    private static IQueryable<ProviderAssignment> Mine(RahoonDbContext db, RequestContext rc, IClock clock)
     {
-        var q = Mine(db, rc);
+        var now = clock.UtcNow;
+        return db.Assignments.Where(a => a.ProviderOrganizationId == rc.OrganizationId && a.Type == AssignmentType.JudicialSale && a.Status != AssignmentStatus.Cancelled
+                                         && (a.AccessExpiresAt == null || a.AccessExpiresAt > now));
+    }
+
+    private static async Task<ProviderAssignment> LoadAsync(RahoonDbContext db, RequestContext rc, IClock clock, string assignmentRef, bool track = false)
+    {
+        var q = Mine(db, rc, clock);
         if (!track) q = q.AsNoTracking();
         return await q.FirstOrDefaultAsync(a => a.Reference == assignmentRef) ?? throw new NotFoundException();
     }
 
-    private static void EnsureWritable(ProviderAssignment a, IClock clock)
+    private static void EnsureWritable(ProviderAssignment a)
     {
         if (a.Status is not (AssignmentStatus.New or AssignmentStatus.InProgress or AssignmentStatus.Returned) || a.AccessExpiresAt is not null)
             throw new DomainException("read_only", "انتهى العمل على هذا التكليف؛ وصولك للقراءة فقط حتى انتهاء المهلة.", StatusCodes.Status409Conflict);
-        _ = clock;
     }
 
     private static async Task<string?> ExternalRefAsync(RahoonDbContext db, Guid caseId) =>
@@ -62,7 +69,7 @@ public static class AgentEndpoints
 
     private static async Task<IResult> List(RahoonDbContext db, RequestContext rc, IClock clock)
     {
-        var rows = await Mine(db, rc).AsNoTracking().OrderByDescending(a => a.CreatedAt).ToListAsync();
+        var rows = await Mine(db, rc, clock).AsNoTracking().OrderByDescending(a => a.CreatedAt).ToListAsync();
         var lenders = await db.Organizations.AsNoTracking().Where(o => rows.Select(r => r.OrganizationId).Contains(o.Id)).ToDictionaryAsync(o => o.Id, o => o.NameAr);
         var items = new List<object>();
         foreach (var a in rows)
@@ -81,7 +88,7 @@ public static class AgentEndpoints
 
     private static async Task<IResult> Detail(string assignmentRef, RahoonDbContext db, RequestContext rc, IClock clock)
     {
-        var a = await LoadAsync(db, rc, assignmentRef);
+        var a = await LoadAsync(db, rc, clock, assignmentRef);
         var ext = await ExternalRefAsync(db, a.CaseId);
         var lender = await db.Organizations.AsNoTracking().Where(o => o.Id == a.OrganizationId).Select(o => o.NameAr).FirstAsync();
         var property = await db.Properties.AsNoTracking().Where(p => p.CaseId == a.CaseId).Select(p => new { p.Type, p.City, p.District, p.ShortLabel, p.Occupancy, p.BuiltAreaM2, p.LandAreaM2 }).FirstOrDefaultAsync();
@@ -141,7 +148,7 @@ public static class AgentEndpoints
 
     private static async Task<IResult> Download(string assignmentRef, Guid versionId, RahoonDbContext db, RequestContext rc, IDocumentStorage storage, IClock clock, AuditLog audit)
     {
-        var a = await LoadAsync(db, rc, assignmentRef);
+        var a = await LoadAsync(db, rc, clock, assignmentRef);
         var v = await db.DocumentVersions.AsNoTracking().FirstOrDefaultAsync(x => x.Id == versionId && x.CaseId == a.CaseId) ?? throw new NotFoundException();
         var ownUpload = await db.Memberships.AnyAsync(m => m.OrganizationId == rc.OrganizationId && m.UserId == v.UploadedByUserId);
         if (!a.SharedDocumentIds.Contains(v.DocumentId) && !ownUpload) throw new NotFoundException();
@@ -160,8 +167,8 @@ public static class AgentEndpoints
             v.Require(req.Milestones.All(m => !string.IsNullOrWhiteSpace(m.Text) && m.Text.Length <= 500), "milestones", "لكل مرحلة تاريخ ونص.");
         v.ThrowIfInvalid();
         await using var tx = await db.Database.BeginTransactionAsync();
-        var a = await LoadAsync(db, rc, assignmentRef, track: true);
-        EnsureWritable(a, clock);
+        var a = await LoadAsync(db, rc, clock, assignmentRef, track: true);
+        EnsureWritable(a);
         var set = db.Set<SalePlanMilestone>();
         set.RemoveRange(await set.Where(m => m.AssignmentId == a.Id).ToListAsync());
         var seq = 0;
@@ -181,8 +188,8 @@ public static class AgentEndpoints
         new Validator().Require(!string.IsNullOrWhiteSpace(req.Text) && req.Text.Trim().Length is >= 5 and <= 2000, "text", "اكتب التحديث (5 أحرف على الأقل).")
             .Require(UpdateKinds.Contains(kind), "kind", "نوع التحديث غير معروف.").ThrowIfInvalid();
         await using var tx = await db.Database.BeginTransactionAsync();
-        var a = await LoadAsync(db, rc, assignmentRef, track: true);
-        EnsureWritable(a, clock);
+        var a = await LoadAsync(db, rc, clock, assignmentRef, track: true);
+        EnsureWritable(a);
         var attachments = req.AttachmentVersionIds ?? [];
         await EnsureOwnEvidenceAsync(db, rc, a, attachments);
         db.Set<AgentUpdate>().Add(new AgentUpdate
@@ -214,8 +221,8 @@ public static class AgentEndpoints
         if (!http.HasFormContentType) throw new DomainException("form_required", "أرسل الملف كنموذج متعدد الأجزاء.", 400);
         var form = await http.ReadFormAsync();
         var file = form.Files.GetFile("file") ?? throw new ValidationFailedException(new Dictionary<string, string[]> { ["file"] = ["اختر ملفاً."] });
-        var a = await LoadAsync(db, rc, assignmentRef);
-        EnsureWritable(a, clock);
+        var a = await LoadAsync(db, rc, clock, assignmentRef);
+        EnsureWritable(a);
 
         await using var stream = file.OpenReadStream();
         var stored = await storage.SaveAsync(stream, file.FileName, a.OrganizationId);
@@ -252,8 +259,8 @@ public static class AgentEndpoints
             .Require(req.DeclaredCosts is null or >= 0, "declaredCosts", "التكاليف لا تكون سالبة.")
             .Require(req.SaleMinutesDate is null || req.SaleMinutesDate <= clock.TodayRiyadh, "saleMinutesDate", "تاريخ المحضر لا يكون في المستقبل.").ThrowIfInvalid();
         await using var tx = await db.Database.BeginTransactionAsync();
-        var a = await LoadAsync(db, rc, assignmentRef);
-        EnsureWritable(a, clock);
+        var a = await LoadAsync(db, rc, clock, assignmentRef);
+        EnsureWritable(a);
         var evidence = req.EvidenceVersionIds ?? [];
         await EnsureOwnEvidenceAsync(db, rc, a, evidence);
         var set = db.Set<SaleResult>();
@@ -278,8 +285,8 @@ public static class AgentEndpoints
     private static async Task<IResult> SubmitResult(string assignmentRef, RahoonDbContext db, RequestContext rc, IClock clock, AuditLog audit, Notifier notifier)
     {
         await using var tx = await db.Database.BeginTransactionAsync();
-        var a = await LoadAsync(db, rc, assignmentRef, track: true);
-        EnsureWritable(a, clock);
+        var a = await LoadAsync(db, rc, clock, assignmentRef, track: true);
+        EnsureWritable(a);
         var result = await db.Set<SaleResult>().FirstOrDefaultAsync(s => s.AssignmentId == a.Id) ?? throw new ConflictException("no_draft", "احفظ النتيجة أولاً.");
         if (result.Status is SaleResultStatus.Submitted or SaleResultStatus.Confirmed) throw new ConflictException("result_submitted", "أُرسلت النتيجة مسبقاً.");
         new Validator().Require(result.OfficialSalePrice is > 0, "officialSalePrice", "ثمن البيع الرسمي مطلوب.")

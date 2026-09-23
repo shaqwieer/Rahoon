@@ -17,14 +17,15 @@ public sealed class TestClient(HttpClient http)
     public string? Csrf => _cookies.GetValueOrDefault("rahoon_csrf");
 
     public async Task<(HttpStatusCode Status, JsonNode? Body)> SendAsync(HttpMethod method, string path, object? body = null,
-        string? idempotencyKey = null, bool includeCsrf = true, string? origin = Origin, bool autoKey = true)
+        string? idempotencyKey = null, bool includeCsrf = true, string? origin = Origin, bool autoKey = true, HttpContent? content = null)
     {
         using var msg = new HttpRequestMessage(method, path);
         if (origin is not null) msg.Headers.Add("Origin", origin);
         if (_cookies.Count > 0) msg.Headers.Add("Cookie", string.Join("; ", _cookies.Select(kv => $"{kv.Key}={kv.Value}")));
         if (includeCsrf && Csrf is not null) msg.Headers.Add("X-CSRF-Token", Csrf);
         if (method != HttpMethod.Get && (idempotencyKey is not null || autoKey)) msg.Headers.Add("Idempotency-Key", idempotencyKey ?? Guid.NewGuid().ToString());
-        if (body is not null) msg.Content = JsonContent.Create(body);
+        if (content is not null) msg.Content = content;
+        else if (body is not null) msg.Content = JsonContent.Create(body);
         using var res = await http.SendAsync(msg);
         if (res.Headers.TryGetValues("Set-Cookie", out var setCookies))
         {
@@ -48,6 +49,18 @@ public sealed class TestClient(HttpClient http)
     public Task<(HttpStatusCode Status, JsonNode? Body)> GetAsync(string path) => SendAsync(HttpMethod.Get, path);
     public Task<(HttpStatusCode Status, JsonNode? Body)> PostAsync(string path, object? body = null, string? key = null) => SendAsync(HttpMethod.Post, path, body ?? new { }, key);
     public Task<(HttpStatusCode Status, JsonNode? Body)> PutAsync(string path, object body) => SendAsync(HttpMethod.Put, path, body);
+    public Task<(HttpStatusCode Status, JsonNode? Body)> DeleteAsync(string path) => SendAsync(HttpMethod.Delete, path);
+
+    /// <summary>Multipart upload of a small valid PDF as «file» (plus optional form fields).</summary>
+    public Task<(HttpStatusCode Status, JsonNode? Body)> UploadAsync(string path, string fileName, IDictionary<string, string>? fields = null)
+    {
+        var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent(System.Text.Encoding.ASCII.GetBytes("%PDF-1.4\n% test file\n1 0 obj << >> endobj\ntrailer << >>\n%%EOF\n" + Guid.NewGuid()));
+        file.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/pdf");
+        form.Add(file, "file", fileName);
+        foreach (var (k, v) in fields ?? new Dictionary<string, string>()) form.Add(new StringContent(v), k);
+        return SendAsync(HttpMethod.Post, path, content: form);
+    }
 
     public async Task LoginAsync(string email, string password, string? orgName = null)
     {
