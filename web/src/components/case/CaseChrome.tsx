@@ -13,7 +13,8 @@ export function CaseChrome({ ws, children }: { ws: WorkspaceData; children: Reac
   const h = ws.header;
   const base = `/cases/${h.reference}`;
   const segment = pathname.slice(base.length).split("/")[1] ?? "";
-  const active = segment === "" ? "overview" : segment;
+  // The agreement (L19) has no tab of its own: the header keeps «الحلول» selected, as in the design.
+  const active = segment === "" ? "overview" : segment === "agreement" ? "solutions" : segment;
   const [dialog, setDialog] = useState<AvailableAction | null>(null);
 
   const tabs: TabDef[] = [
