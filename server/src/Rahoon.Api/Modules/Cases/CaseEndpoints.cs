@@ -167,6 +167,7 @@ public static class CaseEndpoints
             {
                 actions = actions.Where(a => a.Key is "pause" or "resume"),
                 canRequestCancel = rc.Has(P.CaseCancel) && !CaseStatusInfo.IsTerminal(c.Status),
+                pendingCancellation = await CancellationEndpoints.PendingSummaryAsync(db, rc, c.Id),
                 sale = saleAction,
                 referralNote = rc.Has(P.ReferralInitiate) ? null : "الإحالة القضائية لا تظهر لدورك؛ تبدأها الإدارة القانونية بقرار منفصل.",
                 canInitiateReferral = rc.Has(P.ReferralInitiate) && CaseStatusInfo.SolutionStates.Contains(c.Status),

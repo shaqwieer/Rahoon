@@ -45,6 +45,21 @@ public sealed class TestClient(HttpClient http)
         return (res.StatusCode, node);
     }
 
+    /// <summary>Sends arbitrary content (multipart, raw) with the same cookies/CSRF/idempotency headers; returns raw bytes.</summary>
+    public async Task<(HttpStatusCode Status, byte[] Bytes, string? ContentType)> SendRawAsync(HttpMethod method, string path, HttpContent? content = null, string? idempotencyKey = null)
+    {
+        using var msg = new HttpRequestMessage(method, path);
+        msg.Headers.Add("Origin", Origin);
+        if (_cookies.Count > 0) msg.Headers.Add("Cookie", string.Join("; ", _cookies.Select(kv => $"{kv.Key}={kv.Value}")));
+        if (Csrf is not null) msg.Headers.Add("X-CSRF-Token", Csrf);
+        if (method != HttpMethod.Get) msg.Headers.Add("Idempotency-Key", idempotencyKey ?? Guid.NewGuid().ToString());
+        msg.Content = content;
+        using var res = await http.SendAsync(msg);
+        return (res.StatusCode, await res.Content.ReadAsByteArrayAsync(), res.Content.Headers.ContentType?.MediaType);
+    }
+
+    public Task<(HttpStatusCode Status, JsonNode? Body)> PatchAsync(string path, object body) => SendAsync(HttpMethod.Patch, path, body);
+
     public Task<(HttpStatusCode Status, JsonNode? Body)> GetAsync(string path) => SendAsync(HttpMethod.Get, path);
     public Task<(HttpStatusCode Status, JsonNode? Body)> PostAsync(string path, object? body = null, string? key = null) => SendAsync(HttpMethod.Post, path, body ?? new { }, key);
     public Task<(HttpStatusCode Status, JsonNode? Body)> PutAsync(string path, object body) => SendAsync(HttpMethod.Put, path, body);
