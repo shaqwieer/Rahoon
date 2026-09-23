@@ -47,7 +47,7 @@ public static class SystemRoles
         ]),
         new(CaseManager, "مدير حالات", "Case manager", OrganizationKind.Lender,
         [
-            .. TeamBase, P.CaseCreate, P.CaseEdit, P.CaseImport, P.CaseAssign, P.CaseExport, P.CasePause, P.CaseCancel, P.CaseTransition,
+            .. TeamBase, P.CaseViewAll, P.CaseCreate, P.CaseEdit, P.CaseImport, P.CaseAssign, P.CaseExport, P.CasePause, P.CaseCancel, P.CaseTransition,
             P.PiiReveal, P.DocumentReview, P.DocumentDownload, P.ValuationAssign, P.SolutionPrepare, P.SolutionReview, P.OfferSend,
             P.NegotiationManage, P.AgreementPrepare, P.BreachManage, P.SaleManage, P.ProviderAssign, P.ReportsView,
         ]),
@@ -76,12 +76,12 @@ public static class SystemRoles
         ]),
         new(Legal, "القانونية", "Legal", OrganizationKind.Lender,
         [
-            .. TeamBase, P.PiiReveal, P.DocumentReview, P.DocumentDownload, P.AgreementPrepare, P.AgreementActivate,
+            .. TeamBase, P.CaseViewAll, P.PiiReveal, P.DocumentReview, P.DocumentDownload, P.AgreementPrepare, P.AgreementActivate,
             P.ReferralInitiate, P.ReferralExternalUpdate, P.CaseTransition, P.ProviderAssign,
         ]),
         new(Finance, "المالية", "Finance", OrganizationKind.Lender,
         [
-            .. TeamBase, P.PaymentRecord, P.PaymentMatch, P.BreachManage, P.ReconciliationPrepare, P.CaseClose, P.DistributionApprove,
+            .. TeamBase, P.CaseViewAll, P.PaymentRecord, P.PaymentMatch, P.BreachManage, P.ReconciliationPrepare, P.CaseClose, P.DistributionApprove,
             P.InvoiceApprove, P.ReportsView,
         ]),
         new(Compliance, "الامتثال", "Compliance", OrganizationKind.Lender,

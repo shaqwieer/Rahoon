@@ -51,6 +51,9 @@ public sealed class AuditLog(RahoonDbContext db, RequestContext rc, IClock clock
         using (other.Request.BeginSystemScope())
         {
             await using var tx = await other.Database.BeginTransactionAsync();
+            // Callers must record blocked attempts before appending to the chain in their own
+            // transaction; the timeout turns any ordering mistake into an error, never a hang.
+            await other.Database.ExecuteSqlRawAsync("SET LOCAL lock_timeout = '5s'");
             await ChainAsync(other, evt);
             other.AuditEvents.Add(evt);
             await other.SaveChangesAsync();

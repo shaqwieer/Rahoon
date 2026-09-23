@@ -593,7 +593,7 @@ internal sealed class IdempotencyConfig : IEntityTypeConfiguration<IdempotencyRe
         b.ToTable("idempotency_records", "admin");
         b.HasKey(x => new { x.UserId, x.Key });
         b.Property(x => x.Key).HasMaxLength(100);
-        b.Property(x => x.ResponseJson).HasColumnType("jsonb");
+        b.Property(x => x.ResponseJson).HasColumnType("text"); // exact bytes for replay
     }
 }
 

@@ -38,6 +38,8 @@ public sealed class Validator
 {
     private readonly Dictionary<string, List<string>> _errors = new();
 
+    public IReadOnlyDictionary<string, string[]> Errors => _errors.ToDictionary(k => k.Key, v => v.Value.ToArray());
+
     public Validator Require(bool ok, string field, string message)
     {
         if (!ok)

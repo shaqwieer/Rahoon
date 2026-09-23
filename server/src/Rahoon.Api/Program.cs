@@ -40,15 +40,15 @@ var keysDir = config["DataProtection:KeysPath"] is { Length: > 0 } k
 builder.Services.AddDataProtection().SetApplicationName("rahoon").PersistKeysToFileSystem(new DirectoryInfo(keysDir));
 builder.Services.AddSingleton<PiiProtector>();
 builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
-var authOptions = config.GetSection("Auth").Get<AuthOptions>() ?? new AuthOptions();
-builder.Services.AddSingleton(authOptions);
+// Resolved lazily so test hosts and environment overrides apply.
+builder.Services.AddSingleton(sp => sp.GetRequiredService<IConfiguration>().GetSection("Auth").Get<AuthOptions>() ?? new AuthOptions());
 builder.Services.AddScoped<SessionService>();
 builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     o.AddPolicy("auth", http => RateLimitPartition.GetFixedWindowLimiter(
         http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-        _ => new FixedWindowRateLimiterOptions { PermitLimit = 20, Window = TimeSpan.FromMinutes(1) }));
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = config.GetValue("Auth:RateLimitPerMinute", 20), Window = TimeSpan.FromMinutes(1) }));
 });
 
 // ── Infrastructure services ──
