@@ -413,7 +413,7 @@ public static class SolutionEndpoints
         var c = await access.GetAsync(reference, track: false);
         var v = await db.Solutions.AsNoTracking().FirstOrDefaultAsync(s => s.CaseId == c.Id && s.VersionNo == n) ?? throw new NotFoundException();
         var org = await db.Organizations.AsNoTracking().FirstAsync(o => o.Id == c.OrganizationId);
-        var template = await db.Templates.AsNoTracking().Where(t => t.Code == "TPL-OFFER-01" && t.Status == TemplateStatus.Published).OrderByDescending(t => t.VersionNo).FirstOrDefaultAsync();
+        var template = await db.Templates.AsNoTracking().Where(t => t.Code == "TPL-OFFER-01" && t.Status == TemplateStatus.Published && (t.OrganizationId == null || t.OrganizationId == c.OrganizationId)).OrderByDescending(t => t.OrganizationId != null).ThenByDescending(t => t.VersionNo).FirstOrDefaultAsync();
         var validUntil = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(v.OfferValidityDays);
         var body = template?.BodyAr.Replace("{القسط}", v.InstallmentAmount.ToString("N2")).Replace("{المدة}", $"{v.TermMonths} شهراً").Replace("{تاريخ_الصلاحية}", validUntil.ToString("yyyy-MM-dd"));
         return Results.Ok(new

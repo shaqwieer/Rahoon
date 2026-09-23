@@ -45,6 +45,11 @@ public sealed class TempAccessRequest : Entity
     public DateTimeOffset? StartsAt { get; set; }
     public DateTimeOffset? ExpiresAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+    public Guid? RejectedByUserId { get; set; }
+    public string? DecisionNote { get; set; }
+    public DateTimeOffset? ClosedAt { get; set; }
+    /// <summary>Set when the institution was told the grant ended (PA06: «تُشعر المنشأة بعد انتهاء الوصول»).</summary>
+    public DateTimeOffset? InstitutionNotifiedAt { get; set; }
 }
 
 public enum ApplicationStatus { New, InReview, MoreInfoRequested, Approved, Rejected }
@@ -65,6 +70,13 @@ public sealed class InstitutionApplication : Entity
     public string? ReviewNote { get; set; }
     public Guid? ReviewedByUserId { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+    /// <summary>Manual licence-verification status shown in PA02 (e.g. «ينقص خطاب التفويض»).</summary>
+    public string? VerificationNote { get; set; }
+    public DateTimeOffset? ConsentAt { get; set; }
+    public string ConsentPolicyVersion { get; set; } = "privacy-2026-01";
+    public DateTimeOffset? DecidedAt { get; set; }
+    /// <summary>Organization created on approval (status Onboarding until its first admin accepts).</summary>
+    public Guid? CreatedOrganizationId { get; set; }
 }
 
 public sealed class RetentionPolicy : Entity
@@ -72,7 +84,12 @@ public sealed class RetentionPolicy : Entity
     public required string DataCategory { get; set; }
     public required string Period { get; set; }
     public required string Basis { get; set; }
-    public required string State { get; set; } // effective | pending_legal
+    public required string State { get; set; } // draft | pending_legal | effective
+    public string? AfterAction { get; set; }
+    /// <summary>Legal confirmation reference required before a policy becomes effective (A-12).</summary>
+    public string? LegalReference { get; set; }
+    public DateTimeOffset? UpdatedAt { get; set; }
+    public Guid? UpdatedByUserId { get; set; }
 }
 
 /// <summary>Replay protection for mutation endpoints (Idempotency-Key).</summary>

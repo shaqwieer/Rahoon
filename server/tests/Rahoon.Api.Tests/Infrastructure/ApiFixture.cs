@@ -59,6 +59,7 @@ public sealed class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
             ["Database:MigrateOnStartup"] = "false",
             ["Auth:RateLimitPerMinute"] = "10000",
             ["Jobs:BreachMonitor"] = "false",
+            ["Jobs:TempAccessExpiry"] = "false",
         }));
     }
 
