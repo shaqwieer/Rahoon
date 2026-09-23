@@ -56,7 +56,7 @@ export function StepUpDialog({ open, onClose, onVerified }: { open: boolean; onC
         )
       }
     >
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 p-5">
         {error ? <Alert tone="err" title={error} /> : null}
         {sent ? (
           <>

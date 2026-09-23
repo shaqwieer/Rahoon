@@ -283,7 +283,7 @@ function ReassignDialog({ open, onClose, references, onDone }: { open: boolean; 
         </>
       }
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 p-5">
         {error ? <Alert tone="err" title={error} /> : null}
         <Select
           label="المسؤول الجديد"

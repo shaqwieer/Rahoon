@@ -344,7 +344,7 @@ export function SolutionBuilder({ reference, detail }: { reference: string; deta
           </>
         }
       >
-        <ul className="m-0 flex list-none flex-col gap-2 p-0 text-14">
+        <ul className="m-0 flex list-none flex-col gap-2 p-5 text-14">
           <li>النوع: {SOLUTION_KIND_LABEL[p.kind]}</li>
           <li>القسط: <bdi dir="ltr">{formatMoney(view.installmentAmount)}</bdi> ر.س · {view.installments} قسطاً</li>
           <li>التنازل: <bdi dir="ltr">{formatMoney(p.waiverAmount)}</bdi> ر.س ({formatPercent(view.waiverPercent * 100, { fractionDigits: 2 })})</li>

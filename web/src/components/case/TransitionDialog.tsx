@@ -63,7 +63,7 @@ export function TransitionDialog({ reference, action, expectedStatus, open, onCl
           </>
         }
       >
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 p-5">
           {!action.enabled ? (
             <Alert tone="warn" title="غير مؤهل بعد" body={<ul className="m-0 ps-5">{action.reasons.map((r) => <li key={r}>{r}</li>)}</ul>} />
           ) : null}

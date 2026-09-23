@@ -118,7 +118,7 @@ export function RevealParty({ reference, partyId, masked, label }: { reference: 
         description="يُعرض رقم الهوية والجوال كاملين لمدة 60 ثانية، ويُسجَّل الكشف وسببه في سجل الحالة."
         footer={<Button onClick={() => void reveal()} loading={busy} disabled={reason.trim().length < 5}>كشف لمدة 60 ثانية</Button>}
       >
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 p-5">
           {error ? <Alert tone="err" title={error} /> : null}
           <Textarea label="سبب الكشف" requiredMark value={reason} onChange={(e) => setReason(e.target.value)} maxLength={200} placeholder="مثال: مطابقة مع الصك" />
         </div>
