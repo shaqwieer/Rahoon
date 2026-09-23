@@ -121,6 +121,10 @@ public sealed class RequestContextMiddleware(RequestDelegate next)
                 var access = await db.OwnerAccesses.FirstOrDefaultAsync(a => a.Id == accessId);
                 if (access is null || access.RevokedAt != null || access.UserId != session.UserId) return null;
                 var org = await db.Organizations.FirstAsync(o => o.Id == access.OrganizationId);
+                // Closed cases: owner keeps read-only access for the configured window (default 90 days), then it lapses.
+                var closedAt = await db.Cases.Where(c => c.Id == access.CaseId && c.Status == Modules.Cases.CaseStatus.Closed).Select(c => c.ClosedAt).FirstOrDefaultAsync();
+                if (closedAt is { } at && at.AddDays(await Modules.Analytics.OperationalSettings.DaysAsync(db, org.Id, Modules.Analytics.OperationalSettings.OwnerReadOnlyDays, 90)) < clock.UtcNow)
+                    return null;
                 rc.SetOwner(org.Id, org.NameAr, access.CaseId, access.PartyId, access.Id);
                 return org.IdleTimeoutMinutes;
             }

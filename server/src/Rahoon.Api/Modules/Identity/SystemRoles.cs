@@ -43,7 +43,7 @@ public static class SystemRoles
         [
             P.PortfolioView, P.CaseView, P.CaseViewAll, P.CaseCreate, P.CaseImport, P.CaseAssign, P.CaseExport,
             P.OrgSettings, P.UserManage, P.RoleChangeApprove, P.LimitsManage, P.TemplateEdit, P.ReportsView, P.AnalyticsView,
-            P.AuditView, P.ComplaintView, P.CaseCancelApprove, P.InvoiceApprove, P.ProviderAssign,
+            P.AuditView, P.ComplaintView, P.CaseCancelApprove, P.InvoiceApprove, P.ProviderAssign, P.OperationsApprove,
         ]),
         new(CaseManager, "مدير حالات", "Case manager", OrganizationKind.Lender,
         [
@@ -87,6 +87,7 @@ public static class SystemRoles
         new(Compliance, "الامتثال", "Compliance", OrganizationKind.Lender,
         [
             P.PortfolioView, P.CaseView, P.CaseViewAll, P.AuditView, P.ComplaintView, P.ComplaintHandle, P.TemplatePublish, P.ReportsView,
+            P.OperationsApprove,
         ]),
         new(Auditor, "مدقق", "Auditor", OrganizationKind.Lender,
         [

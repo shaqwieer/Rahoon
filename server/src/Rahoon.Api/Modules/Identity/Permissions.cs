@@ -91,6 +91,7 @@ public static class P
     public const string TemplatePublish = "template.publish";
     public const string ReportsView = "reports.view";
     public const string AnalyticsView = "analytics.view";
+    public const string OperationsApprove = "operations.approve";
 
     // Platform
     public const string PlatformOps = "platform.ops";
@@ -172,6 +173,7 @@ public static class P
         new(TemplatePublish, "نشر قالب", "Publish template", "الإدارة", Sensitivity.Medium, PermissionScope.Institution, "اعتماد الامتثال"),
         new(ReportsView, "التقارير التشغيلية", "Operational reports", "الإدارة", Sensitivity.Normal, PermissionScope.Institution),
         new(AnalyticsView, "التحليلات ودعم القرار", "Analytics & decision support", "الإدارة", Sensitivity.Normal, PermissionScope.Institution),
+        new(OperationsApprove, "اعتماد تعديلات العمليات", "Approve operational changes", "الإدارة", Sensitivity.High, PermissionScope.Institution, "ليس مقترح التعديل"),
 
         new(PlatformOps, "لوحة تشغيل المنصة", "Platform operations", "المنصة", Sensitivity.Medium, PermissionScope.Platform),
         new(PlatformInstitutions, "المنشآت والطلبات", "Institutions & applications", "المنصة", Sensitivity.High, PermissionScope.Platform),
