@@ -29,6 +29,8 @@ export interface ReviewScreenProps {
   primary: { label: string; onClick: () => void; loading?: boolean; loadingLabel?: string };
   /** The primary button stays disabled until the reason and attestation are complete. */
   complete: boolean;
+  /** h2 when the page already has an h1 (e.g. inside the case layout). */
+  titleAs?: "h1" | "h2";
   /** Error from the last submit (focus should move to the first missing field — caller's ErrorSummary). */
   error?: ReactNode;
   className?: string;
@@ -71,7 +73,9 @@ export function ReviewScreen({
   complete,
   error,
   className,
+  titleAs = "h1",
 }: ReviewScreenProps) {
+  const TitleTag = titleAs;
   const { t } = useI18n();
   const hintId = useId();
   let n = 0;
@@ -81,7 +85,7 @@ export function ReviewScreen({
         <div className="flex max-w-[760px] flex-col gap-5">
           <div className="flex flex-col gap-1">
             <span className="text-13 text-muted">{eyebrow ?? t.review.highImpact}</span>
-            <h1 className="m-0 text-28 leading-10 font-bold">{title}</h1>
+            <TitleTag className="m-0 text-28 leading-10 font-bold">{title}</TitleTag>
           </div>
           {error ? <Alert tone="err">{error}</Alert> : null}
           <ReviewSection n={++n} title={sectionTitles?.whatHappens ?? t.review.whatHappens}>
