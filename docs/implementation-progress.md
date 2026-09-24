@@ -1,5 +1,9 @@
 # Implementation progress (checkpoint)
 
+> **Superseded (2026-09-24):** work now runs **one phase at a time**. The live status and the next steps are in
+> [`docs/phases/README.md`](phases/README.md). The current phase is [`phase-1a-mvp-settlement.md`](phases/phase-1a-mvp-settlement.md).
+> The table below is the historical checkpoint from the parallel build and is no longer updated.
+
 _Last updated: 2026-09-24_
 
 ## Where things are

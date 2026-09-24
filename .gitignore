@@ -32,3 +32,6 @@ design-source/_condensed/
 .DS_Store
 Thumbs.db
 .idea/
+
+# Parallel-agent git worktrees (local only)
+.claude/worktrees/

@@ -1,0 +1,54 @@
+# رهون — Phase plan (work one phase at a time)
+
+**Working rule:** one phase per session. At the start of a session, open the phase file marked **▶ CURRENT**. Work its steps in order, tick them off, and update its status table before the session ends. Don't start the next phase until the current one's *Definition of done* is met.
+
+| # | Phase file | Goal | Status |
+|---|---|---|---|
+| 0 | [phase-0-foundation.md](phase-0-foundation.md) | Platform skeleton + five anchor screens | ✅ Done |
+| 1A | [phase-1a-mvp-settlement.md](phase-1a-mvp-settlement.md) | **MVP**: one case from creation → approved offer → owner acceptance → agreement → payments → documented closure | ▶ **CURRENT** |
+| 1B | [phase-1b-shared-and-lender-ops.md](phase-1b-shared-and-lender-ops.md) | Public pages, account/search/help, import, complaints, manual judicial-referral package (L25) | ⬜ Next |
+| 1C | [phase-1c-providers-admin-platform.md](phase-1c-providers-admin-platform.md) | Provider portal, institution admin, platform admin (B7) | ⬜ |
+| 2 | [phase-2-sale-ecosystem.md](phase-2-sale-ecosystem.md) | Voluntary sale (B8) + service ecosystem (B9) | ⬜ (backend on master) |
+| 3 | [phase-3-judicial-financial.md](phase-3-judicial-financial.md) | Judicial referral, agent portal, full reconciliation/closure (B10) | ⬜ (backend on a branch) |
+| 4 | [phase-4-optimization.md](phase-4-optimization.md) | Analytics, configurable ops, drafting help, predictive insights (B11) | ⬜ (backend on a branch) |
+
+## Status legend (used in every phase file)
+
+| Mark | Meaning |
+|---|---|
+| ✅ | Done **and verified**: tests pass and it was checked in a real browser or by Playwright |
+| 🟩 | Done on `master`: builds, typechecks and has tests, but hasn't been checked in the browser yet |
+| 🟨 | Finished on a **side branch**, not merged into `master` yet (branch named in the row) |
+| 🟧 | Partial / WIP on a side branch (unverified; may not build) |
+| ⬜ | Not started |
+| ⛔ | Blocked (reason in the row) |
+
+## How a step is "done" (same for every phase)
+
+1. **Backend**: `cd server && dotnet build && dotnet test` → all green. Any schema change needs an EF migration: `cd server/src/Rahoon.Api && dotnet ef migrations add <Name>`.
+2. **Frontend**: `cd web && npx next typegen && npx tsc --noEmit && npx eslint . && npm run build` → all green.
+3. **Browser check** at 1440, 768 and 390 widths against the design (`design-source/*.dc.html`, specs in `docs/design-specs/`).
+4. **E2E**: `cd web && npx playwright test`, with the API and web servers running. Use `E2E_RESET=1` to reseed first.
+5. Tick the item in the phase file and commit.
+
+## Local run (unchanged)
+
+```bash
+docker compose up -d                   # PostgreSQL on :55432 (.env from .env.example)
+bash scripts/dev-api.sh --reset        # build API, migrate + reseed demo data, run on :5080
+cd web && npm run dev                  # web on :3000
+```
+
+Demo password for every seeded user: `Rahoon-Demo-2026!`. The SMS code is shown on screen (sandbox). The users are listed in each phase file.
+
+## Side branches (git worktrees under `.claude/worktrees/`)
+
+These branches were built in parallel before the switch to sequential phases. Each phase file says which branch to merge in which step.
+
+| Branch | Contents | State |
+|---|---|---|
+| `worktree-agent-a3939fc4d7a8b5a97` | UI: case tabs L06–L12, comms L22, complaints L23, case audit L24, import L04, cancellation | 🟨 committed; the builder reported typecheck, lint and build all pass |
+| `worktree-agent-a1bd05103bd12a217` | UI: owner portal D02–D14, agreement view, notifications | 🟨 committed; build passed, progress doc not written |
+| `worktree-agent-a10087449fcbd8672` | UI: L18–L21 at `36d316a` (committed), plus WIP `05c715b` for S07/S08/S09/S10 and the command palette | 🟨 L18–L21 · 🟧 WIP |
+| `worktree-agent-a1417897205c17188` | UI (B7): settings nav, S05 staff invite (committed), plus WIP `9e280ce` for provider/settings/platform pages | 🟧 |
+| `worktree-agent-ae86d4e3d70e6413a` | **Backend** B10/B11: referral, agent portal, reconciliation/closure, integrations, analytics | 🟨 53/54 tests pass (the failure is the known EnsureCreated-only case); **needs a migration when merged** |
