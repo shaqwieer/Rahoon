@@ -70,6 +70,8 @@ public sealed class CaseWorkflow(RahoonDbContext db, RequestContext rc, IClock c
         new("start_voluntary_sale", CaseStatusInfo.SolutionStates, CaseStatus.VoluntarySale, "بدء مسار البيع الطوعي", P.SaleManage, false,
             RequiresReason: true, Guards: ["owner_sale_consent", "valuation_valid", "no_open_complaint"]),
         new("sale_completed", [CaseStatus.VoluntarySale], CaseStatus.AwaitingReconciliation, "اكتمال البيع — للتسوية المالية", P.SaleManage, false),
+        // B8: the owner may withdraw until a buyer offer is accepted; the case returns to solution work — never to referral.
+        new("sale_withdrawn", [CaseStatus.VoluntarySale], CaseStatus.ProposedSolution, "انسحاب المالك من البيع الطوعي", "", false, RequiresReason: true),
         new("refer_judicial", CaseStatusInfo.SolutionStates, CaseStatus.JudicialReferral, "اعتماد الإحالة القضائية", P.ReferralApprove, false,
             RequiresReason: true, RequiresStepUp: true, Guards: ["no_open_complaint", "no_live_offer"]),
         new("external_sale_started", [CaseStatus.JudicialReferral], CaseStatus.ExternalJudicialSale, "تسجيل بدء البيع القضائي الخارجي", P.ReferralExternalUpdate, false,

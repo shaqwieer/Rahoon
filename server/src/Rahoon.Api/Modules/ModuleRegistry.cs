@@ -5,8 +5,10 @@ using Rahoon.Api.Modules.Complaints;
 using Rahoon.Api.Modules.Owner;
 using Rahoon.Api.Modules.Communications;
 using Rahoon.Api.Modules.Documents;
+using Rahoon.Api.Modules.Ecosystem;
 using Rahoon.Api.Modules.Identity;
 using Rahoon.Api.Modules.Providers;
+using Rahoon.Api.Modules.Sale;
 using Rahoon.Api.Modules.Solutions;
 
 namespace Rahoon.Api.Modules;
@@ -33,6 +35,9 @@ public static class ModuleRegistry
         services.AddScoped<PlatformMinima>();
         services.AddScoped<TempAccessService>();
         services.AddHostedService<TempAccessExpiryService>();
+        services.AddScoped<SaleService>();
+        services.AddScoped<ProviderDirectory>();
+        services.AddScoped<ConditionalIntegrations>();
         return services;
     }
 
@@ -61,6 +66,18 @@ public static class ModuleRegistry
         InstitutionApplicationEndpoints.Map(app);
         TempAccessEndpoints.Map(app);
         PlatformEndpoints.Map(app);
+        SaleEndpoints.Map(app);
+        SaleApprovalEndpoints.Map(app);
+        BrokerSaleEndpoints.Map(app);
+        OwnerSaleEndpoints.Map(app);
+        ProviderOnboardingEndpoints.Map(app);
+        PlatformProviderEndpoints.Map(app);
+        InstitutionProviderEndpoints.Map(app);
+        ProviderInvoiceEndpoints.Map(app);
+        WorkflowDesignerEndpoints.Map(app);
+        ReportingEndpoints.Map(app);
+        BillingEndpoints.Map(app);
+        ConditionalIntegrationEndpoints.Map(app);
         return app;
     }
 }

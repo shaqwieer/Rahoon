@@ -93,3 +93,10 @@ public sealed class ApiCollection : ICollectionFixture<ApiFixture>
 {
     public const string Name = "api";
 }
+
+/// <summary>Own database (a second fixture instance) for suites that assert exact seeded aggregates.</summary>
+[CollectionDefinition(Name)]
+public sealed class IsolatedApiCollection : ICollectionFixture<ApiFixture>
+{
+    public const string Name = "api-isolated";
+}

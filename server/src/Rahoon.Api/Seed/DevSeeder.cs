@@ -57,6 +57,8 @@ public sealed partial class DevSeeder(
         if (config.GetValue("Seed:Bulk", true)) await SeedBulkCasesAsync();
         else await db.Database.ExecuteSqlRawAsync("INSERT INTO cases.reference_counters (key, value) VALUES ('case:2026', 5200) ON CONFLICT (key) DO NOTHING");
         await SeedOtherTenantAsync();
+        await SeedEcosystemAsync();
+        await SeedVoluntarySaleAsync();
         await SeedProviderAdminAsync();
         await FlushAuditAsync();
         log.LogInformation("Seed complete.");

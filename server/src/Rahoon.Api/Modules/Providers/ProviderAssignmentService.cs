@@ -64,12 +64,15 @@ public sealed class ProviderAssignmentService(RahoonDbContext db, RequestContext
 
     public static bool IsWritable(AssignmentStatus s) => s is AssignmentStatus.New or AssignmentStatus.InProgress or AssignmentStatus.Returned;
 
-    /// <summary>ASG-YYYY-NNNN from the shared reference counter (atomic upsert).</summary>
+    /// <summary>
+    /// ASG-YYYY-NNNN from the shared counter key <c>assignment:YYYY</c> — the same key voluntary-sale brokerage
+    /// assignments use (SaleService), starting at 5001 to stay clear of seeded references.
+    /// </summary>
     public async Task<string> NextReferenceAsync(int year)
     {
-        var key = $"asg:{year}";
+        var key = $"assignment:{year}";
         var value = await db.Database.SqlQuery<long>($"""
-            INSERT INTO cases.reference_counters (key, value) VALUES ({key}, 1)
+            INSERT INTO cases.reference_counters (key, value) VALUES ({key}, 5001)
             ON CONFLICT (key) DO UPDATE SET value = cases.reference_counters.value + 1
             RETURNING value AS "Value"
             """).ToListAsync();
