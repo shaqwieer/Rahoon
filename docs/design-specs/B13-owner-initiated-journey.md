@@ -181,7 +181,7 @@ Engineering notes:
 
 ## 6. Open questions
 
-Q1–Q12, verbatim, are in `docs/product/product-direction.md` §6.
+Q1–Q12 are in `docs/product/product-direction.md` §6, with the Arabic originals quoted verbatim below the summary table.
 
 ## 7. Impact on existing screens (verbatim status labels)
 

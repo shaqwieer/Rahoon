@@ -102,7 +102,7 @@ Until Q1 is answered, nothing lender-side for intake is final.
 
 ## 6. Open product decisions
 
-Q1–Q12 are verbatim from B13 «نقاط تحتاج تأكيداً من صاحب المشروع»; Q13–Q15 were added by engineering while re-planning. **Blocks** says what can't be built as final until it's answered.
+The English wording of Q1–Q12 below summarizes the questions in B13 «نقاط تحتاج تأكيداً من صاحب المشروع»; the Arabic originals follow the table. Q13–Q15 were added by engineering while re-planning. **Blocks** says what can't be built as final until it's answered.
 
 | # | Question | Why it matters | Blocks |
 |---|---|---|---|
@@ -121,6 +121,23 @@ Q1–Q12 are verbatim from B13 «نقاط تحتاج تأكيداً من صاح�
 | Q13 | Does the MVP still include agreement activation, the payment schedule and closure, or does it end once the outcome is recorded? | Decides whether the old settlement-execution work stays in the MVP | Phase 1A-2 scope |
 | Q14 | Can the individual have several requests or cases at once, and do they share one account? | Today's code pins an owner session to exactly one case | owner auth, D02 |
 | Q15 | Does a returning individual sign in with ID + OTP (no password) as today's owners do, or with a password + OTP like staff? | Identity model for self-registered individuals | OR01/OR02, S03 |
+
+**Arabic originals (verbatim from B13): question — why it matters to the design — affected screens**
+
+| # | السؤال | لماذا يهم التصميم | الشاشات المتأثرة |
+|---|---|---|---|
+| Q1 | كيف تُشرَك الجهة الممولة؟ | استقبال داخل المنصة، أو إحالة من رهون عبر قناة أخرى، أو تفويض من المالك لرهون بالتواصل نيابة عنه — كل خيار يغيّر شاشات الجهة كلياً. | L00a، L00b، OA06 |
+| Q2 | ماذا لو لم تكن الجهة مشاركة في المنصة؟ | يحدد هل يُقبل الطلب أصلاً، أو يُحفظ، أو تتواصل رهون مع الجهة. | OA01 «جهتي غير موجودة» |
+| Q3 | هل تفحص رهون الطلب قبل إرساله للجهة؟ | قد يلزم دور «فريق رهون» ومراجعة أولية ومعايير أهلية. | OA05، OA06، أدوار المنصة |
+| Q4 | معايير الأهلية | مثلاً: تمويل عقاري فقط، عقار مرهون، حد أدنى للتأخر، أفراد مقيمون. | شاشة أهلية قبل OA01 (غير مصممة) |
+| Q5 | ما البيانات المطلوبة عند التقديم؟ | الحد الأدنى يقلل التخلي؛ المطابقة قد تحتاج رقم العقد إلزامياً. | OA02–OA04 |
+| Q6 | مهلة رد الجهة وما بعد انقضائها | المالك يرى «حتى تاريخ…» فقط إذا كانت المهلة ملزمة. | OA06، L00a |
+| Q7 | هل يمكن التقديم لأكثر من جهة؟ | للمالك أكثر من تمويل متعثر لدى جهات مختلفة. | OA01، الصلاحيات |
+| Q8 | خطوات المعالجة بعد القبول | المواصفات تحدد الحلول لكن ليس من يقود كل خطوة عند بدء المالك للطلب. | D02–D14، L05 |
+| Q9 | هل الخدمة مجانية للفرد؟ | أزلنا «مجاناً» من الصفحة حتى يتأكد نموذج التسعير. | الصفحة العامة، الشروط |
+| Q10 | مزود التحقق من الهوية | التحقق الوطني الرقمي أو رمز الجوال فقط. | OR01، OR02 |
+| Q11 | ما الحلول التي تقدّمها رهون فعلياً؟ | إعادة الجدولة، السماح، البيع الطوعي… أمثلة من المواصفات لم تُعتمد كخدمات؛ لا نعرضها للفرد كوعد. | الصفحة العامة، D06، D07 |
+| Q12 | ما الذي يمكن أن تعد به رهون الفرد؟ | مثلاً: مهلة رد، خصوصية، حق الاعتراض، عدم اتخاذ إجراء دون إشعار — كلها تحتاج أساساً قانونياً. | الصفحة العامة، OA06 |
 
 **The solution workflow is blocked by Q1, Q8 and Q11**, with Q6 and Q12 needed for any deadline or promise shown to the individual. The intake journey (landing → registration → request draft → submit → tracking) can be built with the labelled assumptions above.
 

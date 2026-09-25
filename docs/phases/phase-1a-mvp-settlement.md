@@ -29,11 +29,11 @@ Steps below are marked with the open decisions they depend on (`docs/product/pro
 ## Definition of done (acceptance criteria)
 
 - [ ] **Primary journey:** a new individual completes it in the browser on a 390 phone, landing → registration → request (OA01–OA05) → submitted → tracked, with autosave and return-later working.
-- [ ] **Three request outcomes** work end to end with persisted data and audit:
+- [ ] **Request outcomes** work end to end with persisted data and audit, **recorded by whoever Q1 designates** (lender staff in-platform, Rahoon staff, or another mechanism). The outcome set below is the design's, and it's also gated by Q1:
   - (a) accepted → a case opens in «تحقق» linked to the `REQ-…` reference
   - (b) returned for completion → the individual completes it
   - (c) declined with a reason → no case; the individual sees the reason and next options
-- [ ] **After acceptance:** the individual sees the next step, required documents and messages (D02, D04, D12). When an approved proposal exists, they can review it (D07), accept with OTP consent (D09), counter-propose (D08) or decline. The decision is recorded with reference and time and stays visible to them.
+- [ ] **After acceptance** (⛔ Q8: who leads each step): the individual sees the next step, required documents and messages (D02, D04, D12). When an approved proposal exists, they can review it (D07), accept with OTP consent (D09), counter-propose (D08) or decline. The decision is recorded with reference and time and stays visible to them.
 - [ ] **Privacy rules are enforced on the server** and covered by tests:
   - the lender sees nothing before submission
   - only the chosen lender sees the request and shared documents
@@ -69,7 +69,7 @@ Password for staff: `Rahoon-Demo-2026!`. SMS codes are shown on screen (sandbox)
 4. **Individual:** OA06 shows «بانتظار الجهة الممولة», with no deadline shown until Q6 is answered. They can add information or withdraw.
 5. **Lender:** mechanism per Q1. Proposed pattern: سارة opens «الطلبات الواردة» → REQ-… → match table → «قبول وفتح الحالة». The alternatives are «طلب استكمال» → the individual gets OA07, or «الاعتذار مع سبب» → OA08.
 6. **Individual:** «قُبل طلبك وفُتحت حالتك», with the name of the case manager, the next step, required documents (D04) and messages (D12).
-7. **Lender:** فهد prepares a proposal, سارة submits it, نورة approves it with step-up. The solution types are provisional until Q11.
+7. **Proposal** (who does it is ⛔ Q8; shown here with today's lender mechanics): فهد prepares a proposal, سارة submits it, نورة approves it with step-up. The solution types are provisional until Q11.
 8. **Individual:** D07 reviews the approved proposal («عرض راجعته واعتمدته جهتك الممولة…») → D09 accepts with OTP (or D08 counter / decline) → sees the recorded outcome (reference and time) and the agreement view.
 
 ## Scope and status
@@ -164,8 +164,8 @@ Password for staff: `Rahoon-Demo-2026!`. SMS codes are shown on screen (sandbox)
 - [ ] D02 home continues from OA06 (same account, the case now visible); D03–D05, D04 documents, D12 messages.
 - [ ] The lender workspace shows the case source + REQ link; document requests reach the individual.
 
-### Step 7: Proposal review and documented outcome ⬜ (⛔ Q11 for proposal content; Q8)
-- [ ] The lender prepares, submits and approves a proposal using the existing L13–L17 mechanics. The solution types shown stay labelled provisional until Q11.
+### Step 7: Proposal review and documented outcome ⬜ (⛔ Q11 for proposal content; ⛔ Q8 for who prepares and approves it)
+- [ ] The proposal is prepared and approved by whoever Q8 designates. If that's the lender, reuse the existing L13–L17 mechanics (preparer ≠ approver, step-up). The solution types shown stay labelled provisional until Q11.
 - [ ] Individual:
   - D07 (with the approval note) → D09 accept with OTP consent, or D08 counter → L18, or decline (never leads to referral)
   - the recorded outcome (reference, time, terms) stays visible and printable
