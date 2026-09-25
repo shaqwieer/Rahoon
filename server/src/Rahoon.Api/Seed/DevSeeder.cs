@@ -36,8 +36,7 @@ public sealed partial class DevSeeder(
 
     public async Task SeedAsync()
     {
-        if (!env.IsDevelopment() && !env.IsEnvironment("Testing"))
-            throw new InvalidOperationException("Demo seeding is only allowed in Development/Testing.");
+        DemoDataGuard.EnsureAllowed(env, "seed");
         using var _ = db.Request.BeginSystemScope();
         if (await db.Organizations.AnyAsync()) { log.LogInformation("Seed skipped: data already present."); return; }
 
