@@ -125,12 +125,12 @@
 | — | **Rahoon team workspace** (queue, review, completion, consent evidence, coordination log, updates, offer recording and verification, response relay) | ⬜ | New + **Needs design (D-4)** | Uses the existing design system; no frames exist |
 | L00a, L00b | Lender intake queue and review | ⬜ | **Deferred** (X10) | Lender-on-platform mode, later |
 | D01 | Lender invitation | 🟩 | Secondary / Deferred | Not used in the MVP |
-| D02–D05 | Owner home, journey, documents, debt | 🟨 branch `…a1bd0510…` | Rework | Home = the request tracker; debt figures from the individual carry the source «العميل» until the lender confirms |
-| D06 | Options | 🟨 same | Rework | Becomes the **help paths explainer** (P1–P4), with no promises |
-| D07 | Offer | 🟨 same | Rework + **Needs design (D-5)** | «عرض من جهتك الممولة», recorded by Rahoon from the lender's document; per-path effects |
-| D08, D09 | Counter / ask; accept with OTP consent | 🟨 same | OK (relay by the team) | A-05: a consent record, not a signature |
-| D11–D13 | Help, messages, complaints | 🟨 same | OK | P4 minimum |
-| L01–L26 lender workspace | — | ✅ / 🟨 | **Secondary** (lender-on-platform mode) | Kept; not in the MVP demo |
+| D02–D05 | Owner home, journey, documents, debt | 🟩 on `master` (merged 2026-09-25); browser smoke ✓ at 390 | Rework | Home = the request tracker. **Found:** D02 shows «لديك حتى 2026-10-05 (10 أيام)», a deadline that Q6 rules out. Debt figures from the individual carry the source «العميل» |
+| D06 | Options | 🟩 same; smoke ✓ | Rework | Becomes the **help paths explainer** (P1–P4). **Found:** titled «الخيارات المتاحة لك» (X6); lists «تأجيل مؤقت» (V8) and «البيع الطوعي» (V8 wording) |
+| D07 | Offer | 🟩 same; smoke ✓ | Rework + **Needs design (D-5)** | **Found:** «صالح حتى 2026-10-05» in the header (Q6); no approval note; «نتواصل معك أولاً… نمنحك 15 يوماً» is a commitment (Q12/V4); «بيتك يبقى ملكك» wording needs review (V4) |
+| D08, D09 | Counter / ask; accept with OTP consent | 🟩 same; smoke ✓ | OK (relay by the team) | A-05: a consent record, not a signature |
+| D11–D13 | Help, messages, complaints | 🟩 same; smoke ✓; complaint filed as owner and opened by the reviewer | OK, one rework | **Found:** the complaint confirmation promises «نرد عليك كتابياً خلال 5 أيام عمل» (from `ComplaintService`; Q6/Q12) → fix in step 8 |
+| L01–L26 lender workspace | — | ✅ (Phase 0 screens) / 🟩 (L06–L12, L18–L24, L04, C01 merged 2026-09-25; browser smoke ✓ at 1440) | **Secondary** (lender-on-platform mode) | Kept; not in the MVP demo. **Found:** seed case RH-2026-003870 is «تسوية معتمدة / نشطة» but has no agreement or schedule (Phase 1A-2 seed fix) |
 | L13–L17 solution builder / approvals | — | ✅ | **Secondary** (X11) | The mechanics may be reused for offer recording and verification in the team workspace (decided in step 2) |
 
 ## Steps (in order; one or more sessions each, all inside this phase)
@@ -166,11 +166,18 @@
   - Required isolation and leakage tests listed (§6).
 - [x] Rule kept: if a design request isn't ready when its step starts, build with the existing design system and record «بانتظار اعتماد التصميم» in *Findings*.
 
-### Step 3: Bring in finished work and review it ⬜
-- [ ] **First:** fix the `reset-demo` safety finding (environment check before deleting the database; test).
-- [ ] Merge `worktree-agent-a3939fc4d7a8b5a97` (case tabs, comms, complaints, audit, import, cancel) and `worktree-agent-a1bd05103bd12a217` (owner portal). Cherry-pick `36d316a` (L18–L21).
-- [ ] Run the web typecheck, lint and build; fix conflicts. Record each merged screen's direction review above.
-- [ ] Fix the Phase 0 leftover: breadcrumb shows the raw `new` segment.
+### Step 3: Bring in finished work and review it ✅ 2026-09-25
+- [x] **Safety fix first** (`97cb644`): `seed`/`reset-demo` are refused outside Development/Testing **before** any database access. A single `DemoDataGuard` is used by the CLI and `DevSeeder`. Tests `DemoDataGuardTests` (6) include running the real CLI in Production against an unreachable database; I confirmed they fail with the guard disabled.
+- [x] Merged `worktree-agent-a3939fc4d7a8b5a97` (case tabs L06–L12, comms L22, complaints L23, case audit L24, import L04, cancellation C01) and `worktree-agent-a1bd05103bd12a217` (owner portal D02–D14, agreement view, notifications). Cherry-picked `36d316a` (L18–L21) as `ca4aefb`. No textual conflicts.
+- [x] Checks:
+  - web: `next typegen` + `tsc --noEmit` clean (after clearing stale generated `.next/dev/types`), `eslint .` clean, `npm run build` passes
+  - backend: `dotnet test` **122/122**
+- [x] Browser smoke check (Playwright sweep, demo data reseeded; screenshots reviewed for D02, D06, D07, L20, L23 detail and the breadcrumb):
+  - **36 routes** load with HTTP 200, no console errors and no error boundary: 21 lender routes as سارة at 1440, and 15 owner routes through the demo invitation at 390, including D07–D09 on an offer created through the real submit → approve (step-up) path
+  - complaint filed by the owner and opened by هند
+  - the full visual comparison with the design at 390/768/1440 remains for step 9
+- [x] Phase 0 leftover fixed: the breadcrumb for `/cases/new/…` now reads «الحالات › حالة جديدة › RH-…» (and `/cases/import` reads «استيراد»).
+- [x] Direction review recorded in the table above. Rework items are assigned to the steps that rebuild those screens: D02 → step 5 (tracker); D06/D07 → step 7 (D-5); complaint confirmation → step 8.
 
 ### Step 4: Landing + registration + account with several requests ⬜ (Q9, Q10, Q15 interim rules)
 - [ ] Backend: an individual account independent of any case; registration and sign-in (ID + mobile OTP); terms consent; national-digital-ID slot `unavailable`; lockout.

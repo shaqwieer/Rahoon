@@ -14,7 +14,7 @@
 | # | Phase file | Goal | Status |
 |---|---|---|---|
 | 0 | [phase-0-foundation.md](phase-0-foundation.md) | Platform skeleton + five anchor screens | ✅ Done (direction review added) |
-| 1A | [phase-1a-mvp-settlement.md](phase-1a-mvp-settlement.md) | **MVP**: the individual enters Rahoon → submits a request → knows what Rahoon will do for them → follows the case study and communication (the Rahoon team leads and coordinates with the lender manually) → sees an approved offer if one exists → responds | ▶ **CURRENT** (steps 0–2 done; next: step 3, safety fix + merge finished work) |
+| 1A | [phase-1a-mvp-settlement.md](phase-1a-mvp-settlement.md) | **MVP**: the individual enters Rahoon → submits a request → knows what Rahoon will do for them → follows the case study and communication (the Rahoon team leads and coordinates with the lender manually) → sees an approved offer if one exists → responds | ▶ **CURRENT** (steps 0–3 done; next: step 4, landing + registration + individual account) |
 | 1A-2 | [phase-1a2-settlement-execution.md](phase-1a2-settlement-execution.md) | After the response: tracking of the agreement, installments, payment confirmations and closure (Rahoon never holds funds). Not in the first MVP (Q13) | ⬜ Next |
 | 1B | [phase-1b-shared-and-lender-ops.md](phase-1b-shared-and-lender-ops.md) | Account/search/help, institutions' secondary page (S02), rework of secondary entry routes (D01/L03/L04), complaints and objections, referral package (L25) | ⬜ |
 | 1C | [phase-1c-providers-admin-platform.md](phase-1c-providers-admin-platform.md) | Provider portal, institution admin, platform admin (B7) | ⬜ (backend on master) |
@@ -59,8 +59,8 @@ These branches were built in parallel before the switch to sequential phases. Ea
 
 | Branch | Contents | State |
 |---|---|---|
-| `worktree-agent-a3939fc4d7a8b5a97` | UI: case tabs L06–L12, comms L22, complaints L23, case audit L24, import L04, cancellation | 🟨 committed; the builder reported typecheck, lint and build all pass |
-| `worktree-agent-a1bd05103bd12a217` | UI: owner portal D02–D14, agreement view, notifications | 🟨 committed; build passed, progress doc not written |
-| `worktree-agent-a10087449fcbd8672` | UI: L18–L21 at `36d316a` (committed), plus WIP `05c715b` for S07/S08/S09/S10 and the command palette | 🟨 L18–L21 · 🟧 WIP |
+| ~~`worktree-agent-a3939fc4d7a8b5a97`~~ | UI: case tabs L06–L12, comms L22, complaints L23, case audit L24, import L04, cancellation | ✅ **merged into `master`** (Phase 1A step 3, 2026-09-25); worktree and branch removed |
+| ~~`worktree-agent-a1bd05103bd12a217`~~ | UI: owner portal D02–D14, agreement view, notifications | ✅ **merged into `master`** (Phase 1A step 3); worktree and branch removed |
+| `worktree-agent-a10087449fcbd8672` | UI: L18–L21 at `36d316a` (**cherry-picked into `master` as `ca4aefb`**), plus WIP `05c715b` for S07/S08/S09/S10 and the command palette | L18–L21 ✅ merged · WIP 🟧 kept for Phase 1B |
 | `worktree-agent-a1417897205c17188` | UI (B7): settings nav, S05 staff invite (committed), plus WIP `9e280ce` for provider/settings/platform pages | 🟧 |
 | `worktree-agent-ae86d4e3d70e6413a` | **Backend** B10/B11: referral, agent portal, reconciliation/closure, integrations, analytics | 🟨 53/54 tests pass (the failure is the known EnsureCreated-only case); **needs a migration when merged** |
