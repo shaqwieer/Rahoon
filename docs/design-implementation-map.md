@@ -13,12 +13,13 @@ Source: `04 Phase 1 - B13 Owner-Initiated Journey.dc.html` · spec `docs/design-
 | Landing | الصفحة العامة للفرد (تحل محل S01) | عام | `P1-Public-Landing-Desktop/Mobile-OwnerFirst` | `/` | planned | primary (Q9, Q12 labelled) |
 | OR01 | إنشاء حساب | الفرد | `P1-Owner-Register-Mobile` | `/start` | planned | primary (Q10, Q15) |
 | OR02 | الرمز والموافقة | الفرد | `P1-Owner-Consent-Mobile` | `/start/verify` | planned | primary |
-| OA01–OA05 | طلب معالجة تعثر (5 خطوات) | الفرد | `P1-Owner-Apply-Mobile-Step1…Review` | `/request/[ref]/…` | planned | primary (Q2, Q4, Q5, Q7) |
-| OA06 | متابعة الطلب | الفرد | `P1-Owner-Request-Mobile-Submitted` | `/request/[ref]` | planned | primary (Q6) |
+| OA01–OA05 | طلب معالجة تعثر (5 خطوات) | الفرد | `P1-Owner-Apply-Mobile-Step1…Review` (copy changes D-2) | `/request/[ref]/…` | planned | primary; several requests per account (Q7/Q14 decided); Q4, Q5 open |
+| OA06 | متابعة الطلب + «ماذا ستفعل رهون لك» | الفرد | `P1-Owner-Request-Mobile-Submitted` (copy change D-3) | `/request/[ref]` | planned | primary; no deadlines (Q6 decided) |
 | OA07 | استكمال | الفرد | `P1-Owner-Request-Mobile-InfoRequested` | `/request/[ref]` | planned | primary |
 | OA08 | اعتذار | الفرد | `P1-Owner-Request-Mobile-Declined` | `/request/[ref]` | planned | primary (Q3 for objections) |
-| L00a | الطلبات الواردة | مدير الحالات / فريق الاستلام | `P1-Lender-IntakeQueue-Desktop` | `/intake` | planned | **PROPOSED (Q1)** |
-| L00b | مراجعة الطلب | مدير الحالات / فريق الاستلام | `P1-Lender-IntakeReview-Desktop-Accept` | `/intake/[ref]` | planned | **PROPOSED (Q1, Q6)** |
+| L00a | الطلبات الواردة | مدير الحالات / فريق الاستلام | `P1-Lender-IntakeQueue-Desktop` | `/intake` | planned | **Deferred**: lender-on-platform mode (Q1 decided: Rahoon team coordinates manually) |
+| L00b | مراجعة الطلب | مدير الحالات / فريق الاستلام | `P1-Lender-IntakeReview-Desktop-Accept` | `/intake/[ref]` | planned | **Deferred** (as L00a) |
+| — | مساحة عمل فريق رهون (مراجعة، استكمال، موافقة موثقة، سجل تنسيق يدوي، تسجيل العرض والتحقق، نقل الرد) | فريق رهون | **not designed (D-4)** | `/team/…` | planned | **MVP** (Q1, Q3, Q8) |
 
 Effect on the matrix below (design «جرد الشاشات: قبل ← بعد»): S01 **replaced**; S02, D01, L01, L03, L04 **secondary**; S03–S05 and D02–D05 **modified**; D06–D09 **provisional (Q11)**.
 

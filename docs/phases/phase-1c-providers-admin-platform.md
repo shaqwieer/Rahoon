@@ -13,7 +13,7 @@ The backend is ✅ on `master` (merged 2026-09-24, `fc0622e`; see `docs/progress
 
 These screens serve staff, not the individual. They stay in scope, but each needs a check before it's built:
 - **Participating lenders.** PA02/PA03 onboarding decides which institutions appear in the individual's lender choice (OA01). An institution that becomes active must show up there; a suspended one must disappear, and its open requests need handling (Q2).
-- **Rahoon team role (Q3).** If Rahoon pre-screens requests or reviews objections to a declined request («يراجعه فريق رهون»), a platform role and queue are needed. Neither is designed yet.
+- **Rahoon team role (Q3 decided).** The Rahoon team reviews requests and leads coordination. The coordinator and verifier role, and its workspace, are built in the **MVP** (1A step 6). This phase adds its administration: user management, workload and team reporting in the platform admin.
 - **Monitoring (PA06).** It must also cover requests (`REQ-…`), not just cases, with the same masking.
 - **Templates (A05, PA09).** They need messages for request states: submitted, info requested, accepted, declined.
 - **Providers (V01–V04).** They only see a case after acceptance and assignment. They never see a request (B13 permissions table).

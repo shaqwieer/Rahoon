@@ -71,7 +71,9 @@ within platform minima). Enforcement is server-side on every endpoint (`RequireP
 > **Direction change (2026-09-25):** the individual becomes a first-class, self-registered user who owns requests
 > before any case (B13 «الصلاحيات حسب المرحلة»): nothing is visible to any lender before submission; during review only
 > the **chosen** lender sees the request and the shared documents (other lenders: nothing, not even its existence);
-> after acceptance the rules in the owner row above apply. The "exactly one case" scope is under review (Q7, Q14).
+> after acceptance the rules in the owner row above apply. **Decided (Q7, Q14):** one independent account, several requests,
+> each with its own access; the "exactly one case" scope is superseded. **MVP (Q1):** lenders have no platform access; a new
+> platform role «فريق رهون» (coordinator, verifier) sees only the requests assigned to it (Phase 1A step 6).
 > See `docs/product/product-direction.md` §4 and §7 (X4).
 
 Conditions marked ◐ are enforced by code, not by the grant alone: approval tier re-check at decision time,

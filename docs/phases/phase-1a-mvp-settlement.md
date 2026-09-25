@@ -1,190 +1,222 @@
-# Phase 1A: MVP (the individual starts the request) ▶ CURRENT
+# Phase 1A: MVP (the individual starts the request, the Rahoon team leads) ▶ CURRENT
 
-> **Re-planned on 2026-09-25** after the product owner confirmed that Rahoon primarily serves individuals in default, and that **the individual initiates** the request while the lender joins later. See `docs/product/product-direction.md`; the design is `docs/design-specs/B13-owner-initiated-journey.md`.
-> The file name is kept for continuity. The lender settlement-execution work that used to be the MVP (agreement activation → payments → closure) moved to [`phase-1a2-settlement-execution.md`](phase-1a2-settlement-execution.md).
+> **Re-planned twice on 2026-09-25**, following `docs/product/product-direction.md`:
+> 1. Individual-first direction. The MVP starts with the individual; settlement execution moved to [`phase-1a2-settlement-execution.md`](phase-1a2-settlement-execution.md).
+> 2. Product-owner answers:
+>    - **Q1/Q8:** the Rahoon team reviews, obtains documented consent and coordinates with the lender over a **documented manual channel**; the lender needs no account.
+>    - **Q11:** four help paths.
+>    - **Q6/Q12:** no deadlines or promises in the UI.
+>    - **Q7/Q14:** several requests per account.
+>    - **Q13:** execution stays in 1A-2.
+>
+> The file name is kept for continuity.
 
-**Goal:** an individual struggling with an existing mortgage can get from first visit to a documented outcome, with real persisted data:
-understand the service → register or sign in → start and submit a request about the existing default → provide information and documents → track progress → review an approved proposal when one exists → have the outcome documented.
+**Goal:** a struggling individual gets real help from منصة رهون, not just a form:
+**enters Rahoon → submits a request → knows what Rahoon will do for them → follows the case study and the communication → sees an approved offer from their lender, if one exists → responds.**
+- The Rahoon team leads the follow-up and the coordination.
+- The lender decides its offer.
+- The individual decides the response.
+- The lender dashboard is **not** an entry point to the MVP.
 
-**The product question every screen must pass:** «إن كنت عميلاً متعثراً، ماذا أستفيد من رهون، وكيف تساعدني على حل مشكلتي؟»
+**Product question for every screen:** «أنا لو عميل ومتعثر، ماذا أستفيد من المنصة؟ وماذا تقدم حلًا لمشكلتي؟»
 
-## Product gate: read before any step
+## Product gate
 
-Steps below are marked with the open decisions they depend on (`docs/product/product-direction.md` §6). **Don't turn a guess into an approved requirement.**
-- A step marked ⛔ can't be built as final until its question is answered.
-- If you proceed on an assumption, the UI must label it (as the design does, e.g. «نمط مقترح», «قائمة مؤقتة», «افتراض»), and the assumption goes into *Findings*.
+**Decided** (`product-direction.md` §6): Q1, Q2, Q3, Q6 (UI), Q7, Q8, Q11, Q12 (UI rule), Q13, Q14.
 
-| Decision | Blocks |
-|---|---|
-| **Q1** How the lender is involved | Step 5 (lender side), request → case |
-| **Q11** Which solutions Rahoon offers | Step 7 (proposal content shown to the individual) |
-| **Q8** Who leads steps after acceptance | Steps 6–7 |
-| Q6 Response deadline | Any deadline shown in OA06/L00a |
-| Q12 What Rahoon may promise | Landing promises, OA06 text |
-| Q9 Pricing (free?) | Landing, OR01 sub-title |
-| Q10 / Q15 Identity and returning sign-in | Step 3 |
-| Q2, Q4, Q5, Q7 | Step 4 details (non-participating lender, eligibility, required fields, several lenders) |
-| Q13 Does the MVP include settlement execution? | Whether Phase 1A-2 is part of the MVP |
+**Still open.** Build with a visible, reversible assumption, or stop and ask:
+
+| Open item | Affects | Interim rule |
+|---|---|---|
+| Q4 eligibility | Steps 5–6 | No eligibility screen; the Rahoon team reviews manually; no final `not_eligible` wording |
+| Q5 required data | Step 5 | B13's minimum set, as a labelled assumption (contract number optional) |
+| Q9 pricing | Step 4 | No «مجاني» anywhere |
+| Q10 identity provider | Step 4 | Mobile OTP (sandbox); national digital ID slot «غير متاح» |
+| Q15 returning sign-in | Step 4 | ID + mobile OTP, as an assumption |
+| V1 representation / acting on behalf | Steps 6–7 | **Don't build** any power-of-attorney or on-behalf action. Coordination = sharing consented data + relaying communications, documented |
+| V2 official lender channel | Step 6 | Coordination log records channel, date, counterpart, summary and evidence file. Wording is provisional |
+| V4 consent text and data scope | Step 5 | Consent text is marked «صيغة مبدئية — تتطلب مراجعة» (provisional wording, needs review) |
+| V5 internal SLA | Step 6 | Internal timers only, never shown to the individual |
+| V6 lender identification | Step 5 | Assumption: a list of seeded lenders + «أخرى» free text |
+| V7 duplicate request for the same finance | Step 5 | Warn and link; don't block (assumption) |
 
 ## Definition of done (acceptance criteria)
 
-- [ ] **Primary journey:** a new individual completes it in the browser on a 390 phone, landing → registration → request (OA01–OA05) → submitted → tracked, with autosave and return-later working.
-- [ ] **Request outcomes** work end to end with persisted data and audit, **recorded by whoever Q1 designates** (lender staff in-platform, Rahoon staff, or another mechanism). The outcome set below is the design's, and it's also gated by Q1:
-  - (a) accepted → a case opens in «تحقق» linked to the `REQ-…` reference
-  - (b) returned for completion → the individual completes it
-  - (c) declined with a reason → no case; the individual sees the reason and next options
-- [ ] **After acceptance** (⛔ Q8: who leads each step): the individual sees the next step, required documents and messages (D02, D04, D12). When an approved proposal exists, they can review it (D07), accept with OTP consent (D09), counter-propose (D08) or decline. The decision is recorded with reference and time and stays visible to them.
-- [ ] **Privacy rules are enforced on the server** and covered by tests:
-  - the lender sees nothing before submission
-  - only the chosen lender sees the request and shared documents
-  - other lenders get 404
-  - consent is scoped to one lender and can be withdrawn before acceptance
-  - amounts from the individual keep the source «المالك»
-- [ ] **No unapproved promise:** no solution is shown as available, and no deadline or "free" is presented as a commitment, unless the related question (Q6, Q9, Q11, Q12) is answered.
-- [ ] **Every screen in scope passed a product review.** The review is recorded in the table below (column *Direction review*).
+- [ ] **Primary journey in the browser on a 390 phone:** landing → registration → request (with documented consent for Rahoon to share the necessary data) → submitted, with autosave and return-later working.
+- [ ] **«ماذا ستفعل رهون لك»:** after submission, the individual sees:
+  - the relevant help path(s) (P1–P4) in plain language
+  - the current status
+  - **who we're waiting for** (فريق رهون / أنت / الجهة الممولة)
+  - the next step
+  - no deadline, no promised outcome
+- [ ] **The Rahoon team workspace** lets a team member:
+  - review the request
+  - ask the individual for completion
+  - see the consent evidence
+  - log each manual coordination with the lender (channel, date, counterpart, summary, evidence)
+  - post updates and next steps the individual sees
+- [ ] **Approved offer:** the team records the lender's offer **with the lender's source document**, and a second team member verifies it before the individual sees it (ASSUMPTION control, reversible). The individual then sees:
+  - the terms and their effect in plain language, per path
+  - «ليس نهائياً حتى توافق عليه»
+  - nothing presented as guaranteed
+- [ ] **Response:** the individual accepts (OTP consent record), declines, or asks a question / counter-proposes. The response is documented with reference and time, and the team records relaying it to the lender over the manual channel.
+- [ ] **Obstacles, minimum (P4):** the individual can object to incorrect data or amounts, complete documents and file a complaint. Referral to a specialist is recorded manually (V9).
+- [ ] **Several requests per account:** each request has its own reference, status, documents and access. The session isn't tied to one case.
+- [ ] **Privacy and access are enforced on the server and tested:**
+  - no lender sees anything; lenders have no MVP access
+  - only assigned Rahoon team members see a request
+  - the individual sees only their own requests
+  - consent is recorded per request, before any sharing is logged
+  - amounts from the individual keep the source «العميل»
+  - no internal notes reach the individual
+- [ ] **No unapproved promise:** no deadline, "free", guaranteed discount, rescheduling approval or sale completion on any screen.
+- [ ] **Every screen in scope passed a direction review** (table below).
 - [ ] **Tests and checks:**
-  - Playwright owner-first E2E is green: `web/e2e/owner-journey.spec.ts`, covering the primary path + decline + info request.
+  - Playwright `web/e2e/owner-journey.spec.ts`: primary path + completion request + decline response + objection.
   - `dotnet test` is green.
   - Web typecheck, lint and build are green.
-- [ ] **Wrap-up:** README has the owner-first demo script, and `mvp-1` is tagged.
+- [ ] **Wrap-up:** README demo script (owner-first) and tag `mvp-1`.
 
-## Demo cast (owner-first)
+## Demo cast
 
-Password for staff: `Rahoon-Demo-2026!`. SMS codes are shown on screen (sandbox).
-
-| Who | How they enter | Does | Status |
+| Who | Enters as | Owns (Q8) | Status |
 |---|---|---|---|
-| **A new individual** (fictional, registers live) | `/` → «ابدأ طلب المعالجة» → OR01 (ID or iqama + 05 mobile) → OR02 code | Registers, fills OA01–OA05, submits, tracks, later reviews the proposal | Built in steps 3–7 |
-| عبدالله م. (seeded individual, design sample) | Sign in (method per Q15) | Has REQ-2026-00318 → accepted → RH-2026-004172, with an approved proposal to review | Seed in steps 4–5 (today he exists only as a party on RH-2026-004172, entering by invitation) |
-| Declined sample | seeded | REQ-2026-00341, declined «لا يوجد عقد تمويل عقاري باسمك لدينا.» | Seed in step 5 |
-| سارة القحطاني, case manager, s.alqahtani@alufuq.example | staff login | Reviews incoming requests (L00a/L00b **PROPOSED**, Q1), then runs the case | Step 5 depends on Q1 |
-| فهد العتيبي, analyst, f.alotaibi@alufuq.example | staff login | Prepares a proposal on the case | Reuses existing screens |
-| نورة الشهري, approver, n.alshehri@alufuq.example | staff login | Approves the proposal with step-up, so the individual sees it | Reuses existing screens |
+| **An individual in default** (fictional, registers live on a phone) | `/` → «ابدأ طلب المعالجة» → registration | submits, provides information, **decides the response** | Steps 4–7 |
+| **Rahoon team coordinator** (fictional platform user, seeded in step 6) | staff login → team workspace | **leads**: reviews, requests completion, coordinates with the lender manually, informs the individual, records the offer and the response | Step 6 |
+| **Second Rahoon team member** (fictional, seeded) | staff login | verifies a recorded offer before release (ASSUMPTION control) | Step 7 |
+| **The lender** (e.g. «مصرف الأفق», fictional) | **no login in the MVP**; represented by documents and messages over the manual channel | **decides** its offer and the finance terms | Evidence files in the seed |
+| Existing lender staff (سارة, فهد, نورة …) | staff login | not part of the MVP demo; kept for the lender-on-platform mode | Secondary |
 
-## Who clicks what (target demo script; filled in as steps complete)
+## Who clicks what (target demo script)
 
-1. **Visitor (phone):** opens `/`, reads «كيف تعمل» and the privacy notes, taps «ابدأ طلب المعالجة».
-2. **Individual:** OR01 enters ID and mobile → OR02 code + terms → account created.
-3. **Individual:** OA01 chooses «مصرف الأفق» → OA02 finance and property → OA03 situation and preference → OA04 uploads a salary letter and ticks the consent for «مصرف الأفق فقط» → OA05 review → «إرسال الطلب».
-4. **Individual:** OA06 shows «بانتظار الجهة الممولة», with no deadline shown until Q6 is answered. They can add information or withdraw.
-5. **Lender:** mechanism per Q1. Proposed pattern: سارة opens «الطلبات الواردة» → REQ-… → match table → «قبول وفتح الحالة». The alternatives are «طلب استكمال» → the individual gets OA07, or «الاعتذار مع سبب» → OA08.
-6. **Individual:** «قُبل طلبك وفُتحت حالتك», with the name of the case manager, the next step, required documents (D04) and messages (D12).
-7. **Proposal** (who does it is ⛔ Q8; shown here with today's lender mechanics): فهد prepares a proposal, سارة submits it, نورة approves it with step-up. The solution types are provisional until Q11.
-8. **Individual:** D07 reviews the approved proposal («عرض راجعته واعتمدته جهتك الممولة…») → D09 accepts with OTP (or D08 counter / decline) → sees the recorded outcome (reference and time) and the agreement view.
+1. **Individual (phone):** opens `/`. Reads what منصة رهون does (four help paths, no guarantees, no new finance) and taps «ابدأ طلب المعالجة».
+2. **Individual:** registers (ID + mobile + code + terms).
+3. **Individual:** request steps:
+   - names the lender and the finance
+   - explains the situation and their preference (keep the home / settle / sell if continuing isn't possible / not sure)
+   - uploads documents
+   - gives **documented consent for Rahoon to share the necessary data** with the lender
+   - reviews → «إرسال الطلب»
+4. **Individual:** sees **«ماذا ستفعل رهون لك»**: the likely path(s), status «قيد مراجعة فريق رهون», waiting on «فريق رهون», next step.
+5. **Rahoon coordinator:** opens the request.
+   - Asks for a missing salary letter; the individual gets «بانتظارك» and uploads it.
+   - Logs the coordination with «مصرف الأفق»: channel, date, summary, evidence.
+   - Posts an update; the individual sees «قيد التنسيق مع الجهة الممولة» (waiting on the lender).
+6. **Rahoon coordinator:** records the lender's approved offer with the lender's letter attached. The **second team member** verifies it.
+7. **Individual:** sees the offer:
+   - «عرض من جهتك الممولة»
+   - terms, effect on them, «ليس نهائياً حتى توافق عليه»
+   - no guarantee
+8. **Individual:** accepts with OTP (or declines / asks). The response is recorded with reference and time. The coordinator logs relaying it to the lender. **Execution tracking continues in Phase 1A-2.**
 
 ## Scope and status
 
-*Tech status* uses the legend in `README.md` and records what was built and verified. *Direction review* says whether the screen fits the individual-first direction: **OK**, **Rework** (listed), **Secondary** (kept, not in the primary path), **New**, **Proposed** (blocked by a question) or **Provisional** (labelled until answered).
+*Tech status* uses the legend in `README.md`. *Direction review* (after the 2026-09-25 decisions) is one of **OK**, **Rework**, **Secondary**, **New**, **Deferred** or **Needs design**.
 
-| ID | Screen | Tech status | Direction review | Where / notes |
+| ID | Screen / capability | Tech status | Direction review | Notes |
 |---|---|---|---|---|
-| Landing | Owner-first public landing (replaces S01) | ⬜ | New | B13 §2; moved into the MVP from Phase 1B |
-| OR01, OR02 | Individual registration + code + terms | ⬜ | New | B13 §3; backend: an individual account independent of any case (Q10, Q15) |
-| S03/S04 | Sign-in + MFA | ✅ (staff) | Rework | Split the entry: individual sign-in (Q15) vs staff «للجهات الممولة» |
-| OA01–OA05 | Request wizard (autosave, consent scoped to one lender) | ⬜ | New | B13 §3; new backend request module (Q2, Q4, Q5, Q7) |
-| OA06–OA08 | Request tracking, completion, decline | ⬜ | New | B13 §3; deadline text waits for Q6 |
-| L00a, L00b | Lender incoming requests + review | ⬜ | **Proposed (Q1)** | Build only the pattern Q1 selects |
-| — | Request → case (starts in «تحقق», linked to `REQ-…`) | ⬜ | New | A new creation path beside the wizard |
-| D01 | Invitation + identity check | 🟩 | Secondary | Kept as «مسار ثانوي» (design label) |
-| D02–D05 | Owner home, journey, documents, debt | 🟨 branch `…a1bd0510…` | Rework | Before acceptance, home = OA06; the header «مع [الجهة]» appears only once a case exists |
-| D06 | Options | 🟨 same | **Provisional (Q11)** | Add the design tag «قائمة مؤقتة — الحلول المتاحة لم تُعتمد بعد (Q11)» |
-| D07 | Offer | 🟨 same | Rework | Add the design note «عرض راجعته واعتمدته جهتك الممولة بعد دراسة طلبك. ليس نهائياً حتى توافق عليه.» |
-| D08, D09 | Counteroffer; accept with OTP consent | 🟨 same | OK | The consent record is the documented outcome (A-05: not a licensed signature) |
-| D11–D13 | Help, messages, complaints | 🟨 same | OK | D13 also covers «الاعتراض على الرد» after a decline (Q3: who reviews) |
-| L01 | Portfolio | ✅ | Secondary | No longer the lender's default landing, if Q1 confirms the intake queue |
-| L02, L05 | Case list, workspace | ✅ | Rework (small) | Show the case source «طلب من الفرد» + the `REQ-…` link |
-| L03 | Create-case wizard | ✅ | Secondary | Becomes an exception with a mandatory reason; add the reason field in Phase 1B |
-| L06–L12 | Case tabs | 🟨 branch `…a3939fc4…` | OK | Needed after acceptance |
-| L13–L17 | Solutions, compare, submit, approvals, owner preview | ✅ | **Provisional (Q11, Q8)** | The mechanics work; solution types stay provisional |
-| L18 | Negotiation (counteroffer handling) | 🟨 branch `…a1008744…` @ `36d316a` | OK | |
-| L22, L24 | Comms, case audit | 🟨 branch `…a3939fc4…` | OK | |
+| Landing | Owner-first public landing | ⬜ | New + **Needs design (D-1)** | Copy: the Rahoon team reviews and coordinates; four help paths; no «مجاني» or deadlines |
+| OR01, OR02 | Registration, code, terms | ⬜ | New | Q10 and Q15 assumptions |
+| — | Individual account with **several requests** | ⬜ | New | Replaces "owner = exactly one case" (X4) |
+| OA01–OA05 | Request wizard | ⬜ | New + **Needs design (D-2)** | Lender named (V6); consent wording (V4); several requests (Q7) |
+| OA06 successor | «ماذا ستفعل رهون لك» + tracking (status, waiting-on, next step) | ⬜ | New + **Needs design (D-3)** | No deadlines (Q6) |
+| OA07 | Completion requested by the Rahoon team | ⬜ | Rework (actor = Rahoon team) | |
+| OA08 | Declined / not suitable | ⬜ | Rework + **Needs design (D-6)** | The reason comes from the team, or is the lender's response relayed by the team |
+| — | **Rahoon team workspace** (queue, review, completion, consent evidence, coordination log, updates, offer recording and verification, response relay) | ⬜ | New + **Needs design (D-4)** | Uses the existing design system; no frames exist |
+| L00a, L00b | Lender intake queue and review | ⬜ | **Deferred** (X10) | Lender-on-platform mode, later |
+| D01 | Lender invitation | 🟩 | Secondary / Deferred | Not used in the MVP |
+| D02–D05 | Owner home, journey, documents, debt | 🟨 branch `…a1bd0510…` | Rework | Home = the request tracker; debt figures from the individual carry the source «العميل» until the lender confirms |
+| D06 | Options | 🟨 same | Rework | Becomes the **help paths explainer** (P1–P4), with no promises |
+| D07 | Offer | 🟨 same | Rework + **Needs design (D-5)** | «عرض من جهتك الممولة», recorded by Rahoon from the lender's document; per-path effects |
+| D08, D09 | Counter / ask; accept with OTP consent | 🟨 same | OK (relay by the team) | A-05: a consent record, not a signature |
+| D11–D13 | Help, messages, complaints | 🟨 same | OK | P4 minimum |
+| L01–L26 lender workspace | — | ✅ / 🟨 | **Secondary** (lender-on-platform mode) | Kept; not in the MVP demo |
+| L13–L17 solution builder / approvals | — | ✅ | **Secondary** (X11) | The mechanics may be reused for offer recording and verification in the team workspace (decided in step 2) |
 
-## Steps (in order; each step is one or more sessions, all inside this phase)
+## Steps (in order; one or more sessions each, all inside this phase)
 
-### Step 0: Correct the plan to the individual-first direction ✅ 2026-09-25
-- [x] Product source of truth `docs/product/product-direction.md`
-- [x] B13 spec `docs/design-specs/B13-owner-initiated-journey.md`
-- [x] Design mirror refreshed (B13 added; B6 and batch files updated)
-- [x] Phase files re-planned; superseded assumptions listed; open decisions recorded
+### Step 0: Individual-first re-plan ✅ 2026-09-25
+- [x] `product-direction.md`, B13 spec, design mirror refresh, phase files re-planned.
 
-### Step 1: Product decision checkpoint (no code) ⬜
-- [ ] The product owner answers or defers Q1, Q8, Q11 (these block the solution workflow), plus Q6, Q9, Q10, Q12, Q13, Q14 and Q15.
-- [ ] Engineering records each answer in `product-direction.md` §6, then updates this file's ⛔ marks.
-- Steps 2–4 can start without these answers, using the labelled assumptions. Steps 5 and 7 can't be finished without them.
+### Step 1: Product decisions recorded ✅ 2026-09-25
+- [x] Answers for Q1, Q6, Q7, Q8, Q11, Q12, Q13 and Q14 recorded against each question's original text.
+- [x] Q2 and Q3 resolved by derivation from Q1.
+- [x] Q4, Q5, Q9, Q10 and Q15 remain open; verifications V1–V10 listed.
+- [x] Plan, acceptance criteria and demo script updated. Pushed to the Rahoon repository.
 
-### Step 2: Bring the finished work in, and review it against the direction ⬜
-- [ ] Merge `worktree-agent-a3939fc4d7a8b5a97` (case tabs, comms, complaints, audit, import, cancel UI).
-- [ ] Merge `worktree-agent-a1bd05103bd12a217` (owner portal).
-- [ ] Cherry-pick `36d316a` (L18–L21). L19–L21 are used in Phase 1A-2.
-- [ ] Run the web typecheck, lint and build; fix merge conflicts.
-- [ ] Do the design-text reworks that need no product decision:
-  - D01 «مسار ثانوي»
-  - D06 provisional tag
-  - D07 approval note
-  - breadcrumb raw `new`
-- [ ] Record each merged screen's *Direction review* result in the table above.
+### Step 2: Design and architecture alignment (no product code) ⬜
+- [ ] **Design requests** for the product owner or designer to add to the design project:
+  - **D-1** Landing copy: replace «تراجع جهتك الطلب» with the Rahoon team reviewing and coordinating; add a section on the four help paths; no «مجاني» or deadlines.
+  - **D-2** OA01 (lender named, no «مشاركة في رهون» or waitlist) and OA04 (consent: Rahoon shares the necessary data with the lender; wording per V4).
+  - **D-3** «ماذا ستفعل رهون لك» + tracking: path(s), status, waiting-on, next step.
+  - **D-4** Rahoon team workspace: queue, review, completion, consent evidence, coordination log, updates, offer recording and verification, response relay.
+  - **D-5** D07 as «عرض من جهتك الممولة», with per-path effects and without a guarantee; D06 as the help-paths explainer.
+  - **D-6** OA08 reasons and wording.
+- [ ] **ADR `docs/adr/0001-request-ownership.md`:**
+  - the request is owned by the individual's account and handled in the Rahoon platform tenant
+  - the lender is a **counterparty record**, not a tenant, in the MVP
+  - how this coexists with today's lender-tenant case model, which is kept for the lender-on-platform mode
+  - the Rahoon team role and permissions
+  - the request state model (`product-direction.md` §5)
+  - reuse of L13–L17 mechanics for offer recording and verification: yes or no
+- [ ] If the design requests aren't ready when step 5 starts, build with the existing design system and mark each such screen «بانتظار اعتماد التصميم» in *Findings*.
 
-### Step 3: Owner-first landing + individual registration ⬜ (Q9, Q10, Q12, Q15 labelled)
+### Step 3: Bring in finished work and review it ⬜
+- [ ] **First:** fix the `reset-demo` safety finding (environment check before deleting the database; test).
+- [ ] Merge `worktree-agent-a3939fc4d7a8b5a97` (case tabs, comms, complaints, audit, import, cancel) and `worktree-agent-a1bd05103bd12a217` (owner portal). Cherry-pick `36d316a` (L18–L21).
+- [ ] Run the web typecheck, lint and build; fix conflicts. Record each merged screen's direction review above.
+- [ ] Fix the Phase 0 leftover: breadcrumb shows the raw `new` segment.
+
+### Step 4: Landing + registration + account with several requests ⬜ (Q9, Q10, Q15 interim rules)
+- [ ] Backend: an individual account independent of any case; registration and sign-in (ID + mobile OTP); terms consent; national-digital-ID slot `unavailable`; lockout.
+- [ ] Web: owner-first landing (D-1) and OR01/OR02; separate staff entry.
+- [ ] Tests: duplicate identity → sign-in; OTP lockout; cookie-only session; the account can list several requests.
+
+### Step 5: Request wizard + «ماذا ستفعل رهون لك» + tracking ⬜ (Q4, Q5, V4, V6, V7 interim rules)
 - [ ] Backend:
-  - an individual account that isn't tied to a case (supersedes "owner = exactly one case"; see X4)
-  - registration by ID + mobile + OTP, and terms consent recorded
-  - the national-digital-ID slot as `unavailable`
-  - sign-in for a returning individual (assumption until Q15)
-  - rate limits and lockout
-- [ ] Web:
-  - owner-first landing (desktop and mobile), with the institution section secondary
-  - OR01/OR02
-  - separate entry points for the individual and for staff
-- [ ] Tests: registration, duplicate identity → sign-in, OTP lockout; no bearer tokens, cookies only (same session model).
+  - request module: `REQ-YYYY-NNNNN`, draft autosave, lender named (list + «أخرى»)
+  - document upload with the existing scanning and storage rules
+  - **consent record per request** (text version stored)
+  - submit lock (add-info only)
+  - several requests per account; duplicate warning
+  - audit
+- [ ] Web: OA01–OA05, the submission result, and the «ماذا ستفعل رهون لك» tracker (status, waiting-on, next step; no deadline).
+- [ ] Tests: the individual sees only their own requests; consent is required before submit; idempotent submit.
 
-### Step 4: Request wizard OA01–OA05 ⬜ (Q2, Q4, Q5, Q7 labelled)
-- [ ] Backend request module:
-  - `REQ-YYYY-NNNNN` reference
-  - draft with autosave
-  - participating-lender list
-  - «جهتي غير موجودة» waitlist (assumption, Q2)
-  - pre-case document upload with the same scanning and storage rules
-  - consent scoped to one lender, withdrawable before acceptance
-  - submit locks the request (add-info only)
-  - audit on every step
-- [ ] Web: OA01–OA05, mobile-first, with autosave and «محفوظ».
-- [ ] Tests: another lender can't see the request; the lender sees nothing before submission; consent scope; idempotent submit.
+### Step 6: Rahoon team workspace ⬜ (V1, V2, V5 interim rules)
+- [ ] New platform role «فريق رهون» (coordinator; verifier), with permissions and seeded users.
+- [ ] Queue and request review; completion requests (OA07); consent evidence view.
+- [ ] **Manual coordination log** with the lender: channel, date, counterpart, summary, evidence file; append-only and audited.
+- [ ] Updates and next steps pushed to the individual; messages (D12).
+- [ ] Internal processing timers (never shown to the individual).
 
-### Step 5: Tracking + lender involvement ⬜ (⛔ Q1 for the lender side; Q6 for deadlines)
-- [ ] Individual: OA06 tracking, add information, withdraw; OA07 completion; OA08 decline with next options.
-- [ ] Lender side, **exactly as decided in Q1**. If Q1 selects in-platform intake:
-  - L00a/L00b
-  - the match table
-  - accept → case created in «تحقق» and linked to REQ, with an assignment rule
-  - request completion, decline with a listed reason, link to an existing case
-  - LenderSidebar «الطلبات الواردة» as the lender's home
-- [ ] Seed the B13 samples: REQ-2026-00318 → RH-2026-004172, and REQ-2026-00341 declined.
+### Step 7: Approved offer and the individual's response ⬜
+- [ ] The team records the lender's offer with its source document; a second member verifies it (ASSUMPTION control).
+- [ ] The individual sees D06 (paths explainer) and D07 (offer), then responds: D09 accept with OTP consent, D08 ask/counter, or decline, which never triggers any action against them.
+- [ ] Response documented; the coordinator logs relaying it to the lender.
 
-### Step 6: After acceptance, the individual follows the case ⬜ (Q8)
-- [ ] D02 home continues from OA06 (same account, the case now visible); D03–D05, D04 documents, D12 messages.
-- [ ] The lender workspace shows the case source + REQ link; document requests reach the individual.
+### Step 8: Obstacles, minimum (P4) ⬜
+- [ ] Objection to incorrect data or amounts on a request, with a Rahoon team response.
+- [ ] Document completion; complaint (reuse the complaints backend); manual record of a referral to a specialist (V9).
 
-### Step 7: Proposal review and documented outcome ⬜ (⛔ Q11 for proposal content; ⛔ Q8 for who prepares and approves it)
-- [ ] The proposal is prepared and approved by whoever Q8 designates. If that's the lender, reuse the existing L13–L17 mechanics (preparer ≠ approver, step-up). The solution types shown stay labelled provisional until Q11.
-- [ ] Individual:
-  - D07 (with the approval note) → D09 accept with OTP consent, or D08 counter → L18, or decline (never leads to referral)
-  - the recorded outcome (reference, time, terms) stays visible and printable
-
-### Step 8: E2E, responsive QA, wrap-up ⬜
-- [ ] `web/e2e/owner-journey.spec.ts` covers the primary path, the decline branch and the info-request branch. Adapt `web/e2e/lender-flow.spec.ts`: it still starts with the lender creating a case, which is now the exception path.
+### Step 9: E2E, responsive QA, wrap-up ⬜
+- [ ] `web/e2e/owner-journey.spec.ts`: primary path, completion request, decline response, objection.
+- [ ] Adapt `web/e2e/lender-flow.spec.ts` to the lender-on-platform mode, or mark it secondary.
 - [ ] Check at 390, 768 and 1440; bidi, contrast and 200% text.
-- [ ] README owner-first demo script; update `docs/design-implementation-map.md`; tag `mvp-1`.
+- [ ] README demo script (individual → team → offer → response); update `docs/design-implementation-map.md`; tag `mvp-1`; push.
 
-## Already verified (kept from before the re-plan)
+## Already verified (kept from earlier work)
 
 - 2026-09-24:
-  - سارة submitted RH-2026-004172 v2 and نورة approved it in the browser with the step-up OTP. The case moved to «بانتظار العميل». This proves the proposal-approval mechanics reused in step 7.
+  - سارة submitted RH-2026-004172 v2 and نورة approved it in the browser with the step-up OTP. The lender-side approval mechanics work; they're now secondary (X11) and may be reused in step 7.
   - Backend: 116/116 tests green on `master` (`be3b7e3`).
 
 ## Findings / open decisions
 
-- **Request deadline:** the design uses two values, 5 business days (state-model assumption) and «3 أيام عمل» (L00b sample). Both are pending Q6.
-- **OR01 sub-title:** it says «مجاني», but the landing page removed «مجاناً» pending Q9. Don't render it until Q9 is answered.
-- **OTP attempts:** OR02 allows 5 before a temporary lock; today's staff policy is 3 wrong codes → 15-minute lock. Choose one when implementing and record it in `design-conflicts.md`.
-- **Cancellation wording** (from the B3/B5 branch): the backend doesn't revoke the owner's portal access on cancellation. Product decision.
-- **Approvals inbox:** it lists only solution approvals; other approval types notify only. Revisit in Phase 1A-2.
+- **Safety (found 2026-09-25, fix first thing in step 3):** `dotnet run -- reset-demo` calls `EnsureDeletedAsync()` in `server/src/Rahoon.Api/Program.cs:86` **before** the seeder's Development/Testing guard (`DevSeeder.cs:39`). Run against a non-development environment, it would drop that database before failing. Fix: check the environment before deleting, and add a test.
+- **Design gap:** the Rahoon team workspace (D-4) has no frames. B13 designed a lender intake instead, and that is now deferred.
+- **Tenancy change:** the MVP request isn't owned by a lender tenant. Covered by the ADR in step 2; today's lender-tenant case model is kept for later.
+- **Earlier design conflicts, still relevant:**
+  - OR02 allows 5 OTP attempts; staff policy is 3.
+  - The lender response deadline values (5 or 3 days) are moot for the UI (Q6: no deadlines).
+- **Cancellation wording** (B3/B5 branch): the owner's access isn't revoked on cancellation. Product decision, lender-on-platform mode.

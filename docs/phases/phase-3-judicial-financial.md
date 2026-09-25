@@ -13,6 +13,7 @@ The backend is 🟨 on branch `worktree-agent-ae86d4e3d70e6413a`. It gets merged
 
 ## Direction review (added 2026-09-25, `docs/product/product-direction.md`)
 
+- **On hold (V10), 2026-09-25:** judicial referral isn't among the four confirmed help paths (Q11). P4 «الإحالة لمختص مناسب» means referral to a suitable specialist, not judicial referral. Nothing in this phase is built until the product owner confirms scope.
 - **Scope check first (Q11, Q8).** In an individual-first product, confirm with the product owner whether Rahoon still coordinates judicial referral and sale-agent work at all. If it does, confirm it stays strictly a separately approved lender action, triggered only after documented notice and the objection period, and never automatic.
   - The backend exists and stays; building its UI waits for this confirmation.
 - **The individual's view.** Whatever remains must tell the individual, in plain language, what is happening, their rights and how to object. It must show the official status exactly as entered, and nothing before the notice.

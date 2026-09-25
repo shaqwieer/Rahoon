@@ -14,12 +14,12 @@
 | # | Phase file | Goal | Status |
 |---|---|---|---|
 | 0 | [phase-0-foundation.md](phase-0-foundation.md) | Platform skeleton + five anchor screens | ✅ Done (direction review added) |
-| 1A | [phase-1a-mvp-settlement.md](phase-1a-mvp-settlement.md) | **MVP**: the individual understands the service → registers → submits a request about an existing default → provides information → tracks it → reviews an approved proposal → the outcome is documented | ▶ **CURRENT** (step 0 done; step 1 = product decisions) |
-| 1A-2 | [phase-1a2-settlement-execution.md](phase-1a2-settlement-execution.md) | After the outcome: agreement activation → payments (maker-checker) → breach → reconciliation and closure. Whether this is part of the MVP release is Q13 | ⬜ Next |
+| 1A | [phase-1a-mvp-settlement.md](phase-1a-mvp-settlement.md) | **MVP**: the individual enters Rahoon → submits a request → knows what Rahoon will do for them → follows the case study and communication (the Rahoon team leads and coordinates with the lender manually) → sees an approved offer if one exists → responds | ▶ **CURRENT** (steps 0–1 done; next: step 2, design and architecture alignment) |
+| 1A-2 | [phase-1a2-settlement-execution.md](phase-1a2-settlement-execution.md) | After the response: tracking of the agreement, installments, payment confirmations and closure (Rahoon never holds funds). Not in the first MVP (Q13) | ⬜ Next |
 | 1B | [phase-1b-shared-and-lender-ops.md](phase-1b-shared-and-lender-ops.md) | Account/search/help, institutions' secondary page (S02), rework of secondary entry routes (D01/L03/L04), complaints and objections, referral package (L25) | ⬜ |
 | 1C | [phase-1c-providers-admin-platform.md](phase-1c-providers-admin-platform.md) | Provider portal, institution admin, platform admin (B7) | ⬜ (backend on master) |
-| 2 | [phase-2-sale-ecosystem.md](phase-2-sale-ecosystem.md) | Voluntary sale (B8), only if Q11 approves it, + service ecosystem (B9) | ⬜ (backend on master) |
-| 3 | [phase-3-judicial-financial.md](phase-3-judicial-financial.md) | Judicial referral, agent portal, full reconciliation and closure (B10); scope to be re-confirmed | ⬜ (backend on a branch) |
+| 2 | [phase-2-sale-ecosystem.md](phase-2-sale-ecosystem.md) | Consensual sale, help path P3 (B8 re-planned for team-led coordination), + service ecosystem (B9) | ⬜ (backend on master) |
+| 3 | [phase-3-judicial-financial.md](phase-3-judicial-financial.md) | Judicial referral, agent portal, full reconciliation and closure (B10). **On hold (V10)**: not among the confirmed help paths | ⬜ (backend on a branch) |
 | 4 | [phase-4-optimization.md](phase-4-optimization.md) | Analytics, configurable ops, drafting help, predictive insights (B11) | ⬜ (backend on a branch) |
 
 **Two kinds of status.** Phase files track *Tech status* (built and verified, legend below) separately from *Direction review* (does it fit the individual-first direction: OK / Rework / Secondary / New / Proposed / Provisional). A ✅ is never erased because of the new direction; screens that need changes get an explicit rework step.

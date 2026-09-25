@@ -1,8 +1,21 @@
 # B13 — Owner-initiated journey (Phase 1, primary path)
 
-Source: `design-source/04 Phase 1 - B13 Owner-Initiated Journey.dc.html` (Claude Design etag `1790325935644275`, 2026-09-25). Condensed copy: `design-source/_condensed/04 Phase 1 - B13 Owner-Initiated Journey.txt`. Title «04 Phase 1 — B13 Owner-initiated journey — رهون»; H1 «B13 — تصحيح: الفرد يبدأ الطلب، والجهة الممولة تنضم بعده».
+Source: `design-source/04 Phase 1 - B13 Owner-Initiated Journey.dc.html` (design-project etag `1790325935644275`, 2026-09-25). Condensed copy: `design-source/_condensed/04 Phase 1 - B13 Owner-Initiated Journey.txt`. Title «04 Phase 1 — B13 Owner-initiated journey — رهون»; H1 «B13 — تصحيح: الفرد يبدأ الطلب، والجهة الممولة تنضم بعده».
 
-Product decisions behind this batch: `docs/product/product-direction.md`. **Keep Arabic strings verbatim.** Screens the design marks «نمط مقترح» are **PROPOSED**; don't build them as a final workflow before Q1 is answered.
+Product decisions behind this batch: `docs/product/product-direction.md`.
+
+> **Product-owner answers (2026-09-25) change parts of this batch.** See `product-direction.md` §5–§8.
+> - **§4 lender intake (L00a/L00b) is deferred.** In the MVP the **Rahoon team** reviews the request and coordinates with the lender over a documented manual channel (Q1); the lender needs no account.
+> - Copy changes are pending as design requests D-1 to D-6 (`docs/phases/phase-1a-mvp-settlement.md` step 2):
+>   - landing step 3 «تراجع جهتك الطلب»
+>   - OA01 «مشاركة في رهون» / «جهتي غير موجودة»
+>   - OA04 consent «مع [الجهة] فقط»
+>   - OA06 «وصل طلبك إلى [الجهة]»
+>   - OA08 reasons
+> - **Superseded by decisions:**
+>   - the 5-day or 3-day deadlines: no deadlines are shown (Q6)
+>   - the waitlist: any lender can be named (Q2)
+> - **Still open:** «مجاني» (Q9). **Keep Arabic strings verbatim.** Screens the design marks «نمط مقترح» are **PROPOSED**; don't build them as a final workflow before Q1 is answered.
 
 ## Header notes (verbatim)
 

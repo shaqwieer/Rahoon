@@ -4,7 +4,10 @@
 > accepted | declined`, plus withdrawal) now precedes the case (`docs/design-specs/B13-owner-initiated-journey.md` §1).
 > A case created from an accepted request starts in **«تحقق» (`verification`)**, linked to its `REQ-…` reference —
 > not in `draft`. The `finalize_intake` row below (lender wizard) remains valid for the **exception** path (L03).
-> Not yet implemented; planned in Phase 1A steps 4–5. The lender-review mechanism is open (Q1).
+> **Update after the product-owner answers:** in the MVP the Rahoon team reviews and coordinates with the lender manually (Q1), so
+> MVP requests follow the request state model in `docs/product/product-direction.md` §5 (team review → lender coordination →
+> offer available → response recorded). The case workflow in this table is kept for the lender-on-platform mode.
+> Planned: ADR in Phase 1A step 2, implementation in steps 5–7.
 
 Source of truth in code: `server/src/Rahoon.Api/Modules/Cases/CaseWorkflow.cs` (`Transitions`).
 Design sources: 03 Phase 0 — Blueprint (state map + «جدول الانتقالات والحواجز»), 09 Handoff (CaseState enum,

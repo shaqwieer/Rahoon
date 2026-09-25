@@ -1,6 +1,6 @@
 # رهون (Rahoon)
 
-Helps **individuals who are struggling to repay an existing mortgage** resolve the default. The individual starts a request on Rahoon, and their financing institution joins later to review it and propose a solution. Rahoon coordinates and documents the process. It doesn't offer new finance, isn't a court or an auction operator, and doesn't collect payments.
+**منصة رهون** is a SaaS platform in Saudi Arabia that helps **individuals who are struggling to repay an existing mortgage**. The individual starts a request, and the Rahoon team studies it and coordinates with their financing institution. Rahoon helps through four paths: keeping the property (rescheduling or easing installments), debt settlement, consensual sale when continuing isn't possible, and removing obstacles (objections, documents, complaints). None of these is a guaranteed outcome: the lender decides its offers, and the individual decides the response. Rahoon doesn't offer new finance, isn't a court or an auction operator, and doesn't hold funds or execute payments.
 
 - Product source of truth: `docs/product/product-direction.md` (confirmed direction + open decisions).
 - Work plan and status: `docs/phases/README.md`.
@@ -9,7 +9,7 @@ Helps **individuals who are struggling to repay an existing mortgage** resolve t
 > **Current state (2026-09-25):**
 > - What runs today is the platform foundation and the **lender-side** screens.
 > - The owner portal is still invitation-based.
-> - The individual's own entry (landing → registration → request) is designed (B13) but not built yet. It is Phase 1A of the plan.
+> - The individual's own journey (landing → registration → request → the Rahoon team follows up) is Phase 1A of the plan, and not built yet.
 
 - `server/`: ASP.NET Core 10 API + EF Core, running on **http://localhost:5080**
 - `web/`: Next.js 16 app, running on **http://localhost:3000**. It forwards `/api/*` to the API, so always open the app through :3000.

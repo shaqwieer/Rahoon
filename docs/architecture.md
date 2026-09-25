@@ -6,7 +6,7 @@
 web/      Next.js 16 (App Router, TypeScript, Tailwind v4) — public pages + role-aware portals
 server/   ASP.NET Core 10 Web API (modular monolith) + xUnit integration tests
           PostgreSQL 16 via EF Core 10 (Npgsql), one schema per module
-design-source/  Mirror of the Claude Design project (source of truth for UI)
+design-source/  Mirror of the design project (source of truth for UI)
 docs/     Specs per design batch, implementation map, matrices, progress
 ```
 
@@ -53,8 +53,10 @@ a static `Map(IEndpointRouteBuilder)` registered in `Modules/ModuleRegistry.cs`)
   An owner session is pinned to exactly one case (`RequestContext.OwnerCaseId`).
   > **Superseded by the product direction of 2026-09-25** (`docs/product/product-direction.md`, X3/X4).
   > Individuals self-register (national ID/iqama + mobile + OTP) and own **requests** before any case exists; the
-  > lender invitation becomes a secondary route. The code above is still the implemented behaviour; the rework is
-  > planned in Phase 1A step 3 (open questions Q14, Q15).
+  > lender invitation becomes a secondary route. Decided (Q7, Q14): an independent account with several requests,
+  > each with its own reference, status, documents and access; the session is not tied to one case. The code above is
+  > still the implemented behaviour; the rework is planned in Phase 1A step 4 (returning sign-in: Q15, open).
+  > In the MVP, lenders have no platform access; the **Rahoon team** (platform staff) reviews and coordinates (Q1).
 * **Tenancy** — `RequestContext` is resolved from the session and the *active membership*, never
   from client input. Every `IOrgOwned` entity has a global EF query filter on
   `RequestContext.DataOrganizationIds`, and `TenantWriteGuardInterceptor` refuses writes outside it.

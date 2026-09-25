@@ -1,15 +1,26 @@
 # Phase 1A-2: After the outcome (agreement → payments → closure) ⬜
 
-**Start only after Phase 1A (MVP) is done.** Whether this phase is part of the MVP release is **OPEN (Q13)** in `docs/product/product-direction.md`.
+**Start only after Phase 1A (MVP) is done.** **Q13 decided (2026-09-25):** this phase is **not** part of the first MVP.
 
 > **Origin:** this was steps 3–4 of the MVP before the 2026-09-25 re-plan, when the MVP was the lender's settlement path. The work and its branches are unchanged; only the order moved. Rahoon doesn't collect money. Payments stay recorded manually with maker-checker (A-04), and signing stays «غير مفعّل» (A-05).
 
-**Goal:** once the individual has accepted an approved proposal, the outcome is carried through and documented for them:
-- the lender's legal review and activation of the agreement
-- the installment schedule the individual can follow
-- payments recorded and matched by two different people
-- breach handled without automatic referral
-- reconciliation and a documented closure, with closure documents available to the individual
+**Goal:** once the individual has accepted an approved offer, the outcome is **tracked** and documented for them:
+- the agreement
+- the installment schedule they can follow
+- payment confirmations
+- breach handled without any automatic action against them
+- closure, with closure documents available to them
+
+The lender executes all of this; Rahoon tracks and explains. See the two modes below.
+
+## Direction review (after the product-owner answers, 2026-09-25)
+
+- **Q13 decided:** agreement activation, payments and financial closure stay in this phase, not in the MVP. Rahoon **doesn't hold customer funds or execute payments**.
+- **Q1/Q8 decided:** in the MVP the lender isn't on the platform, and the Rahoon team coordinates over a documented manual channel. This phase therefore has two modes:
+  1. **Manual-coordination mode (first).** The Rahoon team records the lender's agreement, installment schedule, payment confirmations and closure/release letters **as evidence from the lender** (source document + date). The individual can also report a payment with proof. Rahoon only tracks and explains; it never marks money as received on its own authority.
+  2. **Lender-on-platform mode (later).** The existing L19–L21 and L26 screens and backend (maker-checker payments, reconciliation, closure) are used when a lender works inside Rahoon.
+- **Re-review of existing work.** L19–L21, L26 and D10/D14 were built for mode 2. Before building mode 1, decide in this phase's first session which parts are reused (the D10/D14 owner views most likely) and which are mode-2 only.
+- **Needs design.** Team screens for recording the lender's agreement, schedule and payment evidence (mode 1).
 
 ## Definition of done
 
@@ -19,6 +30,10 @@
 - [ ] `dotnet test` is green, with the B10 backend merged and migrated.
 
 ## Demo cast
+
+**Mode 1, manual coordination (first):** the Rahoon team coordinator records the lender's agreement, schedule, payment confirmations and closure letters as evidence. The individual follows along (D10, D14) and can report a payment with proof.
+
+**Mode 2, lender on platform (later), existing cast:**
 
 | Who | Login | Does |
 |---|---|---|
@@ -32,7 +47,7 @@
 
 | ID | Screen | Tech status | Direction review | Where |
 |---|---|---|---|---|
-| L19 | Agreement (legal review → schedule → activate) | 🟨 branch `…a1008744…` @ `36d316a` (merged in 1A step 2) | OK | |
+| L19 | Agreement (legal review → schedule → activate) | 🟨 branch `…a1008744…` @ `36d316a` (merged in 1A step 3) | OK | |
 | L20 | Payment schedule, record (maker), match (checker) | 🟨 same | OK | |
 | L21 | Breach handling (no automatic referral) | 🟨 same | OK | Check the owner-facing wording: «نتواصل معك أولاً» |
 | D10 | Owner payments and receipts | 🟨 branch `…a1bd0510…` | OK | «رهون لا تستلم أي مبالغ» |

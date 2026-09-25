@@ -33,7 +33,7 @@ There's no live court API; the manual and unavailable states stay.
 |---|---|---|
 | Individual from Phase 1A | own sign-in | files a complaint (D13) or an objection to a decline (OA08 → «الاعتراض على الرد») |
 | هند المطيري (compliance) | h.almutairi@alufuq.example | reviews complaints (L23) |
-| Rahoon team reviewer | depends on Q3 | reviews objections to a lender's decline («يراجعه فريق رهون»). **OPEN (Q3)**: no platform role exists for this yet |
+| Rahoon team coordinator | platform staff (role created in 1A step 6) | reviews objections and complaints (Q3 decided: the Rahoon team reviews) and records referrals to a specialist (V9) |
 | سارة القحطاني | s.alqahtani@alufuq.example | creates a manual case as an exception (L03 + reason), runs an import (L04) |
 | ماجد الحربي (legal) | m.alharbi@alufuq.example | L25 referral readiness |
 | Institution visitor | public | demo request (S02) |
@@ -51,10 +51,10 @@ There's no live court API; the manual and unavailable states stay.
 | S11 | Help and support | ⬜ | Rework | Content must answer the individual's question first, then staff help |
 | D01 | Lender invites the owner first | 🟩 | **Secondary, rework** | Reword it as a secondary route; the invited individual ends up with the same account type as a self-registered one (Q14/Q15) |
 | L03 | Manual case wizard | ✅ | **Secondary, rework** | Add a mandatory reason («استثناء بسبب إلزامي — مثل عميل حضر للفرع») and audit it |
-| L04 | Bulk CSV import | 🟨 branch `…a3939fc4…` (merged in 1A step 2) | **Secondary, rework** | «للترحيل فقط؛ لا تواصل مع المالك قبل دعوته»: enforce no owner contact until invited |
-| L23 + D13 | Complaints (reviewer) + owner complaints | 🟨 merged in 1A step 2 | OK | Add objections to a declined request (Q3: who reviews) |
-| L25 | Manual judicial-referral readiness package | ⬜ UI · 🟨 API | Review | Arrives with the B10 backend merge (1A-2 step 2). Confirm it stays in scope for an individual-first product (Q11/Q8) |
-| C01 | Cancellation request + approver decision | 🟨 merged in 1A step 2 | OK | |
+| L04 | Bulk CSV import | 🟨 branch `…a3939fc4…` (merged in 1A step 3) | **Secondary, rework** | «للترحيل فقط؛ لا تواصل مع المالك قبل دعوته»: enforce no owner contact until invited |
+| L23 + D13 | Complaints (reviewer) + owner complaints | 🟨 merged in 1A step 3 | OK | The P4 minimum (objection, completion, complaint) is in the MVP (1A step 8); this phase completes the full flow, including referral to a specialist (V9) |
+| L25 | Manual judicial-referral readiness package | ⬜ UI · 🟨 API | **On hold (V10)** | Judicial referral isn't among the four confirmed help paths (Q11). Don't build the UI until the product owner confirms scope; the backend stays |
+| C01 | Cancellation request + approver decision | 🟨 merged in 1A step 3 | OK | |
 
 ## Steps
 
@@ -66,8 +66,8 @@ There's no live court API; the manual and unavailable states stay.
    - L04 no-contact rule
 4. ⬜ Complaints and objections:
    - individual D13 → هند's decision → the individual sees the response; the SLA pause is visible
-   - objection to a declined request, with the reviewer per Q3
-5. ⬜ L25 referral readiness UI, if still in scope:
+   - objection to a declined request, reviewed by the Rahoon team (Q3)
+5. ⬜ L25 referral readiness UI, **only if V10 confirms it's in scope**:
    - legal requests the referral; a different approver decides with step-up
    - the external reference is stored exactly as entered
    - the individual gets a notice
@@ -76,4 +76,4 @@ There's no live court API; the manual and unavailable states stay.
 ## Findings / open decisions
 
 - Audit export is open to anyone with `audit.view` (there's no `audit.export` permission). Decide whether to add one.
-- Q3 (Rahoon pre-screening and review of objections) may need a new platform role. Coordinate with Phase 1C.
+- Q3 is decided: the Rahoon team reviews. The platform role is created in the MVP (1A step 6).

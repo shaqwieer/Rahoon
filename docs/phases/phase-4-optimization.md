@@ -13,7 +13,8 @@ The backend is 🟨 on branch `worktree-agent-ae86d4e3d70e6413a` and is merged i
 
 ## Direction review (added 2026-09-25, `docs/product/product-direction.md`)
 
-- **O01/O02 are institution-facing.** Add request-stage metrics once the intake mechanism exists (Q1):
+- **Q6 decided:** processing times may be tracked **internally** and are never shown to the individual as a commitment. The analytics here are for the Rahoon team and, later, lenders.
+- **O01/O02 were designed as institution-facing.** Add Rahoon-team request metrics (the intake mechanism is the Rahoon team, Q1):
   - requests received
   - response time
   - accepted / declined, with reasons

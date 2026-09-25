@@ -11,9 +11,11 @@ The backend is ✅ on `master` (merged 2026-09-24, `be3b7e3`; see `docs/progress
 
 ## Direction review (added 2026-09-25, `docs/product/product-direction.md`)
 
-- **Voluntary sale isn't an approved service yet (Q11).** B13 says «البيع الطوعي خيار يطرحه المالك فقط», meaning only the individual raises it (OA03 «أفكر في بيع العقار بنفسي»). Before building L27–L33 and D15–D16, confirm with the product owner that:
-  1. voluntary sale is offered at all;
-  2. it can only start from the individual's own request or preference, never be proposed as pressure.
+- **Q11 decided (2026-09-25):** «البيع الرضائي عند تعذر الاستمرار» is confirmed help path P3. Rahoon coordinates the valuation, deals with the lender and rights holders, handles the sale procedures, and explains the proceeds and any remaining debt. It's a help path, **not a guaranteed sale**. Remaining checks before building L27–L33 and D15–D16:
+  - B8 was designed with the lender driving the sale inside Rahoon. Re-plan it for the Rahoon team leading with manual lender coordination (Q1/Q8); lender-driven screens go to the lender-on-platform mode.
+  - Terminology: «البيع الرضائي» (product owner) vs «البيع الطوعي» (design), V8.
+  - Any action on the individual's behalf (listing, broker mandate) needs V1 first.
+- It starts only from the individual's own preference or request (B13: «البيع الطوعي خيار يطرحه المالك فقط»), never as pressure.
 - **What the individual gains.** D15 must answer the product question: what they gain, the risks, and that they can withdraw until an offer is accepted.
 - **Ecosystem screens (V05–V07, PA14–PA17)** are institution- and platform-facing. Keep them, but after the MVP. Reconsider billing (PA17) once Q9 (is the service free for the individual?) is answered.
 
