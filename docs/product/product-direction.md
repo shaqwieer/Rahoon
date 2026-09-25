@@ -135,6 +135,8 @@ These items were decided in principle; verify each before its feature is activat
 | V8 | Wording: «البيع الرضائي» vs «البيع الطوعي» in the UI; whether «السماح/فترة مؤقتة دون أقساط» belongs under P1 | Path copy, Phase 2 |
 | V9 | «الإحالة لمختص مناسب» (P4): who the specialists are and how a referral is made and documented | P4 in 1B |
 | V10 | **Judicial referral** coordination isn't among the confirmed service paths. Confirm whether it stays in any scope | Phase 3 UI (the backend exists and is kept) |
+| V11 | Final **terms of use and privacy policy** text (published as labelled drafts; each account records the accepted version `terms-draft-2026-09`) | Replacing the drafts on `/terms` and `/privacy`; re-acceptance when the version changes |
+| V12 | **Self-declared identity** until Q10: anyone can register an ID number with their own mobile. The Rahoon team must verify identity before any coordination | Steps 5–6 review checklist; Q10 removes it |
 
 ## 8. Superseded assumptions
 

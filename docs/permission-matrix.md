@@ -67,6 +67,7 @@ within platform minima). Enforcement is server-side on every endpoint (`RequireP
 | الامتثال (منصة) | Platform | platform.ops, complaints, privacy, defaults, audit | metadata |
 | مدقق (منصة) | Platform | platform.ops, audit, temp_access_approve | audit trail |
 | المالك / المدين | — (owner session) | owner endpoints only | exactly one case; no internal notes, other parties or lender-only documents |
+| الفرد (حساب ذاتي التسجيل) | — (individual session, ADR 0001) | `/api/individual/*` and own-account auth endpoints only (`RequireIndividual`); no organization permissions | own account; own requests from Phase 1A step 5; no tenant data (empty `DataOrganizationIds`) |
 
 > **Direction change (2026-09-25):** the individual becomes a first-class, self-registered user who owns requests
 > before any case (B13 «الصلاحيات حسب المرحلة»): nothing is visible to any lender before submission; during review only

@@ -115,9 +115,9 @@
 
 | ID | Screen / capability | Tech status | Direction review | Notes |
 |---|---|---|---|---|
-| Landing | Owner-first public landing | ⬜ | New + **Needs design (D-1)** | Copy: the Rahoon team reviews and coordinates; four help paths; no «مجاني» or deadlines |
-| OR01, OR02 | Registration, code, terms | ⬜ | New | Q10 and Q15 assumptions |
-| — | Individual account with **several requests** | ⬜ | New | Replaces "owner = exactly one case" (X4) |
+| Landing | Owner-first public landing | 🟩 built 2026-09-25; browser ✓ at 390 and 1440 | New + **Needs design (D-1)** | B13 frames + proposed D-1 text (help paths, the Rahoon team step), labelled «بانتظار اعتماد التصميم» until D-1 is approved. No «مجاني», no deadlines, consent described as a mechanism (Q12) |
+| OR01, OR02 | Registration, code, terms | 🟩 built 2026-09-25; browser ✓ at 390 | New | `/start` (register) and `/start?mode=signin`; Q10 (digital ID «غير متاح») and Q15 (ID + mobile code) interim rules |
+| — | Individual account with **several requests** | 🟩 account and session built 2026-09-25 (`/my`); the requests themselves arrive in step 5 | New | Session scope `Individual`, not tied to any case (X4 superseded in code) |
 | OA01–OA05 | Request wizard | ⬜ | New + **Needs design (D-2)** | Lender named (V6); consent wording (V4); several requests (Q7) |
 | OA06 successor | «ماذا ستفعل رهون لك» + tracking (status, waiting-on, next step) | ⬜ | New + **Needs design (D-3)** | No deadlines (Q6) |
 | OA07 | Completion requested by the Rahoon team | ⬜ | Rework (actor = Rahoon team) | |
@@ -179,10 +179,35 @@
 - [x] Phase 0 leftover fixed: the breadcrumb for `/cases/new/…` now reads «الحالات › حالة جديدة › RH-…» (and `/cases/import` reads «استيراد»).
 - [x] Direction review recorded in the table above. Rework items are assigned to the steps that rebuild those screens: D02 → step 5 (tracker); D06/D07 → step 7 (D-5); complaint confirmation → step 8.
 
-### Step 4: Landing + registration + account with several requests ⬜ (Q9, Q10, Q15 interim rules)
-- [ ] Backend: an individual account independent of any case; registration and sign-in (ID + mobile OTP); terms consent; national-digital-ID slot `unavailable`; lockout.
-- [ ] Web: owner-first landing (D-1) and OR01/OR02; separate staff entry.
-- [ ] Tests: duplicate identity → sign-in; OTP lockout; cookie-only session; the account can list several requests.
+### Step 4: Landing + registration + account with several requests ✅ 2026-09-25 (Q9, Q10, Q15 interim rules)
+- [x] **Backend** (ADR 0001 §4.1):
+  - `AccountKind` (Staff/Owner/Individual) and `UserStatus.Pending`
+  - session scope `Individual`, with no organization and no tenant data
+  - `identity.individual_profiles`: encrypted ID/iqama and mobile, HMAC lookup (unique per ID), masked values, `IdentityAssurance = self_declared`
+  - `identity.terms_acceptances` (version + time + masked IP on every acceptance)
+  - endpoints `POST /api/auth/individual/start|resend|verify` and `GET /api/individual/account`
+  - `RequireIndividual` guard; `/api/auth/me` returns `scope=individual`, the masked identity and `home=/my`
+  - an individual's logout returns to `/`
+  - migration `IndividualAccounts`, which also tags existing invited-owner accounts as `Owner`
+- [x] **Security:**
+  - **anti-enumeration:** `/start` answers the same way whether or not the ID is registered. If the ID is registered with another mobile, a decoy challenge is issued: nothing is sent and the account isn't locked.
+  - a pending registration from another mobile can only be replaced after its code expires
+  - 3 wrong codes on the real mobile → 15-minute lock (same as staff)
+  - terms are checked before the code, so a missing tick never costs an attempt
+  - cookie-only session (HttpOnly), CSRF-exempt pre-session endpoints guarded by the Origin check and rate limit
+- [x] **Web:**
+  - individual-first landing (B13 + proposed D-1): header «كيف تعمل · كيف نساعدك · حقوقك وخصوصيتك · للجهات الممولة», «تسجيل الدخول», primary «ابدأ طلب المعالجة»; mobile «دخول» + menu
+  - OR01/OR02 at `/start` (register and sign-in in one flow, terms + optional awareness opt-in on the code screen; field errors clear as you type)
+  - `/my` («حسابي»: «طلباتي» empty state + account card with masked ID/phone, «مُعلَنة… لم تُوثَّق بعد», digital ID «غير متاح», accepted terms version)
+  - draft `/terms` and `/privacy` pages, labelled «مسودة»
+  - the staff `/login` note now sends individuals to `/start`; the footer has «دخول الموظفين»
+  - `/my` is protected (no session → `/start?mode=signin`); an individual reaching staff pages is sent to `/my`
+- [x] **Tests:**
+  - `IndividualAccountTests` (9): registration, session not bound to a case, terms-before-code, field errors, same-ID sign-in (one account), decoy (no code, no lock), real lock, no staff/owner/tenant data, staff and anonymous refused, HttpOnly cookie and no token in the body
+  - backend total **131/131**
+  - web typecheck, lint and build clean
+  - browser journey (Playwright, 20 checks at 390/1440, run three times): landing → validation → register → terms required → `/my` → staff page refused → sign out → protected redirect → sign in again; no web-storage token, no horizontal overflow, no console errors
+- [x] *Moved to step 5:* "the account can list several requests" — requests don't exist before step 5. Step 4 proves the session isn't tied to any case.
 
 ### Step 5: Request wizard + «ماذا ستفعل رهون لك» + tracking ⬜ (Q4, Q5, V4, V6, V7 interim rules)
 - [ ] Backend:
@@ -224,6 +249,19 @@
   - Backend: 116/116 tests green on `master` (`be3b7e3`).
 
 ## Findings / open decisions
+
+- **Identity is self-declared (Q10, important):** without a national identity provider, anyone can register someone else's ID number with their own mobile. Mitigation today:
+  - the account is labelled «مُعلَنة… لم تُوثَّق بعد»
+  - the Rahoon team verifies identity (documents, lender match) before any coordination (steps 5–6; V12)
+  - the real owner of an ID can't be locked out by others' attempts
+
+  A national identity provider (Q10) removes the gap.
+- **The person's name isn't collected** at registration (B13 OR01 collects only ID + mobile). The display label is the masked ID until step 5 collects the name (Q5).
+- **SMS abuse:** codes are rate-limited per IP (`auth` policy) and per session (60-second resend cooldown). A per-mobile daily cap is still missing; add it before a real SMS gateway is enabled.
+- **Placeholders shown to users until later steps:**
+  - «تقديم طلب المعالجة يُتاح في هذه الصفحة قريباً» on `/my`, until step 5
+  - draft terms and privacy pages; the final legal text is **V11** (see `product-direction.md` §7)
+- **D-1 is pending design approval:** the landing uses the proposed D-1 text. It's labelled in this table, not on the page.
 
 - **Safety (found 2026-09-25, fix first thing in step 3):** `dotnet run -- reset-demo` calls `EnsureDeletedAsync()` in `server/src/Rahoon.Api/Program.cs:86` **before** the seeder's Development/Testing guard (`DevSeeder.cs:39`). Run against a non-development environment, it would drop that database before failing. Fix: check the environment before deleting, and add a test.
 - **Design gap:** the Rahoon team workspace (D-4) has no frames. B13 designed a lender intake instead, and that is now deferred. The requests D-1 to D-6 are written (`docs/design-requests/1a-step2-design-requests.md`) and **await the product owner or designer**; steps 4–8 will use «بانتظار اعتماد التصميم» for any frame still missing.

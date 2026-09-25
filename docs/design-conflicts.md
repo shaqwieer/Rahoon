@@ -34,8 +34,8 @@ The individual-first direction and its open decisions are recorded in `docs/prod
 | # | Topic | Conflict | Handling |
 |---|---|---|---|
 | 16 | Lender response deadline | State model: «مهلة رد الجهة 5 أيام عمل» (افتراض) vs L00b sample «الرد خلال 3 أيام عمل» | **Resolved (Q6):** no deadline is shown to the individual; processing times are tracked internally only. |
-| 17 | «مجاني» on OR01 | OR01 sub-title «مجاني · دقيقتان» vs landing «أزلنا "مجاناً" … حتى يتأكد نموذج التسعير» (Q9) | Don't render «مجاني» until **Q9** is answered. |
-| 18 | OTP attempts at registration | OR02 «5 محاولات ثم قفل مؤقت» vs implemented staff policy (3 wrong codes → 15-min lock) | Decide at Phase 1A step 3; record here. |
+| 17 | «مجاني» on OR01 | OR01 sub-title «مجاني · دقيقتان» vs landing «أزلنا "مجاناً" … حتى يتأكد نموذج التسعير» (Q9) | Don't render «مجاني» until **Q9** is answered. **Applied in step 4:** OR01's sub-title shows «دقيقتان» only. |
+| 18 | OTP attempts at registration | OR02 «5 محاولات ثم قفل مؤقت» vs implemented staff policy (3 wrong codes → 15-min lock) | **Decided (step 4):** 3 attempts, as for staff; only a real registered account is locked, and decoy attempts never lock (ADR 0001 §8). |
 | 19 | Lender default landing | Phase 0 anchor: portfolio (L01) vs LenderSidebar 2026-09-25: «الطلبات الواردة» first and default | **Resolved (Q1):** in the MVP the Rahoon team coordinates manually, and lender screens aren't an entry point; the intake sidebar item belongs to the later lender-on-platform mode. |
 
 ## Open questions (need product / legal confirmation)

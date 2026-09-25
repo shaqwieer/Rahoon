@@ -58,6 +58,10 @@ a static `Map(IEndpointRouteBuilder)` registered in `Modules/ModuleRegistry.cs`)
   > each with its own reference, status, documents and access; the session is not tied to one case. The code above is
   > still the implemented behaviour; the rework is planned in Phase 1A step 4 (returning sign-in: Q15, open).
   > In the MVP, lenders have no platform access; the **Rahoon team** (platform staff) reviews and coordinates (Q1).
+* **Individuals** (implemented in Phase 1A step 4): self-registration and sign-in with national ID/iqama + SMS code at
+  `/start` (no password, Q15 interim); session scope `Individual` with no organization and no tenant data; anti-enumeration
+  (same answer whether the ID is registered; decoy challenge when the mobile differs); 3 wrong codes on the real mobile →
+  15-minute lock. Identity is self-declared until a national identity provider exists (Q10).
 * **Tenancy** — `RequestContext` is resolved from the session and the *active membership*, never
   from client input. Every `IOrgOwned` entity has a global EF query filter on
   `RequestContext.DataOrganizationIds`, and `TenantWriteGuardInterceptor` refuses writes outside it.

@@ -211,3 +211,11 @@ UI rule (Q6): every state maps to a **status label**, **«ننتظر»** (فري
 | V7 duplicates | |
 | Linking an invited owner (D01) to an individual account | Phase 1B |
 | Converting a request into a lender-tenant case when a lender joins | needs new consent; later |
+
+## 8. Amendments
+
+| Date | Change | Reason |
+|---|---|---|
+| 2026-09-25 (Phase 1A step 4) | `User.Email` stays **required**. Individuals get a reserved non-routable placeholder (`individual+{id}@individuals.rahoon.local`), as invited owners already do. It's never used to sign in or to send messages, and `/api/auth/me` returns an empty e-mail for non-staff accounts. | 26 code paths read `User.Email`; making it optional would ripple through staff login, audit and masking for no product gain. The individual's identity key is the national-ID HMAC (unique). |
+| 2026-09-25 (Phase 1A step 4) | A registration creates a `UserStatus.Pending` user and profile **before** the code is verified (sessions require a user). The pending user never gets a resolved session. A pending registration from another mobile can be replaced only after its code expires. | Keeps the one-account-per-ID rule without letting an unverified start block a real owner for long. |
+| 2026-09-25 (Phase 1A step 4) | OTP attempts for individuals: **3** (the existing policy), not the 5 in B13 OR02. Only a real, already-registered account is locked after exhaustion; decoy challenges (ID registered with another mobile) never lock. | One policy across the platform; prevents locking a victim through someone else's attempts. Recorded in `design-conflicts.md` #18. |
