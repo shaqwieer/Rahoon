@@ -120,6 +120,15 @@ export function lenderCrumbs(pathname: string, t: Dictionary): Crumb[] {
     const sub = SETTINGS_NAV.find((s) => s.href === `/settings/${seg[1]}`);
     return [first, { label: sub ? t.nav.settings[sub.key] : decodeURIComponent(seg[1]) }];
   }
-  if (section === "cases") return [first, { label: decodeURIComponent(seg[1]), ltr: true }];
+  if (section === "cases") {
+    // /cases/new[/RH-…] is the wizard and /cases/import the bulk import: named pages, not case references.
+    if (seg[1] === "new") {
+      // Not a link: opening /cases/new creates another draft.
+      const draft: Crumb[] = seg[2] ? [{ label: decodeURIComponent(seg[2]), ltr: true }] : [];
+      return [first, { label: t.nav.lender.newCase }, ...draft];
+    }
+    if (seg[1] === "import") return [first, { label: t.nav.lender.importCases }];
+    return [first, { label: decodeURIComponent(seg[1]), ltr: true }];
+  }
   return [first, { label: decodeURIComponent(seg[seg.length - 1]) }];
 }

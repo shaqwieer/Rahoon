@@ -61,6 +61,8 @@ const ar = {
       reports: "التقارير",
       settings: "الإعدادات",
       help: "المساعدة والدعم",
+      newCase: "حالة جديدة",
+      importCases: "استيراد",
       more: "المزيد",
       mobileLabel: "التنقل",
     },

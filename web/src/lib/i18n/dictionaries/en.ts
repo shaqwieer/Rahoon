@@ -60,6 +60,8 @@ const en: Dictionary = {
       reports: "Reports",
       settings: "Settings",
       help: "Help & support",
+      newCase: "New case",
+      importCases: "Import",
       more: "More",
       mobileLabel: "Navigation",
     },
