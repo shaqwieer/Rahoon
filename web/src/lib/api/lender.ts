@@ -132,11 +132,26 @@ export interface WorkspaceData {
   sensitive: {
     actions: AvailableAction[];
     canRequestCancel: boolean;
+    /** Pending «إلغاء الحالة» request (CancellationEndpoints.PendingSummaryAsync), null when none. */
+    pendingCancellation: PendingCancellation | null;
     sale: { label: string; enabled: boolean; reasons: string[]; href: string } | null;
     referralNote: string | null;
     canInitiateReferral: boolean;
   };
   actions: AvailableAction[];
+}
+
+export interface PendingCancellation {
+  id: string;
+  reason: string | null;
+  requestedBy: string | null;
+  requestedAt: string | null;
+  approver: string | null;
+  dueOn: string | null;
+  assignedToMe: boolean;
+  canDecide: boolean;
+  /** Separation-of-duties note shown to the requester, else null. */
+  note: string | null;
 }
 
 export interface SolutionDto {

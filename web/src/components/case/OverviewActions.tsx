@@ -139,7 +139,15 @@ export function SensitivePanel({ ws }: { ws: WorkspaceData }) {
           {a.key === "pause" ? "إيقاف الحالة مؤقتاً" : a.labelAr}
         </Button>
       ))}
-      {s.canRequestCancel ? (
+      {s.pendingCancellation ? (
+        <div className="flex flex-col gap-1 rounded-md border border-warn-line bg-warn-bg p-3 text-13">
+          <span className="flex items-center gap-1.5 font-semibold text-warn"><Icon name="hourglass_top" size={16} />طلب إلغاء بانتظار الاعتماد</span>
+          <span>طلبه {s.pendingCancellation.requestedBy ?? "—"}{s.pendingCancellation.approver ? ` · المعتمد ${s.pendingCancellation.approver}` : ""}</span>
+          <Button variant={s.pendingCancellation.canDecide ? "primary" : "text"} size="sm" href={`/cases/${ws.header.reference}/cancel`} className="self-start">
+            {s.pendingCancellation.canDecide ? "اتخاذ القرار" : "عرض الطلب"}
+          </Button>
+        </div>
+      ) : s.canRequestCancel ? (
         <Button variant="sensitive" icon="cancel" review href={`/cases/${ws.header.reference}/cancel`} className="justify-start">إلغاء الحالة</Button>
       ) : null}
       {s.sale ? (
