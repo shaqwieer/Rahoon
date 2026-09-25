@@ -144,22 +144,27 @@
 - [x] Q4, Q5, Q9, Q10 and Q15 remain open; verifications V1–V10 listed.
 - [x] Plan, acceptance criteria and demo script updated. Pushed to the Rahoon repository.
 
-### Step 2: Design and architecture alignment (no product code) ⬜
-- [ ] **Design requests** for the product owner or designer to add to the design project:
-  - **D-1** Landing copy: replace «تراجع جهتك الطلب» with the Rahoon team reviewing and coordinating; add a section on the four help paths; no «مجاني» or deadlines.
-  - **D-2** OA01 (lender named, no «مشاركة في رهون» or waitlist) and OA04 (consent: Rahoon shares the necessary data with the lender; wording per V4).
-  - **D-3** «ماذا ستفعل رهون لك» + tracking: path(s), status, waiting-on, next step.
-  - **D-4** Rahoon team workspace: queue, review, completion, consent evidence, coordination log, updates, offer recording and verification, response relay.
-  - **D-5** D07 as «عرض من جهتك الممولة», with per-path effects and without a guarantee; D06 as the help-paths explainer.
-  - **D-6** OA08 reasons and wording.
-- [ ] **ADR `docs/adr/0001-request-ownership.md`:**
-  - the request is owned by the individual's account and handled in the Rahoon platform tenant
-  - the lender is a **counterparty record**, not a tenant, in the MVP
-  - how this coexists with today's lender-tenant case model, which is kept for the lender-on-platform mode
-  - the Rahoon team role and permissions
-  - the request state model (`product-direction.md` §5)
-  - reuse of L13–L17 mechanics for offer recording and verification: yes or no
-- [ ] If the design requests aren't ready when step 5 starts, build with the existing design system and mark each such screen «بانتظار اعتماد التصميم» in *Findings*.
+### Step 2: Design and architecture alignment (no product code) ✅ 2026-09-25
+- [x] **Design requests D-1 to D-6** written in [`docs/design-requests/1a-step2-design-requests.md`](../design-requests/1a-step2-design-requests.md). Each has proposed Arabic text marked «يحتاج اعتماد صاحب المشروع» or «يحتاج مراجعة نظامية», the states to draw, and design acceptance criteria.
+  - **Open:** the product owner or designer adds them to the design project. Status is tracked in that file.
+  - D-4 (the Rahoon team workspace, T01–T08) is the largest, and it's needed from step 6.
+- [x] **ADR [`docs/adr/0001-request-ownership.md`](../adr/0001-request-ownership.md)** accepted. Decisions:
+  - **New organization kind `Operator` («فريق رهون»)** owns requests; the Rahoon team are its members. The Platform org is rejected as the owner, to keep the rule that platform admins see tenant data only under a dual-approved grant.
+  - Requests are **also** `IApplicantOwned`. The individual is a new `Individual` session scope with an independent account (`individual_profiles`: encrypted ID and phone with HMAC lookup, unique per ID), and holds several requests.
+  - The **lender is a counterparty** (`financing_institutions` directory, optional future link to a Lender tenant) with no access in the MVP. Moving a request into a lender tenant later needs new consent.
+  - New `requests` schema:
+    - Request (`REQ-YYYY-NNNNN`)
+    - RequestConsent (versioned text, OTP-confirmed, withdrawable)
+    - RequestDocument/Version
+    - CoordinationEntry (append-only manual channel log, hidden from the individual by default)
+    - RequestUpdate, RequestMessage
+    - RequestOffer (recorded ≠ verified, lender letter required)
+    - RequestResponse
+    - RequestObjection
+  - `RequestWorkflow`: 12 explicit transitions with guards (§4.5). No future dates in the UI.
+  - Reuse: sessions/CSRF/OTP/PII/documents/notifier/audit. The audit chain gets subject columns with hash-format versioning. **L13–L17 aren't reused for MVP offers** (they model the lender's internal decision); the D07/D09 components are reused with a request data adapter.
+  - Required isolation and leakage tests listed (§6).
+- [x] Rule kept: if a design request isn't ready when its step starts, build with the existing design system and record «بانتظار اعتماد التصميم» in *Findings*.
 
 ### Step 3: Bring in finished work and review it ⬜
 - [ ] **First:** fix the `reset-demo` safety finding (environment check before deleting the database; test).
@@ -214,7 +219,7 @@
 ## Findings / open decisions
 
 - **Safety (found 2026-09-25, fix first thing in step 3):** `dotnet run -- reset-demo` calls `EnsureDeletedAsync()` in `server/src/Rahoon.Api/Program.cs:86` **before** the seeder's Development/Testing guard (`DevSeeder.cs:39`). Run against a non-development environment, it would drop that database before failing. Fix: check the environment before deleting, and add a test.
-- **Design gap:** the Rahoon team workspace (D-4) has no frames. B13 designed a lender intake instead, and that is now deferred.
+- **Design gap:** the Rahoon team workspace (D-4) has no frames. B13 designed a lender intake instead, and that is now deferred. The requests D-1 to D-6 are written (`docs/design-requests/1a-step2-design-requests.md`) and **await the product owner or designer**; steps 4–8 will use «بانتظار اعتماد التصميم» for any frame still missing.
 - **Tenancy change:** the MVP request isn't owned by a lender tenant. Covered by the ADR in step 2; today's lender-tenant case model is kept for later.
 - **Earlier design conflicts, still relevant:**
   - OR02 allows 5 OTP attempts; staff policy is 3.

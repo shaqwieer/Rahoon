@@ -7,6 +7,7 @@ web/      Next.js 16 (App Router, TypeScript, Tailwind v4) — public pages + ro
 server/   ASP.NET Core 10 Web API (modular monolith) + xUnit integration tests
           PostgreSQL 16 via EF Core 10 (Npgsql), one schema per module
 design-source/  Mirror of the design project (source of truth for UI)
+docs/adr/       Architecture decision records (0001: request ownership, Rahoon team tenant, request lifecycle)
 docs/     Specs per design batch, implementation map, matrices, progress
 ```
 

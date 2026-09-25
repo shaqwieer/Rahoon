@@ -80,7 +80,7 @@ After the MVP (Phase 1A-2), the outcome's execution is **tracked**: agreement, i
 - **Several requests (CONFIRMED, Q7):** the individual can submit separate requests, for example for finance with different lenders. A second request for the **same** finance is VERIFY V7.
 - **Lender participation (CONFIRMED, Q1/Q2):** the individual names their lender, whether or not that lender uses Rahoon. No lender account or integration is needed to start. The design's «مشاركة في رهون» label and the «جهتي غير موجودة» waitlist are superseded (X14). How the lender is identified (a list of licensed institutions or free text) is VERIFY V6.
 - **What the individual sees (CONFIRMED, Q6/Q12):** the request's **status**, **what the team or the individual is waiting for**, and **the next step**. **No response time or deadline, and no promise of a solution**, until a clear operating policy is approved. Processing times may be **tracked internally** and never shown as a commitment.
-- **Proposed request states (PROPOSED by engineering, derived from the decisions above; wording to be validated with design):**
+- **Request states (engineering design accepted in `docs/adr/0001-request-ownership.md` §4.5; the labels shown to the individual are proposed in design request D-3):**
 
   | State | Waiting on |
   |---|---|
