@@ -19,7 +19,7 @@ public sealed class RequestContextMiddleware(RequestDelegate next)
 {
     private static readonly string[] CsrfExempt =
     [
-        "/api/auth/login", "/api/auth/owner/", "/api/public/", "/api/invitations/", "/api/health",
+        "/api/auth/login", "/api/auth/owner/", "/api/auth/individual/", "/api/public/", "/api/invitations/", "/api/health",
     ];
 
     public async Task InvokeAsync(HttpContext http, RequestContext rc, RahoonDbContext db, SessionService sessions,
@@ -123,6 +123,13 @@ public sealed class RequestContextMiddleware(RequestDelegate next)
                 var org = await db.Organizations.FirstAsync(o => o.Id == access.OrganizationId);
                 rc.SetOwner(org.Id, org.NameAr, access.CaseId, access.PartyId, access.Id);
                 return org.IdleTimeoutMinutes;
+            }
+            case SessionScope.Individual:
+            {
+                var user = await db.Users.FirstOrDefaultAsync(u => u.Id == session.UserId);
+                if (user is not { AccountKind: AccountKind.Individual, Status: UserStatus.Active }) return null;
+                rc.SetIndividual();
+                return 30;
             }
             case SessionScope.None:
                 return 30;

@@ -50,6 +50,15 @@ public static class EndpointAccess
             return await next(ctx);
         });
 
+    /// <summary>Self-registered individual (ADR 0001). Staff, owners and anonymous callers are refused.</summary>
+    public static TBuilder RequireIndividual<TBuilder>(this TBuilder b) where TBuilder : IEndpointConventionBuilder =>
+        b.RequireSession().AddEndpointFilter(async (ctx, next) =>
+        {
+            var rc = ctx.HttpContext.RequestServices.GetRequiredService<RequestContext>();
+            if (!rc.IsIndividual) throw new ForbiddenException();
+            return await next(ctx);
+        });
+
     public static TBuilder RequireOwner<TBuilder>(this TBuilder b) where TBuilder : IEndpointConventionBuilder =>
         b.RequireSession().AddEndpointFilter(async (ctx, next) =>
         {

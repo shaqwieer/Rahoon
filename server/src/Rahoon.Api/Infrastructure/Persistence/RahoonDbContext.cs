@@ -27,6 +27,8 @@ public sealed class RahoonDbContext(DbContextOptions<RahoonDbContext> options, R
     // Identity & tenants
     public DbSet<Organization> Organizations => Set<Organization>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<IndividualProfile> IndividualProfiles => Set<IndividualProfile>();
+    public DbSet<TermsAcceptance> TermsAcceptances => Set<TermsAcceptance>();
     public DbSet<Membership> Memberships => Set<Membership>();
     public DbSet<Team> Teams => Set<Team>();
     public DbSet<Role> Roles => Set<Role>();

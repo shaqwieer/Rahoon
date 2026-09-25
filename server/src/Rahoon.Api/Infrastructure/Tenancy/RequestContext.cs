@@ -42,8 +42,10 @@ public sealed class RequestContext
     public bool IsJudicialAgent => Scope == SessionScope.Organization && OrganizationKind == Modules.Identity.OrganizationKind.JudicialAgent;
     public bool IsPlatform => Scope == SessionScope.Organization && OrganizationKind == Modules.Identity.OrganizationKind.Platform;
     public bool IsOwner => Scope == SessionScope.Owner;
+    /// <summary>Self-registered individual (ADR 0001): no organization data at all; access to own requests only.</summary>
+    public bool IsIndividual => Scope == SessionScope.Individual;
 
-    public string ActorType => IsOwner ? "owner" : IsProvider || IsJudicialAgent ? "provider" : IsPlatform ? "platform" : "user";
+    public string ActorType => IsOwner ? "owner" : IsIndividual ? "individual" : IsProvider || IsJudicialAgent ? "provider" : IsPlatform ? "platform" : "user";
 
     public void SetAnonymous() => IsAuthenticated = false;
 
@@ -79,6 +81,14 @@ public sealed class RequestContext
         OwnerPartyId = partyId;
         OwnerAccessId = ownerAccessId;
         DataOrganizationIds = [lenderOrgId];
+    }
+
+    /// <summary>Individual session: no organization, no tenant data (DataOrganizationIds stays empty).</summary>
+    public void SetIndividual()
+    {
+        OrganizationId = null;
+        OrganizationName = null;
+        DataOrganizationIds = [];
     }
 
     public void AddDataOrganizations(IEnumerable<Guid> orgIds) =>

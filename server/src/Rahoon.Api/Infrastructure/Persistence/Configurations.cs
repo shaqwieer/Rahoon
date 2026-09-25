@@ -37,6 +37,34 @@ internal sealed class UserConfig : IEntityTypeConfiguration<User>
         b.Property(x => x.Email).HasMaxLength(254);
         b.HasIndex(x => x.Email).IsUnique();
         b.Property(x => x.PasswordHash).HasMaxLength(400);
+        b.Property(x => x.AccountKind).HasMaxLength(20).HasDefaultValue(AccountKind.Staff).HasSentinel((AccountKind)(-1));
+    }
+}
+
+internal sealed class IndividualProfileConfig : IEntityTypeConfiguration<IndividualProfile>
+{
+    public void Configure(EntityTypeBuilder<IndividualProfile> b)
+    {
+        b.ToTable("individual_profiles", "identity");
+        b.HasIndex(x => x.UserId).IsUnique();
+        b.HasIndex(x => x.NationalIdHash).IsUnique();
+        b.HasIndex(x => x.PhoneHash);
+        b.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+        b.Property(x => x.IdType).HasMaxLength(20);
+        b.Property(x => x.IdentityAssurance).HasMaxLength(40);
+        b.Property(x => x.NationalIdHash).HasMaxLength(64);
+        b.Property(x => x.PhoneHash).HasMaxLength(64);
+        b.Property(x => x.TermsVersion).HasMaxLength(60);
+    }
+}
+
+internal sealed class TermsAcceptanceConfig : IEntityTypeConfiguration<TermsAcceptance>
+{
+    public void Configure(EntityTypeBuilder<TermsAcceptance> b)
+    {
+        b.ToTable("terms_acceptances", "identity");
+        b.HasIndex(x => new { x.UserId, x.AcceptedAt });
+        b.Property(x => x.Version).HasMaxLength(60);
     }
 }
 

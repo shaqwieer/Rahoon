@@ -18,11 +18,13 @@ export interface PublicHeaderProps {
 /** B2 public header: 80px desktop (padding 0 80), 60px mobile with a menu popover. */
 export function PublicHeader({ variant = "full" }: PublicHeaderProps) {
   const { t } = useI18n();
+  // Individual-first (B13): the person in default is the audience; institutions get a secondary link.
+  const N = t.individual.nav;
   const links = [
-    { key: "how", label: t.public.how, href: "/#how" },
-    { key: "lenders", label: t.public.lenders, href: "/#lenders" },
-    { key: "owners", label: t.public.owners, href: "/#owners" },
-    { key: "gov", label: t.public.governance, href: "/#gov" },
+    { key: "how", label: N.how, href: "/#how" },
+    { key: "paths", label: N.paths, href: "/#paths" },
+    { key: "rights", label: N.rights, href: "/privacy" },
+    { key: "lenders", label: N.lenders, href: "/#lenders" },
   ];
   return (
     <>
@@ -46,14 +48,18 @@ export function PublicHeader({ variant = "full" }: PublicHeaderProps) {
             </nav>
             <div className="ms-auto hidden items-center gap-2.5 md:flex">
               <LocaleSwitch variant="link" />
-              <Link href="/login" className={buttonClasses({ variant: "secondary", size: "lg", className: "min-h-11 text-15" })}>
-                {t.public.login}
+              <Link href="/start?mode=signin" className={buttonClasses({ variant: "secondary", size: "lg", className: "min-h-11 text-15" })}>
+                {N.signIn}
               </Link>
-              <Link href="/demo" className={buttonClasses({ variant: "primary", size: "lg", className: "min-h-11 px-[18px] text-15" })}>
-                {t.public.demo}
+              <Link href="/start" className={buttonClasses({ variant: "primary", size: "lg", className: "min-h-11 px-[18px] text-15" })}>
+                {N.start}
               </Link>
             </div>
-            <div className="ms-auto md:hidden">
+            <div className="ms-auto flex items-center gap-1 md:hidden">
+              {/* B13 mobile header: «دخول» beside the menu. */}
+              <Link href="/start?mode=signin" className="flex min-h-11 items-center px-2 text-15 font-semibold">
+                {N.signInShort}
+              </Link>
               <Menu
                 label={t.common.menu}
                 align="end"
@@ -62,8 +68,8 @@ export function PublicHeader({ variant = "full" }: PublicHeaderProps) {
                 trigger={<span className="ms text-[24px]" aria-hidden="true">menu</span>}
                 items={[
                   ...links.map((l) => ({ key: l.key, label: l.label, href: l.href })),
-                  { key: "login", label: t.public.login, href: "/login", icon: "login" },
-                  { key: "demo", label: t.public.demo, href: "/demo", icon: "event" },
+                  { key: "signin", label: N.signIn, href: "/start?mode=signin", icon: "login" },
+                  { key: "start", label: N.start, href: "/start", icon: "arrow_back" },
                 ]}
                 footer={<LocaleSwitch variant="link" className="px-0" />}
               />
@@ -88,20 +94,21 @@ export function PublicFooter() {
       <nav aria-label={t.public.footerNav}>
         <ul className="m-0 flex list-none flex-wrap gap-x-6 gap-y-2 p-0 text-14">
           {[
-            { k: "privacy", l: t.public.privacy },
-            { k: "terms", l: t.public.terms },
-            { k: "complaint", l: t.public.complaint },
-            { k: "contact", l: t.public.contact },
+            { k: "privacy", l: t.public.privacy, href: "/privacy" },
+            { k: "terms", l: t.public.terms, href: "/terms" },
+            { k: "staff", l: t.individual.landing.staffLogin, href: "/login" },
           ].map((x) => (
             <li key={x.k}>
-              <a href="#" className="text-white hover:text-white">
+              <Link href={x.href} className="text-white hover:text-white">
                 {x.l}
-              </a>
+              </Link>
             </li>
           ))}
         </ul>
       </nav>
-      <span className="text-13 text-inv-2 md:ms-auto">{t.public.copyright}</span>
+      <span className="text-13 text-inv-2 md:ms-auto">
+        {t.individual.landing.footerStatement} {t.public.copyright}
+      </span>
     </footer>
   );
 }

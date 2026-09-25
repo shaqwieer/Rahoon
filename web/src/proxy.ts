@@ -2,7 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 
 /**
  * Optimistic UX gate only — the API enforces authorization on every call.
- * 1. Protected prefixes without a `rahoon_sid` cookie → /login?next=… (owner pages → /access-denied?reason=owner).
+ * 1. Protected prefixes without a `rahoon_sid` cookie → /login?next=… (owner pages → /access-denied?reason=owner;
+ *    individual pages /my → /start?mode=signin&next=…).
  * 2. Every page request gets an `x-pathname` header so Server Components can build `?next=` redirects.
  */
 const PROTECTED = [
@@ -19,6 +20,7 @@ const PROTECTED = [
   "/profile",
   "/help",
   "/owner",
+  "/my",
   "/provider",
   "/agent",
   "/platform",
@@ -40,6 +42,10 @@ export function proxy(request: NextRequest) {
     if (prefix === "/owner") {
       url.pathname = "/access-denied";
       url.searchParams.set("reason", "owner");
+    } else if (prefix === "/my") {
+      url.pathname = "/start";
+      url.searchParams.set("mode", "signin");
+      url.searchParams.set("next", `${pathname}${search}`);
     } else {
       url.pathname = "/login";
       url.searchParams.set("next", `${pathname}${search}`);

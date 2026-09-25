@@ -44,6 +44,7 @@ public static class ModuleRegistry
     public static IEndpointRouteBuilder MapRahoonEndpoints(this IEndpointRouteBuilder app)
     {
         AuthEndpoints.Map(app);
+        IndividualAuthEndpoints.Map(app);
         CaseListEndpoints.Map(app);
         CaseDraftEndpoints.Map(app);
         CaseEndpoints.Map(app);

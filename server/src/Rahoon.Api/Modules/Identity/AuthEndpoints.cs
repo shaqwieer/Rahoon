@@ -170,13 +170,19 @@ public static class AuthEndpoints
         if (!rc.IsAuthenticated) return Results.Ok(new { authenticated = false });
         using var _ = rc.BeginSystemScope();
         var user = await db.Users.AsNoTracking().FirstAsync(u => u.Id == rc.UserId);
-        var memberships = rc.IsOwner ? [] : await ActiveMembershipsAsync(db, rc.UserId);
+        var memberships = rc.IsOwner || rc.IsIndividual ? [] : await ActiveMembershipsAsync(db, rc.UserId);
         object? owner = null;
         if (rc.IsOwner)
         {
             var c = await db.Cases.AsNoTracking().FirstAsync(x => x.Id == rc.OwnerCaseId);
             var party = await db.Parties.AsNoTracking().FirstAsync(p => p.Id == rc.OwnerPartyId);
             owner = new { caseRef = c.Reference, firstName = party.FullName.Split(' ')[0], lenderName = rc.OrganizationName };
+        }
+        object? individual = null;
+        if (rc.IsIndividual)
+        {
+            var p = await db.IndividualProfiles.AsNoTracking().FirstAsync(x => x.UserId == rc.UserId);
+            individual = new { idMasked = p.NationalIdMasked, phoneMasked = p.PhoneMasked, identityAssurance = p.IdentityAssurance };
         }
         var org = rc.OrganizationId is { } oid ? await db.Organizations.AsNoTracking().FirstAsync(o => o.Id == oid) : null;
         var unread = await db.Notifications.CountAsync(n => n.UserId == rc.UserId && n.ReadAt == null);
@@ -185,11 +191,12 @@ public static class AuthEndpoints
             authenticated = true,
             stage = rc.Stage.ToString().ToLowerInvariant(),
             scope = rc.Scope.ToString().ToLowerInvariant(),
-            user = new { id = user.Id, name = user.FullName, email = user.Email, locale = user.PreferredLocale, numerals = user.NumeralStyle, initials = Initials(user.FullName) },
+            user = new { id = user.Id, name = user.FullName, email = user.AccountKind == AccountKind.Staff ? user.Email : "", locale = user.PreferredLocale, numerals = user.NumeralStyle, initials = Initials(user.FullName) },
             organization = org is null ? null : new { id = org.Id, name = org.NameAr, kind = org.Kind.ToString().ToLowerInvariant(), initials = org.Initials },
             roles = rc.RoleKeys, roleName = rc.PrimaryRoleNameAr,
             permissions = rc.Permissions,
             owner,
+            individual,
             memberships = memberships.Select(m => new
             {
                 id = m.Id, organization = m.Organization!.NameAr, initials = m.Organization.Initials, kind = m.Organization.Kind.ToString().ToLowerInvariant(),
@@ -197,7 +204,7 @@ public static class AuthEndpoints
             }),
             stepUpActive = rc.StepUpUntil > clock.UtcNow,
             unreadNotifications = unread,
-            home = memberships.FirstOrDefault(m => m.Id == rc.MembershipId) is { } cur ? HomeFor(cur) : rc.IsOwner ? "/owner" : "/select-context",
+            home = memberships.FirstOrDefault(m => m.Id == rc.MembershipId) is { } cur ? HomeFor(cur) : rc.IsOwner ? "/owner" : rc.IsIndividual ? "/my" : "/select-context",
         });
     }
 
@@ -219,7 +226,8 @@ public static class AuthEndpoints
             await db.SaveChangesAsync();
         }
         sessions.ClearCookies(http);
-        return Results.Ok(new { next = "/login" });
+        // Individuals return to the public landing; staff to their sign-in page.
+        return Results.Ok(new { next = session?.User?.AccountKind == AccountKind.Individual ? "/" : "/login" });
     }
 
     /// <summary>Organization switch rotates the session so no cached data crosses tenants (C12).</summary>
@@ -342,7 +350,7 @@ public static class AuthEndpoints
         if (user is null)
         {
             // Owners have no password; their phone stays encrypted on the party record only.
-            user = new User { Email = $"owner+{access.Id:N}@owners.rahoon.local", FullName = party.FullName, PreferredLocale = party.PreferredLanguage };
+            user = new User { Email = $"owner+{access.Id:N}@owners.rahoon.local", FullName = party.FullName, PreferredLocale = party.PreferredLanguage, AccountKind = AccountKind.Owner };
             db.Users.Add(user);
             access.UserId = user.Id;
             await db.SaveChangesAsync();

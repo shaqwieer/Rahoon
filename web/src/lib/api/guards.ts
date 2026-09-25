@@ -10,7 +10,16 @@ import type { MeAuthenticated, OrgKind } from "./types";
 export async function requireOrgPortal(kind: OrgKind, portalPrefix: string): Promise<MeAuthenticated> {
   const me = await requireMe();
   if (me.scope === "owner") redirect("/owner");
+  if (me.scope === "individual") redirect("/my");
   if (me.organization?.kind !== kind) redirectToHome(me, portalPrefix);
+  return me;
+}
+
+/** Individual area guard (/my): individuals sign in with ID + mobile code at /start, never through /login. */
+export async function requireIndividualPortal(): Promise<MeAuthenticated> {
+  const me = await getMe();
+  if (!me.authenticated || me.stage !== "active") redirect("/start?mode=signin");
+  if (me.scope !== "individual") redirectToHome(me, "/my");
   return me;
 }
 

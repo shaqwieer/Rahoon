@@ -16,8 +16,9 @@ public sealed class OtpService(RahoonDbContext db, IClock clock, ISmsGateway sms
     public const int MaxAttempts = 3;
     public const int ResendCooldownSeconds = 60;
 
+    /// <param name="send">false issues a decoy challenge that is never delivered (anti-enumeration); its code is never echoed.</param>
     public async Task<OtpIssued> IssueAsync(OtpPurpose purpose, string phone, Guid? userId, Guid? sessionId, string? context = null,
-        Guid? orgId = null, Guid? caseId = null)
+        Guid? orgId = null, Guid? caseId = null, bool send = true)
     {
         var now = clock.UtcNow;
         var recent = await db.OtpChallenges
@@ -43,10 +44,10 @@ public sealed class OtpService(RahoonDbContext db, IClock clock, ISmsGateway sms
             OtpPurpose.StepUp => $"رمز تأكيد الإجراء في رهون: {code}. صالح 5 دقائق.",
             _ => $"رمز الدخول إلى رهون: {code}. صالح 5 دقائق. لا تشاركه مع أحد.",
         };
-        await sms.SendAsync(phone, text, orgId, caseId);
+        if (send) await sms.SendAsync(phone, text, orgId, caseId);
         await db.SaveChangesAsync();
         return new OtpIssued(challenge.Id, challenge.Destination!, options.OtpMinutes * 60, ResendCooldownSeconds,
-            options.ExposeSandboxOtp ? code : null);
+            options.ExposeSandboxOtp && send ? code : null);
     }
 
     /// <summary>Verifies and consumes. Throws with remaining attempts; returns false when attempts are exhausted (caller locks).</summary>

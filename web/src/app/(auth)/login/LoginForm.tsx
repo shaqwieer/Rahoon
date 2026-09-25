@@ -29,7 +29,7 @@ type FormError =
   | { kind: "message"; text: string };
 
 export function LoginForm({ next }: { next: string }) {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const L = t.auth.login;
   const router = useRouter();
   const emailRef = useRef<HTMLInputElement>(null);
@@ -156,8 +156,7 @@ export function LoginForm({ next }: { next: string }) {
       <div className="flex gap-2.5 border-t border-line pt-4 text-14 leading-[22px]">
         <Icon name="person" size={20} className="text-muted" />
         <span>
-          {L.ownerNoteLead} <strong>{L.ownerNoteLink}</strong> {L.ownerNoteTail}{" "}
-          {locale === "ar" ? <Link href="#">{L.ownerVerifyLink}</Link> : null}
+          {L.ownerNoteLead} <Link href="/start">{L.ownerNoteLink}</Link> {L.ownerNoteTail}
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-4 text-13 text-muted">

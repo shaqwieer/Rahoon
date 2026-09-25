@@ -23,13 +23,19 @@ public sealed class Organization : Entity, IHasTimestamps
     public DateTimeOffset UpdatedAt { get; set; }
 }
 
-public enum UserStatus { Active, Locked, Disabled }
+/// <summary>Pending = an individual's registration awaiting its first SMS verification (never gets a resolved session).</summary>
+public enum UserStatus { Active, Locked, Disabled, Pending }
 public enum MfaMethod { Sms, Authenticator }
+
+/// <summary>Staff (institution/platform members), Owner (lender-invited case owner, secondary route) or Individual (self-registered, ADR 0001).</summary>
+public enum AccountKind { Staff, Owner, Individual }
 
 public sealed class User : Entity, IHasTimestamps
 {
+    /// <summary>Staff login e-mail. Owners and individuals get a reserved non-routable placeholder (ADR 0001 amendment).</summary>
     public required string Email { get; set; }
     public required string FullName { get; set; }
+    public AccountKind AccountKind { get; set; } = AccountKind.Staff;
     public string? FullNameEn { get; set; }
     public string? Phone { get; set; }
     public string? PasswordHash { get; set; }
@@ -94,7 +100,7 @@ public sealed class MembershipRole
     public Role? Role { get; set; }
 }
 
-public enum SessionScope { None, Organization, Owner }
+public enum SessionScope { None, Organization, Owner, Individual }
 public enum SessionStage { MfaPending, Active }
 
 /// <summary>
@@ -125,7 +131,7 @@ public sealed class Session : Entity
     public string? City { get; set; }
 }
 
-public enum OtpPurpose { Login, StepUp, OwnerInvite, OwnerLogin, Consent }
+public enum OtpPurpose { Login, StepUp, OwnerInvite, OwnerLogin, Consent, IndividualAccess }
 
 /// <summary>One-time code sent through the (sandboxed) SMS channel. Stored hashed.</summary>
 public sealed class OtpChallenge : Entity
@@ -175,4 +181,40 @@ public sealed class RoleChangeRequest : Entity, IOrgOwned
     public Guid? DecidedByUserId { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? DecidedAt { get; set; }
+}
+
+/// <summary>
+/// A self-registered individual (ADR 0001 §4.1). The national ID/iqama and mobile are encrypted, with an HMAC lookup
+/// hash; one account per ID. Identity is self-declared until a national identity provider exists (Q10).
+/// </summary>
+public sealed class IndividualProfile : Entity, IHasTimestamps
+{
+    public Guid UserId { get; set; }
+    public User? User { get; set; }
+    public required string NationalIdEnc { get; set; }
+    public required string NationalIdHash { get; set; }
+    public required string NationalIdMasked { get; set; }
+    /// <summary>citizen (starts with 1) or resident (iqama, starts with 2).</summary>
+    public required string IdType { get; set; }
+    public required string PhoneEnc { get; set; }
+    public required string PhoneHash { get; set; }
+    public required string PhoneMasked { get; set; }
+    /// <summary>self_declared until a national identity provider is integrated (Q10).</summary>
+    public string IdentityAssurance { get; set; } = "self_declared";
+    /// <summary>Set when the mobile number was first verified by SMS code (registration completed).</summary>
+    public DateTimeOffset? PhoneVerifiedAt { get; set; }
+    public string? TermsVersion { get; set; }
+    public DateTimeOffset? TermsAcceptedAt { get; set; }
+    public bool AwarenessOptIn { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+/// <summary>Every acceptance of the terms and privacy policy, with the version shown (evidence).</summary>
+public sealed class TermsAcceptance : Entity
+{
+    public Guid UserId { get; set; }
+    public required string Version { get; set; }
+    public DateTimeOffset AcceptedAt { get; set; }
+    public string? IpMasked { get; set; }
 }

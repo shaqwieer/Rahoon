@@ -1,7 +1,7 @@
 /** Shapes shared by server and client API helpers. Mirrors server/src/Rahoon.Api (Identity/AuthEndpoints.cs). */
 
 export type OrgKind = "lender" | "serviceprovider" | "judicialagent" | "platform";
-export type SessionScope = "none" | "organization" | "owner";
+export type SessionScope = "none" | "organization" | "owner" | "individual";
 export type SessionStage = "mfapending" | "active";
 
 export interface MeMembership {
@@ -23,6 +23,8 @@ export interface MeAuthenticated {
   roleName: string | null;
   permissions: string[];
   owner: { caseRef: string; firstName: string; lenderName: string } | null;
+  /** Self-registered individual (ADR 0001); identity is self-declared until verified by the Rahoon team. */
+  individual?: { idMasked: string; phoneMasked: string; identityAssurance: string } | null;
   memberships: MeMembership[];
   stepUpActive: boolean;
   unreadNotifications: number;
