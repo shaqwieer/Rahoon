@@ -9,6 +9,14 @@
 
 The backend is ✅ on `master` (merged 2026-09-24, `be3b7e3`; see `docs/progress/backend-B8-B9.md`).
 
+## Direction review (added 2026-09-25, `docs/product/product-direction.md`)
+
+- **Voluntary sale isn't an approved service yet (Q11).** B13 says «البيع الطوعي خيار يطرحه المالك فقط», meaning only the individual raises it (OA03 «أفكر في بيع العقار بنفسي»). Before building L27–L33 and D15–D16, confirm with the product owner that:
+  1. voluntary sale is offered at all;
+  2. it can only start from the individual's own request or preference, never be proposed as pressure.
+- **What the individual gains.** D15 must answer the product question: what they gain, the risks, and that they can withdraw until an offer is accepted.
+- **Ecosystem screens (V05–V07, PA14–PA17)** are institution- and platform-facing. Keep them, but after the MVP. Reconsider billing (PA17) once Q9 (is the service free for the individual?) is answered.
+
 ## Definition of done
 
 - [ ] Every row below is ✅.

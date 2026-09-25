@@ -9,7 +9,14 @@
 - Full reconciliation, distribution waterfall and closure with traceable sources.
 - A case never goes to referral automatically, and not every case ends in foreclosure.
 
-The backend is 🟨 on branch `worktree-agent-ae86d4e3d70e6413a`. It gets merged with a migration in Phase 1A step 4, because closure is needed for the MVP (see `docs/progress/backend-B10-B11.md` on that branch).
+The backend is 🟨 on branch `worktree-agent-ae86d4e3d70e6413a`. It gets merged with a migration in Phase 1A-2 step 2, because the settlement-path closure needs it (see `docs/progress/backend-B10-B11.md` on that branch).
+
+## Direction review (added 2026-09-25, `docs/product/product-direction.md`)
+
+- **Scope check first (Q11, Q8).** In an individual-first product, confirm with the product owner whether Rahoon still coordinates judicial referral and sale-agent work at all. If it does, confirm it stays strictly a separately approved lender action, triggered only after documented notice and the objection period, and never automatic.
+  - The backend exists and stays; building its UI waits for this confirmation.
+- **The individual's view.** Whatever remains must tell the individual, in plain language, what is happening, their rights and how to object. It must show the official status exactly as entered, and nothing before the notice.
+- **Full financial closure (F01–F04)** extends the settlement-path closure built in Phase 1A-2.
 
 ## Definition of done
 
@@ -24,14 +31,14 @@ The backend is 🟨 on branch `worktree-agent-ae86d4e3d70e6413a`. It gets merged
 | J01–J03 | Legal readiness, export and matching, external reference and official status | ⬜ UI · 🟨 API |
 | J04 | Exceptions queue | ⬜ UI · 🟨 API |
 | J05–J07 | Agent portal: assigned cases, plan, updates, result and evidence | ⬜ UI · 🟨 API |
-| F01–F04 | Full reconciliation, approved distributions, release/clearance docs, traceable closure | ⬜ UI · 🟨 API (the settlement-path subset is built in 1A step 4) |
+| F01–F04 | Full reconciliation, approved distributions, release/clearance docs, traceable closure | ⬜ UI · 🟨 API (the settlement-path subset is built in 1A-2 step 3) |
 | PA18 | Integrations and their states | ⬜ UI · 🟨 API |
 
 ## Steps
 
 1. ⬜ J01–J03 (building on L25 from Phase 1B).
 2. ⬜ J05–J07 agent portal (ياسر الحمدان, y.alhamdan@agent-j.example).
-3. ⬜ F01–F04 (extends the 1A closure UI with the distribution waterfall).
+3. ⬜ F01–F04 (extends the Phase 1A-2 closure UI with the distribution waterfall).
 4. ⬜ J04 + PA18.
 5. ⬜ Playwright + responsive QA; update the implementation map.
 

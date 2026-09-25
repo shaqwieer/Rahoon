@@ -21,11 +21,22 @@ end of each `docs/design-specs/*.md`.
 | 8 | SLA for «حل مقترح» / «تفاوض» | A06 lists 6 stages only; case header shows a proposed-solution deadline | 5 business days each, labelled «افتراض — يتطلب تأكيد المنتج» in the SLA table. |
 | 9 | Complaint reviewer name | L23 «هند المطيري» | Seeded compliance reviewer is هند المطيري. |
 | 10 | Owner debt breakdown | D05 (1,121,840 + 144,420 + 18,300) vs earlier assumption | Seed follows D05; total 1,284,560.00 unchanged. |
-| 11 | Returning owner sign-in | not designed (only first invitation) | The invitation link remains the entry point; «مستخدمة» state continues to the same last-4 + OTP verification. |
+| 11 | Returning owner sign-in | not designed (only first invitation) | The invitation link remains the entry point; «مستخدمة» state continues to the same last-4 + OTP verification. **Superseded 2026-09-25** by self-registration (B13 OR01/OR02); returning sign-in is open (Q15). |
 | 12 | Owner MFA factor | S04 SMS default vs S07 authenticator primary | SMS OTP (sandbox) for all; authenticator app enrollment is **OPEN** (not implemented). |
 | 13 | Agreement PDF | «النص الكامل PDF» | Printable HTML view (browser print to PDF) — Arabic PDF rendering server-side is outstanding. |
 | 14 | Product type / lender / manager hard-coded in CaseHeader DC | CaseHeader.dc.html | Made data-driven props. |
 | 15 | App pages have no h1 | B2 screens | Page title rendered as h1 for accessibility. |
+
+## Product direction correction (2026-09-25)
+
+The individual-first direction and its open decisions are recorded in `docs/product/product-direction.md`. Conflicts found inside the B13 design itself (to resolve at implementation, not guessed):
+
+| # | Topic | Conflict | Handling |
+|---|---|---|---|
+| 16 | Lender response deadline | State model: «مهلة رد الجهة 5 أيام عمل» (افتراض) vs L00b sample «الرد خلال 3 أيام عمل» | Neither shown to the individual as a commitment until **Q6** is answered. |
+| 17 | «مجاني» on OR01 | OR01 sub-title «مجاني · دقيقتان» vs landing «أزلنا "مجاناً" … حتى يتأكد نموذج التسعير» (Q9) | Don't render «مجاني» until **Q9** is answered. |
+| 18 | OTP attempts at registration | OR02 «5 محاولات ثم قفل مؤقت» vs implemented staff policy (3 wrong codes → 15-min lock) | Decide at Phase 1A step 3; record here. |
+| 19 | Lender default landing | Phase 0 anchor: portfolio (L01) vs LenderSidebar 2026-09-25: «الطلبات الواردة» first and default | Follows **Q1**; portfolio stays for reports. |
 
 ## Open questions (need product / legal confirmation)
 

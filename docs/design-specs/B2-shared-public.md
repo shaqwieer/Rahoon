@@ -1,5 +1,10 @@
 # B2 — Shared & Public screens (S01–S12): implementation spec
 
+> **S01 replaced (2026-09-25).** The institution-facing landing specified here is superseded by the owner-first landing in
+> `B13-owner-initiated-journey.md` §2 (design: «تحل هذه الدفعة محل الصفحة العامة (S01)»). S02 remains but is
+> **secondary** (reached from «للجهات الممولة»). S03–S05: the individual now self-registers (OR01/OR02); staff login and
+> invitations remain. See `docs/product/product-direction.md`.
+
 Source: `design-source/04 Phase 1 - B2 Shared & Public.dc.html`. The condensed mirror was cross-checked against the raw file. Also used: shell components `LenderSidebar` and `LenderTopbar`, the S01–S12 table in the brief (`00 Brief & Assumptions`) and the rules in `09 Handoff`.
 Every Arabic string below is copied verbatim from the design. "Aside" means the grey spec panel (`specXxx` in the script) that sits next to each screen's artboards. These asides are normative requirements.
 

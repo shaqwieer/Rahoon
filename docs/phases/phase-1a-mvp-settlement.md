@@ -1,105 +1,190 @@
-# Phase 1A: MVP (settlement path end to end) ▶ CURRENT
+# Phase 1A: MVP (the individual starts the request) ▶ CURRENT
 
-**Goal:** a lender and a property owner can take **one real case** all the way through the platform: creation → documents and valuation → solution → internal approval (maker-checker) → owner accepts the offer → agreement activated → installments recorded and matched → reconciliation → **documented closure**. Every step uses real persisted data, server-side rules and audit.
+> **Re-planned on 2026-09-25** after the product owner confirmed that Rahoon primarily serves individuals in default, and that **the individual initiates** the request while the lender joins later. See `docs/product/product-direction.md`; the design is `docs/design-specs/B13-owner-initiated-journey.md`.
+> The file name is kept for continuity. The lender settlement-execution work that used to be the MVP (agreement activation → payments → closure) moved to [`phase-1a2-settlement-execution.md`](phase-1a2-settlement-execution.md).
 
-**Out of MVP** (later phases): public landing/demo form, staff invitations, search/help pages, bulk import, voluntary sale, judicial referral, provider/admin/platform portals, analytics.
+**Goal:** an individual struggling with an existing mortgage can get from first visit to a documented outcome, with real persisted data:
+understand the service → register or sign in → start and submit a request about the existing default → provide information and documents → track progress → review an approved proposal when one exists → have the outcome documented.
 
-## Definition of done
+**The product question every screen must pass:** «إن كنت عميلاً متعثراً، ماذا أستفيد من رهون، وكيف تساعدني على حل مشكلتي؟»
 
-- [ ] Every screen marked *must* below is ✅ (built, merged into `master`, browser-checked at 1440, 768 and 390).
-- [ ] Playwright covers the full path, and a separate owner (debtor) flow: `cd web && E2E_RESET=1 npx playwright test` is green.
-- [ ] `dotnet test` and the web typecheck, lint and build are all green on `master`.
-- [ ] README has the "MVP demo script": who logs in, in what order, and what they click.
-- [ ] Tag `mvp-1` on `master`.
+## Product gate: read before any step
 
-## Demo cast for the MVP (password `Rahoon-Demo-2026!`, SMS code shown on screen)
+Steps below are marked with the open decisions they depend on (`docs/product/product-direction.md` §6). **Don't turn a guess into an approved requirement.**
+- A step marked ⛔ can't be built as final until its question is answered.
+- If you proceed on an assumption, the UI must label it (as the design does, e.g. «نمط مقترح», «قائمة مؤقتة», «افتراض»), and the assumption goes into *Findings*.
 
-| Who | Login | Does |
-|---|---|---|
-| سارة القحطاني (case manager) | s.alqahtani@alufuq.example | creates the case, reviews and submits solutions, talks to the owner |
-| فهد العتيبي (analyst) | f.alotaibi@alufuq.example | prepares solution versions, valuation and analysis |
-| نورة الشهري (approver) | n.alshehri@alufuq.example | approves or returns solutions (step-up) |
-| ماجد الحربي (legal) | m.alharbi@alufuq.example | agreement legal review and activation |
-| ريم الدوسري (finance, maker) | r.aldosari@alufuq.example | records payments |
-| عبدالعزيز الشمري (finance, checker) | a.alshammari@alufuq.example | matches payments (≠ recorder) |
-| Owner عبدالله محمد السبيعي | `/invite/demo-RH-2026-004172`, ID `1098734542` | views the offer, accepts it with OTP, follows payments |
+| Decision | Blocks |
+|---|---|
+| **Q1** How the lender is involved | Step 5 (lender side), request → case |
+| **Q11** Which solutions Rahoon offers | Step 7 (proposal content shown to the individual) |
+| **Q8** Who leads steps after acceptance | Steps 6–7 |
+| Q6 Response deadline | Any deadline shown in OA06/L00a |
+| Q12 What Rahoon may promise | Landing promises, OA06 text |
+| Q9 Pricing (free?) | Landing, OR01 sub-title |
+| Q10 / Q15 Identity and returning sign-in | Step 3 |
+| Q2, Q4, Q5, Q7 | Step 4 details (non-participating lender, eligibility, required fields, several lenders) |
+| Q13 Does the MVP include settlement execution? | Whether Phase 1A-2 is part of the MVP |
+
+## Definition of done (acceptance criteria)
+
+- [ ] **Primary journey:** a new individual completes it in the browser on a 390 phone, landing → registration → request (OA01–OA05) → submitted → tracked, with autosave and return-later working.
+- [ ] **Three request outcomes** work end to end with persisted data and audit:
+  - (a) accepted → a case opens in «تحقق» linked to the `REQ-…` reference
+  - (b) returned for completion → the individual completes it
+  - (c) declined with a reason → no case; the individual sees the reason and next options
+- [ ] **After acceptance:** the individual sees the next step, required documents and messages (D02, D04, D12). When an approved proposal exists, they can review it (D07), accept with OTP consent (D09), counter-propose (D08) or decline. The decision is recorded with reference and time and stays visible to them.
+- [ ] **Privacy rules are enforced on the server** and covered by tests:
+  - the lender sees nothing before submission
+  - only the chosen lender sees the request and shared documents
+  - other lenders get 404
+  - consent is scoped to one lender and can be withdrawn before acceptance
+  - amounts from the individual keep the source «المالك»
+- [ ] **No unapproved promise:** no solution is shown as available, and no deadline or "free" is presented as a commitment, unless the related question (Q6, Q9, Q11, Q12) is answered.
+- [ ] **Every screen in scope passed a product review.** The review is recorded in the table below (column *Direction review*).
+- [ ] **Tests and checks:**
+  - Playwright owner-first E2E is green: `web/e2e/owner-journey.spec.ts`, covering the primary path + decline + info request.
+  - `dotnet test` is green.
+  - Web typecheck, lint and build are green.
+- [ ] **Wrap-up:** README has the owner-first demo script, and `mvp-1` is tagged.
+
+## Demo cast (owner-first)
+
+Password for staff: `Rahoon-Demo-2026!`. SMS codes are shown on screen (sandbox).
+
+| Who | How they enter | Does | Status |
+|---|---|---|---|
+| **A new individual** (fictional, registers live) | `/` → «ابدأ طلب المعالجة» → OR01 (ID or iqama + 05 mobile) → OR02 code | Registers, fills OA01–OA05, submits, tracks, later reviews the proposal | Built in steps 3–7 |
+| عبدالله م. (seeded individual, design sample) | Sign in (method per Q15) | Has REQ-2026-00318 → accepted → RH-2026-004172, with an approved proposal to review | Seed in steps 4–5 (today he exists only as a party on RH-2026-004172, entering by invitation) |
+| Declined sample | seeded | REQ-2026-00341, declined «لا يوجد عقد تمويل عقاري باسمك لدينا.» | Seed in step 5 |
+| سارة القحطاني, case manager, s.alqahtani@alufuq.example | staff login | Reviews incoming requests (L00a/L00b **PROPOSED**, Q1), then runs the case | Step 5 depends on Q1 |
+| فهد العتيبي, analyst, f.alotaibi@alufuq.example | staff login | Prepares a proposal on the case | Reuses existing screens |
+| نورة الشهري, approver, n.alshehri@alufuq.example | staff login | Approves the proposal with step-up, so the individual sees it | Reuses existing screens |
+
+## Who clicks what (target demo script; filled in as steps complete)
+
+1. **Visitor (phone):** opens `/`, reads «كيف تعمل» and the privacy notes, taps «ابدأ طلب المعالجة».
+2. **Individual:** OR01 enters ID and mobile → OR02 code + terms → account created.
+3. **Individual:** OA01 chooses «مصرف الأفق» → OA02 finance and property → OA03 situation and preference → OA04 uploads a salary letter and ticks the consent for «مصرف الأفق فقط» → OA05 review → «إرسال الطلب».
+4. **Individual:** OA06 shows «بانتظار الجهة الممولة», with no deadline shown until Q6 is answered. They can add information or withdraw.
+5. **Lender:** mechanism per Q1. Proposed pattern: سارة opens «الطلبات الواردة» → REQ-… → match table → «قبول وفتح الحالة». The alternatives are «طلب استكمال» → the individual gets OA07, or «الاعتذار مع سبب» → OA08.
+6. **Individual:** «قُبل طلبك وفُتحت حالتك», with the name of the case manager, the next step, required documents (D04) and messages (D12).
+7. **Lender:** فهد prepares a proposal, سارة submits it, نورة approves it with step-up. The solution types are provisional until Q11.
+8. **Individual:** D07 reviews the approved proposal («عرض راجعته واعتمدته جهتك الممولة…») → D09 accepts with OTP (or D08 counter / decline) → sees the recorded outcome (reference and time) and the agreement view.
 
 ## Scope and status
 
-| ID | Screen | Must/Should | Status | Where |
+*Tech status* uses the legend in `README.md` and records what was built and verified. *Direction review* says whether the screen fits the individual-first direction: **OK**, **Rework** (listed), **Secondary** (kept, not in the primary path), **New**, **Proposed** (blocked by a question) or **Provisional** (labelled until answered).
+
+| ID | Screen | Tech status | Direction review | Where / notes |
 |---|---|---|---|---|
-| L01, L02, L03, L05 | Portfolio, case list, wizard, workspace | must | ✅ | master |
-| L06–L09 | Parties, finance, property and mortgage tabs | must | 🟨 | branch `…a3939fc4…` |
-| L10 | Documents and requests | must | 🟨 | branch `…a3939fc4…` |
-| L11/L12 | Valuation and analysis | must | 🟨 | branch `…a3939fc4…` |
-| L13–L17 | Solutions, compare, submit, approvals, owner preview | must | ✅ | master |
-| L18 | Negotiation (counteroffer handling) | must | 🟨 | branch `…a1008744…` @ `36d316a` |
-| L19 | Agreement (legal review → schedule → activate) | must | 🟨 | branch `…a1008744…` @ `36d316a` |
-| L20 | Payment schedule, record (maker), match (checker) | must | 🟨 | branch `…a1008744…` @ `36d316a` |
-| L21 | Breach handling | should | 🟨 | branch `…a1008744…` @ `36d316a` |
-| L22 | Case comms and tasks | should | 🟨 | branch `…a3939fc4…` |
-| L24 | Case audit timeline + chain verification | should | 🟨 | branch `…a3939fc4…` |
-| L26 | Reconciliation + closure (settlement path only) | must | ⬜ UI · 🟨 API on branch `…ae86d4e3…` | — |
-| D01 | Owner invitation + identity check | must | 🟩 | master |
-| D02, D07, D09, D10 | Owner home, offer, accept (OTP consent), payments | must | 🟨 | branch `…a1bd0510…` |
-| D04, D12 | Owner documents, messages | must | 🟨 | branch `…a1bd0510…` |
-| D03, D05, D06, D08, D11, D13, D14 | Journey, debt, options, counteroffer, help, complaints, closure docs | should | 🟨 | branch `…a1bd0510…` |
-| S08, S09 | Notifications, tasks | should | 🟧 WIP | branch `…a1008744…` @ `05c715b` |
-| L23 | Complaints (reviewer) | should | 🟨 | branch `…a3939fc4…` |
+| Landing | Owner-first public landing (replaces S01) | ⬜ | New | B13 §2; moved into the MVP from Phase 1B |
+| OR01, OR02 | Individual registration + code + terms | ⬜ | New | B13 §3; backend: an individual account independent of any case (Q10, Q15) |
+| S03/S04 | Sign-in + MFA | ✅ (staff) | Rework | Split the entry: individual sign-in (Q15) vs staff «للجهات الممولة» |
+| OA01–OA05 | Request wizard (autosave, consent scoped to one lender) | ⬜ | New | B13 §3; new backend request module (Q2, Q4, Q5, Q7) |
+| OA06–OA08 | Request tracking, completion, decline | ⬜ | New | B13 §3; deadline text waits for Q6 |
+| L00a, L00b | Lender incoming requests + review | ⬜ | **Proposed (Q1)** | Build only the pattern Q1 selects |
+| — | Request → case (starts in «تحقق», linked to `REQ-…`) | ⬜ | New | A new creation path beside the wizard |
+| D01 | Invitation + identity check | 🟩 | Secondary | Kept as «مسار ثانوي» (design label) |
+| D02–D05 | Owner home, journey, documents, debt | 🟨 branch `…a1bd0510…` | Rework | Before acceptance, home = OA06; the header «مع [الجهة]» appears only once a case exists |
+| D06 | Options | 🟨 same | **Provisional (Q11)** | Add the design tag «قائمة مؤقتة — الحلول المتاحة لم تُعتمد بعد (Q11)» |
+| D07 | Offer | 🟨 same | Rework | Add the design note «عرض راجعته واعتمدته جهتك الممولة بعد دراسة طلبك. ليس نهائياً حتى توافق عليه.» |
+| D08, D09 | Counteroffer; accept with OTP consent | 🟨 same | OK | The consent record is the documented outcome (A-05: not a licensed signature) |
+| D11–D13 | Help, messages, complaints | 🟨 same | OK | D13 also covers «الاعتراض على الرد» after a decline (Q3: who reviews) |
+| L01 | Portfolio | ✅ | Secondary | No longer the lender's default landing, if Q1 confirms the intake queue |
+| L02, L05 | Case list, workspace | ✅ | Rework (small) | Show the case source «طلب من الفرد» + the `REQ-…` link |
+| L03 | Create-case wizard | ✅ | Secondary | Becomes an exception with a mandatory reason; add the reason field in Phase 1B |
+| L06–L12 | Case tabs | 🟨 branch `…a3939fc4…` | OK | Needed after acceptance |
+| L13–L17 | Solutions, compare, submit, approvals, owner preview | ✅ | **Provisional (Q11, Q8)** | The mechanics work; solution types stay provisional |
+| L18 | Negotiation (counteroffer handling) | 🟨 branch `…a1008744…` @ `36d316a` | OK | |
+| L22, L24 | Comms, case audit | 🟨 branch `…a3939fc4…` | OK | |
 
-## Steps (one session each, in order)
+## Steps (in order; each step is one or more sessions, all inside this phase)
 
-### Step 1: Merge the finished UI branches ⬜
-- [ ] Merge `worktree-agent-a3939fc4d7a8b5a97` (case tabs, comms, complaints, audit, import, cancel).
+### Step 0: Correct the plan to the individual-first direction ✅ 2026-09-25
+- [x] Product source of truth `docs/product/product-direction.md`
+- [x] B13 spec `docs/design-specs/B13-owner-initiated-journey.md`
+- [x] Design mirror refreshed (B13 added; B6 and batch files updated)
+- [x] Phase files re-planned; superseded assumptions listed; open decisions recorded
+
+### Step 1: Product decision checkpoint (no code) ⬜
+- [ ] The product owner answers or defers Q1, Q8, Q11 (these block the solution workflow), plus Q6, Q9, Q10, Q12, Q13, Q14 and Q15.
+- [ ] Engineering records each answer in `product-direction.md` §6, then updates this file's ⛔ marks.
+- Steps 2–4 can start without these answers, using the labelled assumptions. Steps 5 and 7 can't be finished without them.
+
+### Step 2: Bring the finished work in, and review it against the direction ⬜
+- [ ] Merge `worktree-agent-a3939fc4d7a8b5a97` (case tabs, comms, complaints, audit, import, cancel UI).
 - [ ] Merge `worktree-agent-a1bd05103bd12a217` (owner portal).
-- [ ] Cherry-pick **only** `36d316a` from `worktree-agent-a10087449fcbd8672` (L18–L21). Leave the WIP commit `05c715b` for Phase 1B.
-- [ ] Run the web typecheck, lint and build; fix conflicts (expect `lib/api/lender.ts`, `OverviewActions.tsx`, the i18n dictionaries).
-- [ ] Fix the leftover: breadcrumb shows raw `new`.
-- [ ] Browser: open every case tab for RH-2026-004172 as سارة; note defects in *Findings* below.
+- [ ] Cherry-pick `36d316a` (L18–L21). L19–L21 are used in Phase 1A-2.
+- [ ] Run the web typecheck, lint and build; fix merge conflicts.
+- [ ] Do the design-text reworks that need no product decision:
+  - D01 «مسار ثانوي»
+  - D06 provisional tag
+  - D07 approval note
+  - breadcrumb raw `new`
+- [ ] Record each merged screen's *Direction review* result in the table above.
 
-### Step 2: Owner journey in the browser ⬜
-- [ ] Sara submits v2 and Noura approves (done once on 2026-09-24; reseed first with `bash scripts/dev-api.sh --reset`).
-- [ ] Owner: `/invite/demo-RH-2026-004172` → identity → OTP → D02 home → D07 offer → D09 accept with OTP.
-- [ ] Check the case moved to «بانتظار العميل» → agreement pending, and that the owner never sees internal notes.
-- [ ] Owner counteroffer (D08) → lender negotiation (L18) → decline with reason → back to «حل مقترح».
-- [ ] Mobile 390 pass on every owner screen (the owner portal is mobile-first).
+### Step 3: Owner-first landing + individual registration ⬜ (Q9, Q10, Q12, Q15 labelled)
+- [ ] Backend:
+  - an individual account that isn't tied to a case (supersedes "owner = exactly one case"; see X4)
+  - registration by ID + mobile + OTP, and terms consent recorded
+  - the national-digital-ID slot as `unavailable`
+  - sign-in for a returning individual (assumption until Q15)
+  - rate limits and lockout
+- [ ] Web:
+  - owner-first landing (desktop and mobile), with the institution section secondary
+  - OR01/OR02
+  - separate entry points for the individual and for staff
+- [ ] Tests: registration, duplicate identity → sign-in, OTP lockout; no bearer tokens, cookies only (same session model).
 
-### Step 3: Agreement → payments ⬜
-- [ ] ماجد: L19 legal review → create schedule → activate (guard reasons shown when blocked).
-- [ ] ريم records installment 1 (L20 drawer); عبدالعزيز matches it; the same user can't match their own payment.
-- [ ] The owner sees the payment in D10.
-- [ ] Breach: run the monitor (or use the seeded overdue case) → L21 outcome.
+### Step 4: Request wizard OA01–OA05 ⬜ (Q2, Q4, Q5, Q7 labelled)
+- [ ] Backend request module:
+  - `REQ-YYYY-NNNNN` reference
+  - draft with autosave
+  - participating-lender list
+  - «جهتي غير موجودة» waitlist (assumption, Q2)
+  - pre-case document upload with the same scanning and storage rules
+  - consent scoped to one lender, withdrawable before acceptance
+  - submit locks the request (add-info only)
+  - audit on every step
+- [ ] Web: OA01–OA05, mobile-first, with autosave and «محفوظ».
+- [ ] Tests: another lender can't see the request; the lender sees nothing before submission; consent scope; idempotent submit.
 
-### Step 4: Reconciliation and closure (settlement path) ⬜
-- [ ] Merge the backend branch `worktree-agent-ae86d4e3d70e6413a` (B10/B11 API). Then:
-  - [ ] `dotnet ef migrations add ReferralClosureAnalytics`
-  - [ ] `dotnet test` green
-  - [ ] `bash scripts/dev-api.sh --reset`
-- [ ] Build the L26 UI for the settlement path. Read `docs/progress/backend-B10-B11.md` (on that branch) for the routes.
-  - [ ] Reconciliation: preparer, reviewer and approver are three different people; step-up.
-  - [ ] Closure documents checklist.
-  - [ ] Closure request → decision (`case.close`, step-up).
-- [ ] Owner D14 shows the closure documents after closure. Owner access is read-only for 90 days.
-- [ ] Seeded case RH-2026-003702 (already «بانتظار التسوية المالية») gives a fast demo path.
+### Step 5: Tracking + lender involvement ⬜ (⛔ Q1 for the lender side; Q6 for deadlines)
+- [ ] Individual: OA06 tracking, add information, withdraw; OA07 completion; OA08 decline with next options.
+- [ ] Lender side, **exactly as decided in Q1**. If Q1 selects in-platform intake:
+  - L00a/L00b
+  - the match table
+  - accept → case created in «تحقق» and linked to REQ, with an assignment rule
+  - request completion, decline with a listed reason, link to an existing case
+  - LenderSidebar «الطلبات الواردة» as the lender's home
+- [ ] Seed the B13 samples: REQ-2026-00318 → RH-2026-004172, and REQ-2026-00341 declined.
 
-### Step 5: E2E + responsive QA ⬜
-- [ ] Extend `web/e2e/lender-flow.spec.ts` with the full path: create → … → approve → owner accept → activate → payments → closure. Use the seeded cases where the path is long.
-- [ ] Add `web/e2e/owner-flow.spec.ts` for the debtor flow: invite → identity → offer → accept; plus the counteroffer variant.
-- [ ] Negative checks: another tenant gets 404, a forbidden transition shows reasons, a double submit replays the same response.
-- [ ] Check all MVP screens at 1440, 768 and 390; fix layout, bidi and contrast issues.
+### Step 6: After acceptance, the individual follows the case ⬜ (Q8)
+- [ ] D02 home continues from OA06 (same account, the case now visible); D03–D05, D04 documents, D12 messages.
+- [ ] The lender workspace shows the case source + REQ link; document requests reach the individual.
 
-### Step 6: MVP wrap-up ⬜
-- [ ] README: MVP demo script and demo cast.
-- [ ] Update `docs/design-implementation-map.md` statuses for the MVP screens.
-- [ ] Deviations, blocked integrations (signing, payment and identity stay «غير مفعّل» or sandbox) and outstanding work → *Findings* below.
-- [ ] Tag `mvp-1`.
+### Step 7: Proposal review and documented outcome ⬜ (⛔ Q11 for proposal content; Q8)
+- [ ] The lender prepares, submits and approves a proposal using the existing L13–L17 mechanics. The solution types shown stay labelled provisional until Q11.
+- [ ] Individual:
+  - D07 (with the approval note) → D09 accept with OTP consent, or D08 counter → L18, or decline (never leads to referral)
+  - the recorded outcome (reference, time, terms) stays visible and printable
 
-## Already verified in this phase
+### Step 8: E2E, responsive QA, wrap-up ⬜
+- [ ] `web/e2e/owner-journey.spec.ts` covers the primary path, the decline branch and the info-request branch. Adapt `web/e2e/lender-flow.spec.ts`: it still starts with the lender creating a case, which is now the exception path.
+- [ ] Check at 390, 768 and 1440; bidi, contrast and 200% text.
+- [ ] README owner-first demo script; update `docs/design-implementation-map.md`; tag `mvp-1`.
 
-- 2026-09-24: Sara submitted RH-2026-004172 v2 and Noura approved it in the browser with the step-up OTP. The case moved to «بانتظار العميل». Backend: 116/116 tests green on `master` (`be3b7e3`).
+## Already verified (kept from before the re-plan)
+
+- 2026-09-24:
+  - سارة submitted RH-2026-004172 v2 and نورة approved it in the browser with the step-up OTP. The case moved to «بانتظار العميل». This proves the proposal-approval mechanics reused in step 7.
+  - Backend: 116/116 tests green on `master` (`be3b7e3`).
 
 ## Findings / open decisions
 
-- **Cancellation wording** (from the B3/B5 branch): the backend does **not** revoke the owner's portal access on cancellation, so the cancel screen says so. If access should be revoked automatically, that's a product decision plus a backend change.
-- **Approvals inbox** lists only solution approvals. Referral, reconciliation and closure approvals notify by task and notification only (B10 note). For the MVP, closure approvals need to be reachable. Decide in step 4 whether they go in the inbox or on a case-level screen.
-- The owner summary PDF generated at closure is Latin-only (no Arabic shaping). Acceptable for the MVP; listed as outstanding.
+- **Request deadline:** the design uses two values, 5 business days (state-model assumption) and «3 أيام عمل» (L00b sample). Both are pending Q6.
+- **OR01 sub-title:** it says «مجاني», but the landing page removed «مجاناً» pending Q9. Don't render it until Q9 is answered.
+- **OTP attempts:** OR02 allows 5 before a temporary lock; today's staff policy is 3 wrong codes → 15-minute lock. Choose one when implementing and record it in `design-conflicts.md`.
+- **Cancellation wording** (from the B3/B5 branch): the backend doesn't revoke the owner's portal access on cancellation. Product decision.
+- **Approvals inbox:** it lists only solution approvals; other approval types notify only. Revisit in Phase 1A-2.

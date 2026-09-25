@@ -1,5 +1,10 @@
 # 08 — Flows & Prototypes (9 clickable flows)
 
+> **Updated design (2026-09-25):** a new first flow **PROTO-00 «الفرد يقدّم طلب معالجة»** (المالك ← الجهة الممولة ·
+> مختلط; goal «المسار الأساسي: الفرد يسجل ويقدّم طلبه، ثم تراجعه الجهة المختارة وتفتح الحالة.») precedes the flows below,
+> and PROTO-01 is renamed «فتح حالة يدوياً (استثناء)» · «مدير الحالات · مسار ثانوي». PROTO-00 steps are summarised in
+> `B13-owner-initiated-journey.md` §8. The flows below are unchanged otherwise.
+
 Source: `design-source/08 Flows & Prototypes.dc.html` (+ `_condensed/…txt`). All flow data lives in `static F` of the `<script type="text/x-dc">` class.
 
 **Tagging convention:** statements come from the design unless marked **(inferred)**. The screen-ID mapping per step is **(inferred)** from each step's title, role and the Brief matrix. The CaseState enum names come from `09 Handoff`.

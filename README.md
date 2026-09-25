@@ -1,6 +1,15 @@
 # رهون (Rahoon)
 
-Coordinates distressed mortgage cases between lenders, property owners, service providers and judicial sale agents. Architecture: `docs/architecture.md`. The work plan and status are in `docs/phases/README.md`.
+Helps **individuals who are struggling to repay an existing mortgage** resolve the default. The individual starts a request on Rahoon, and their financing institution joins later to review it and propose a solution. Rahoon coordinates and documents the process. It doesn't offer new finance, isn't a court or an auction operator, and doesn't collect payments.
+
+- Product source of truth: `docs/product/product-direction.md` (confirmed direction + open decisions).
+- Work plan and status: `docs/phases/README.md`.
+- Architecture: `docs/architecture.md`.
+
+> **Current state (2026-09-25):**
+> - What runs today is the platform foundation and the **lender-side** screens.
+> - The owner portal is still invitation-based.
+> - The individual's own entry (landing → registration → request) is designed (B13) but not built yet. It is Phase 1A of the plan.
 
 - `server/`: ASP.NET Core 10 API + EF Core, running on **http://localhost:5080**
 - `web/`: Next.js 16 app, running on **http://localhost:3000**. It forwards `/api/*` to the API, so always open the app through :3000.
@@ -58,6 +67,8 @@ Stop: press Ctrl+C in the web and API terminals. Run `docker compose stop` to st
 ## Demo logins
 
 Every seeded user has the password `Rahoon-Demo-2026!`. The SMS code isn't sent anywhere (sandbox); it's shown on screen.
+
+The self-registered individual journey isn't built yet (Phase 1A). Until then, the owner view is reached through the lender invitation below. That route is now secondary.
 
 | User | Email | Role |
 |---|---|---|

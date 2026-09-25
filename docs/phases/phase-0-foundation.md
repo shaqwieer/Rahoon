@@ -33,7 +33,23 @@ All items below are done. Kept here as the reference for what the platform alrea
 | L14/L15/L17 | Compare, submit for approval, owner preview | ✅ browser (L15) | `cases/[ref]/solutions/*` |
 | L16 | Approvals inbox + decision with step-up (maker-checker) | ✅ browser, 2026-09-24 | `app/(lender)/approvals` |
 
-## Known small leftovers (carried into Phase 1A step 1)
+## Direction review (added 2026-09-25)
+
+The ✅ marks above record **technical** completion and verification, and they stay. They don't mean the screens are product-correct under the individual-first direction (`docs/product/product-direction.md`). Review results:
+
+| Item | Review | Follow-up (phase · step) |
+|---|---|---|
+| Security, tenancy, audit, workflow engine, PII masking, idempotency, design system, shells | **OK.** Reused unchanged | — |
+| S03/S04/S06 staff login → MFA → organization | **OK for staff.** The entry must be split from the individual's sign-in | 1A · 3 |
+| D01 owner invitation + identity check | **Secondary.** Kept as «مسار ثانوي»; the self-registration path is new | 1A · 2 (label), 1B · 3 (account type) |
+| Owner session model (invitation link + last-4 + OTP, pinned to exactly one case) | **Rework.** An individual account must exist before any case (X3, X4; Q14, Q15) | 1A · 3 |
+| L01 portfolio as the lender's default landing | **Secondary.** Stays for reports; the proposed default is «الطلبات الواردة» (Q1) | 1A · 5 |
+| L03 wizard as the way cases start | **Secondary / exception.** Needs a mandatory reason | 1B · 3 |
+| Case workflow starts at `Draft` → `AwaitingData` | **Extend.** A case created from an accepted request starts at `Verification`, linked to `REQ-…` | 1A · 5 |
+| L13–L17 solution mechanics + L16 approvals | **OK mechanics, provisional content.** Solution types wait for Q11 | 1A · 7 |
+| Seed data (owners exist only as invited parties) | **Extend.** Add B13 individuals and requests | 1A · 4–5 |
+
+## Known small leftovers (carried into Phase 1A step 2)
 
 - Breadcrumb shows the raw `new` segment on `/cases/new/...`.
 - Dialog bodies had no padding: fixed on 2026-09-24 (`10f440e`).

@@ -1,5 +1,11 @@
 # Case-transition matrix
 
+> **Direction change (2026-09-25):** a **request stage** (`REQ.draft → submitted → lender_review → info_requested →
+> accepted | declined`, plus withdrawal) now precedes the case (`docs/design-specs/B13-owner-initiated-journey.md` §1).
+> A case created from an accepted request starts in **«تحقق» (`verification`)**, linked to its `REQ-…` reference —
+> not in `draft`. The `finalize_intake` row below (lender wizard) remains valid for the **exception** path (L03).
+> Not yet implemented; planned in Phase 1A steps 4–5. The lender-review mechanism is open (Q1).
+
 Source of truth in code: `server/src/Rahoon.Api/Modules/Cases/CaseWorkflow.cs` (`Transitions`).
 Design sources: 03 Phase 0 — Blueprint (state map + «جدول الانتقالات والحواجز»), 09 Handoff (CaseState enum,
 transition excerpt), B4/B5/B8/B10 specs.

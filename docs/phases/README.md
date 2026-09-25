@@ -1,16 +1,28 @@
 # رهون — Phase plan (work one phase at a time)
 
-**Working rule:** one phase per session. At the start of a session, open the phase file marked **▶ CURRENT**. Work its steps in order, tick them off, and update its status table before the session ends. Don't start the next phase until the current one's *Definition of done* is met.
+> **Product direction, confirmed 2026-09-25:** Rahoon primarily serves **individuals struggling to repay an existing mortgage**. **The individual starts the request**, and the financing institution joins later. Rahoon isn't a bank-facing product first and doesn't originate mortgages.
+> - The product source of truth is [`docs/product/product-direction.md`](../product/product-direction.md). Read it before any phase work.
+> - Its open decisions (Q1–Q15) gate several steps.
+> - The design for the new primary journey is [`docs/design-specs/B13-owner-initiated-journey.md`](../design-specs/B13-owner-initiated-journey.md).
+
+**Working rule:** every session works on **one phase only**, the one marked **▶ CURRENT**.
+- Work its steps in order; a large phase continues over several sessions, step by step.
+- Tick items off and update the status table and *Findings* before the session ends.
+- Never start the next phase until the current one's *Definition of done* is met.
+- If a step depends on an unanswered product question (⛔), stop at the labelled assumption or ask the product owner. Don't invent the answer.
 
 | # | Phase file | Goal | Status |
 |---|---|---|---|
-| 0 | [phase-0-foundation.md](phase-0-foundation.md) | Platform skeleton + five anchor screens | ✅ Done |
-| 1A | [phase-1a-mvp-settlement.md](phase-1a-mvp-settlement.md) | **MVP**: one case from creation → approved offer → owner acceptance → agreement → payments → documented closure | ▶ **CURRENT** |
-| 1B | [phase-1b-shared-and-lender-ops.md](phase-1b-shared-and-lender-ops.md) | Public pages, account/search/help, import, complaints, manual judicial-referral package (L25) | ⬜ Next |
-| 1C | [phase-1c-providers-admin-platform.md](phase-1c-providers-admin-platform.md) | Provider portal, institution admin, platform admin (B7) | ⬜ |
-| 2 | [phase-2-sale-ecosystem.md](phase-2-sale-ecosystem.md) | Voluntary sale (B8) + service ecosystem (B9) | ⬜ (backend on master) |
-| 3 | [phase-3-judicial-financial.md](phase-3-judicial-financial.md) | Judicial referral, agent portal, full reconciliation/closure (B10) | ⬜ (backend on a branch) |
+| 0 | [phase-0-foundation.md](phase-0-foundation.md) | Platform skeleton + five anchor screens | ✅ Done (direction review added) |
+| 1A | [phase-1a-mvp-settlement.md](phase-1a-mvp-settlement.md) | **MVP**: the individual understands the service → registers → submits a request about an existing default → provides information → tracks it → reviews an approved proposal → the outcome is documented | ▶ **CURRENT** (step 0 done; step 1 = product decisions) |
+| 1A-2 | [phase-1a2-settlement-execution.md](phase-1a2-settlement-execution.md) | After the outcome: agreement activation → payments (maker-checker) → breach → reconciliation and closure. Whether this is part of the MVP release is Q13 | ⬜ Next |
+| 1B | [phase-1b-shared-and-lender-ops.md](phase-1b-shared-and-lender-ops.md) | Account/search/help, institutions' secondary page (S02), rework of secondary entry routes (D01/L03/L04), complaints and objections, referral package (L25) | ⬜ |
+| 1C | [phase-1c-providers-admin-platform.md](phase-1c-providers-admin-platform.md) | Provider portal, institution admin, platform admin (B7) | ⬜ (backend on master) |
+| 2 | [phase-2-sale-ecosystem.md](phase-2-sale-ecosystem.md) | Voluntary sale (B8), only if Q11 approves it, + service ecosystem (B9) | ⬜ (backend on master) |
+| 3 | [phase-3-judicial-financial.md](phase-3-judicial-financial.md) | Judicial referral, agent portal, full reconciliation and closure (B10); scope to be re-confirmed | ⬜ (backend on a branch) |
 | 4 | [phase-4-optimization.md](phase-4-optimization.md) | Analytics, configurable ops, drafting help, predictive insights (B11) | ⬜ (backend on a branch) |
+
+**Two kinds of status.** Phase files track *Tech status* (built and verified, legend below) separately from *Direction review* (does it fit the individual-first direction: OK / Rework / Secondary / New / Proposed / Provisional). A ✅ is never erased because of the new direction; screens that need changes get an explicit rework step.
 
 ## Status legend (used in every phase file)
 

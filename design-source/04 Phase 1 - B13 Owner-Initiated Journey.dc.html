@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>04 Phase 1 — B13 Owner-initiated journey — رهون</title>
+<meta name="design_doc_mode" content="canvas">
+<link rel="icon" href="assets/rahoon-favicon.svg">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400,0..1,0&display=block">
+<style>
+html,body{margin:0;background:#E7E6E1;color:#151513;font-family:"IBM Plex Sans Arabic","IBM Plex Sans",sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#AA4528;text-underline-offset:3px}a:hover{color:#8E3920}
+*:focus-visible{outline:2px solid #151513;outline-offset:2px}
+button,input,textarea{font-family:inherit}
+.ms{font-family:"Material Symbols Rounded";font-weight:400;font-style:normal;line-height:1;display:inline-block;white-space:nowrap;direction:ltr;font-feature-settings:"liga"}
+</style>
+</helmet>
+<div dir="rtl" lang="ar" style="padding:48px;display:flex;flex-direction:column;gap:88px;width:max-content">
+  <div style="display:flex;align-items:center;gap:24px">
+    <img src="assets/rahoon-horizontal-full.svg" alt="رهون" style="width:200px">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <h1 style="margin:0;font-size:32px;line-height:44px">B13 — تصحيح: الفرد يبدأ الطلب، والجهة الممولة تنضم بعده</h1>
+      <div style="font-size:15px;display:flex;gap:16px;flex-wrap:wrap"><a href="00 Brief & Assumptions.dc.html">00 الموجز</a><a href="04 Phase 1 - B2 Shared & Public.dc.html">B2 (الصفحة العامة السابقة)</a><a href="04 Phase 1 - B6 Debtor Journey.dc.html">B6 رحلة المالك</a><a href="08 Flows & Prototypes.dc.html">08 النماذج</a></div>
+      <div role="note" style="display:flex;gap:10px;padding:12px 16px;border-radius:10px;background:#FDF0EB;border:1px solid #F0B8A6;font-size:15px;line-height:24px;max-width:1150px"><span class="ms" aria-hidden="true" style="font-size:22px;color:#8E3920">swap_vert</span><span><strong>قرار صاحب المشروع (<bdi dir="ltr">2026-09-25</bdi>):</strong> الشريحة الرئيسية هي الفرد صاحب العقار المتعثر. هو من يسجل ويقدّم طلب المعالجة لتمويل عقاري قائم، ثم تنضم الجهة الممولة لمراجعة الطلب. الطلب <strong>معالجة تعثر في تمويل عقاري قائم وعقار مرهون</strong>، وليس طلب تمويل جديد. تحل هذه الدفعة محل الصفحة العامة (S01)، وتجعل الدعوة من الجهة (D01) مساراً ثانوياً، وإنشاء الحالة يدوياً من الجهة (L03) استثناءً.</span></div>
+      <div role="note" style="display:flex;gap:10px;padding:12px 16px;border-radius:10px;background:#FBF2DE;border:1px solid #E2C27A;font-size:15px;line-height:24px;max-width:1150px"><span class="ms" aria-hidden="true" style="font-size:22px;color:#8A5300">help</span><span><strong>غير محدد في المواصفات:</strong> طريقة إشراك الجهة الممولة وخطوات المعالجة بعد التقديم. شاشات الجهة أدناه <strong>نمط مقترح للنقاش</strong> وليست مسار عمل معتمداً؛ انظر «نقاط تحتاج تأكيداً» في آخر الصفحة.</span></div>
+    </div>
+  </div>
+
+  <!-- STATE MODEL -->
+  <section data-screen-label="Owner-first state model" style="background:#FFFFFF;border-radius:14px;padding:28px;display:flex;flex-direction:column;gap:18px;max-width:1720px">
+    <h2 style="margin:0;font-size:24px;font-weight:700">نموذج الحالة المحدّث — مرحلة «الطلب» تسبق «الحالة»</h2>
+    <ol aria-label="مراحل الطلب قبل فتح الحالة" style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px">
+      <sc-for list="{{ reqStates }}" as="s" hint-placeholder-count="6"><li style="border:1px solid {{ s.bd }};background:{{ s.bg }};border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px"><span dir="ltr" style="font:600 11px 'IBM Plex Mono';color:#5E5D58;text-align:right">{{ s.code }}</span><strong style="font-size:15px">{{ s.t }}</strong><span style="font-size:13px;line-height:20px;color:#22262A">{{ s.d }}</span><span style="font-size:12px;color:#5E5D58">{{ s.who }}</span></li></sc-for>
+    </ol>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;font-size:14px;line-height:22px">
+      <div style="background:#FAF9F6;border-radius:10px;padding:14px 16px"><strong>عند القبول:</strong> يُنشأ رقم حالة <bdi dir="ltr">RH-…</bdi> مرتبط برقم الطلب <bdi dir="ltr">REQ-…</bdi>، وتبدأ الحالة في «تحقق» (لا «مسودة»)، لأن المالك أدخل بياناته وتحقق من هويته.</div>
+      <div style="background:#FAF9F6;border-radius:10px;padding:14px 16px"><strong>عند الاعتذار:</strong> لا تُنشأ حالة. يرى المالك السبب بلغة واضحة وما يمكنه فعله (تصحيح الجهة، اختيار جهة أخرى، التواصل مع الدعم).</div>
+      <div style="background:#FBF2DE;border-radius:10px;padding:14px 16px"><strong>افتراض — يتطلب تأكيداً:</strong> مهلة رد الجهة 5 أيام عمل؛ الجهات غير المشاركة في المنصة لا تستقبل طلبات، ويُعرض للمالك بديل (إشعاره عند انضمامها).</div>
+    </div>
+  </section>
+
+  <!-- PUBLIC LANDING -->
+  <section data-screen-label="Owner-first landing" style="display:flex;gap:48px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P1-Public-Landing-Desktop-OwnerFirst · 1440 (replaces S01)</div>
+      <div data-screen-label="P1-Public-Landing-Desktop-OwnerFirst" style="width:1440px;background:#FFFFFF;display:flex;flex-direction:column;box-shadow:0 16px 40px rgba(21,21,19,.14)">
+        <header style="height:76px;border-bottom:1px solid #EDECE8;display:flex;align-items:center;gap:32px;padding:0 80px">
+          <img src="assets/rahoon-horizontal-full.svg" alt="رهون" style="width:180px">
+          <nav aria-label="الرئيسية" style="display:flex;gap:4px;font-size:15px"><a href="#" style="padding:10px 14px;color:#151513;text-decoration:none">كيف تعمل</a><a href="#" style="padding:10px 14px;color:#151513;text-decoration:none">حقوقك وخصوصيتك</a><a href="#" style="padding:10px 14px;color:#151513;text-decoration:none">الأسئلة الشائعة</a></nav>
+          <div style="margin-inline-start:auto;display:flex;gap:10px;align-items:center"><a href="#" style="font-size:14px;font-weight:600;padding:10px 12px">للجهات الممولة</a><a href="#" style="font-size:15px;font-weight:600;padding:10px 14px;color:#151513;text-decoration:none">تسجيل الدخول</a><a href="#" style="min-height:44px;padding:0 20px;border-radius:8px;background:#AA4528;color:#FFFFFF;font-weight:600;font-size:15px;display:flex;align-items:center;text-decoration:none">ابدأ طلب المعالجة</a></div>
+        </header>
+        <div style="padding:88px 80px 72px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:64px;align-items:center;background:#FAF9F6">
+          <div style="display:flex;flex-direction:column;gap:22px">
+            <span style="font-size:15px;font-weight:600;color:#8E3920">لأصحاب العقارات الممولة</span>
+            <h1 style="margin:0;font-size:52px;line-height:72px;font-weight:700;text-wrap:pretty">تأخرت في أقساط تمويلك العقاري؟ ابدأ الحل من هنا.</h1>
+            <p style="margin:0;font-size:20px;line-height:34px;color:#22262A;max-width:34em">لديك عقار مرهون وتواجه صعوبة في سداد تمويلك العقاري الحالي؟ قدّم طلب معالجة التعثر، وتابع حالتك خطوة بخطوة مع خيارات واضحة ووثائق محفوظة.</p>
+            <span style="font-size:15px;color:#22262A;display:flex;gap:8px;align-items:center"><span class="ms" aria-hidden="true" style="font-size:18px;color:#5E5D58">info</span>رهون لا تقدّم تمويلاً جديداً؛ نساعدك في معالجة تمويل قائم.</span>
+            <div style="display:flex;gap:12px;align-items:center"><a href="#" style="min-height:56px;padding:0 28px;border-radius:8px;background:#AA4528;color:#FFFFFF;font-weight:600;font-size:18px;display:flex;align-items:center;text-decoration:none">ابدأ طلب المعالجة</a><a href="#" style="min-height:56px;padding:0 22px;border-radius:8px;border:1px solid #85847F;color:#151513;font-weight:600;font-size:17px;display:flex;align-items:center;text-decoration:none">كيف تعمل؟</a></div>
+            <span style="font-size:14px;color:#5E5D58;display:flex;gap:8px;align-items:center"><span class="ms" aria-hidden="true" style="font-size:18px">save</span>يُحفظ طلبك تلقائياً ويمكنك العودة لإكماله لاحقاً</span>
+          </div>
+          <div role="img" aria-label="مكان صورة تعبيرية هادئة لشخص يراجع أوراقه في منزله" style="height:420px;border-radius:18px;background:repeating-linear-gradient(135deg,#F2F1ED 0 14px,#FFFFFF 14px 28px);display:flex;align-items:center;justify-content:center"><span dir="ltr" style="font:500 13px 'IBM Plex Mono';color:#5E5D58;background:#FFFFFF;padding:6px 10px;border-radius:4px">calm lifestyle photo — person reviewing papers at home</span></div>
+        </div>
+        <div style="padding:72px 80px;display:flex;flex-direction:column;gap:28px">
+          <h2 style="margin:0;font-size:32px;font-weight:700">كيف تعمل</h2>
+          <ol style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px">
+            <sc-for list="{{ how }}" as="h" hint-placeholder-count="4"><li style="display:flex;flex-direction:column;gap:10px;border-top:3px solid {{ h.c }};padding-top:18px"><span style="font-size:14px;font-weight:700;color:#5E5D58">{{ h.n }}</span><strong style="font-size:20px">{{ h.t }}</strong><span style="font-size:16px;line-height:27px;color:#22262A">{{ h.d }}</span></li></sc-for>
+          </ol>
+        </div>
+        <div style="padding:0 80px 72px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px">
+          <sc-for list="{{ promises }}" as="p" hint-placeholder-count="3"><div style="background:#FAF9F6;border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:10px"><span class="ms" aria-hidden="true" style="font-size:28px;color:#22262A">{{ p.i }}</span><strong style="font-size:19px">{{ p.t }}</strong><span style="font-size:16px;line-height:27px;color:#22262A">{{ p.d }}</span></div></sc-for>
+        </div>
+        <div style="padding:40px 80px;background:#151513;color:#FFFFFF;display:flex;align-items:center;gap:24px">
+          <div style="flex:1;display:flex;flex-direction:column;gap:6px"><strong style="font-size:22px">جهة تمويل؟</strong><span style="font-size:16px;color:#B5B3AD">استقبل طلبات عملائك المتعثرين موثقة ومنظمة، وأدرها بموافقات وسجل تدقيق.</span></div>
+          <a href="#" style="min-height:48px;padding:0 20px;border-radius:8px;border:1px solid #FFFFFF;color:#FFFFFF;font-weight:600;font-size:16px;display:flex;align-items:center;text-decoration:none">طلب عرض للمنشآت</a>
+        </div>
+        <footer style="padding:24px 80px;display:flex;gap:24px;font-size:13px;color:#5E5D58;border-top:1px solid #EDECE8"><span>رهون منصة تنسيق وتوثيق، وليست جهة تمويل أو محكمة أو سوقاً عقارية.</span><a href="#" style="margin-inline-start:auto">الخصوصية</a><a href="#">الشروط</a><a href="#">English</a></footer>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P1-Public-Landing-Mobile-OwnerFirst · 390</div>
+      <div data-screen-label="P1-Public-Landing-Mobile-OwnerFirst" style="width:390px;height:844px;background:#FAF9F6;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 16px 40px rgba(21,21,19,.14)">
+        <div style="height:60px;background:#FFFFFF;border-bottom:1px solid #EDECE8;display:flex;align-items:center;padding:0 12px 0 16px"><img src="assets/rahoon-horizontal-full.svg" alt="رهون" style="width:132px"><a href="#" style="margin-inline-start:auto;font-size:15px;font-weight:600;padding:10px;color:#151513;text-decoration:none">دخول</a><button aria-label="القائمة" style="width:44px;height:44px;border:0;background:transparent"><span class="ms" aria-hidden="true" style="font-size:24px">menu</span></button></div>
+        <main style="flex:1;padding:28px 22px;display:flex;flex-direction:column;gap:18px">
+          <span style="font-size:14px;font-weight:600;color:#8E3920">لأصحاب العقارات الممولة</span>
+          <h1 style="margin:0;font-size:30px;line-height:44px;font-weight:700">تأخرت في أقساط تمويلك العقاري؟ ابدأ الحل من هنا.</h1>
+          <p style="margin:0;font-size:18px;line-height:30px;color:#22262A">لديك عقار مرهون وتعثرت في تمويلك الحالي؟ قدّم طلب المعالجة وتابع حالتك.</p>
+          <span style="font-size:14px;color:#5E5D58">لا نقدّم تمويلاً جديداً.</span>
+          <a href="#" style="min-height:56px;border-radius:8px;background:#AA4528;color:#FFFFFF;font-weight:600;font-size:18px;display:flex;align-items:center;justify-content:center;text-decoration:none">ابدأ طلب المعالجة</a>
+          <span style="font-size:14px;color:#5E5D58;text-align:center">يُحفظ تلقائياً · أكمل لاحقاً</span>
+          <ol style="list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:12px"><sc-for list="{{ how }}" as="h" hint-placeholder-count="4"><li style="display:flex;gap:12px;font-size:16px;line-height:26px"><span style="flex:none;width:28px;height:28px;border-radius:50%;background:#FFFFFF;border:1px solid #CBCAC6;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">{{ h.k }}</span><span><strong>{{ h.t }}</strong> — {{ h.s }}</span></li></sc-for></ol>
+          <a href="#" style="margin-top:auto;font-size:14px;font-weight:600;text-align:center">للجهات الممولة ←</a>
+        </main>
+      </div>
+    </div>
+    <aside style="width:380px;background:#FFFFFF;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:22px"><strong style="font-size:18px">الصفحة العامة (تحل محل S01)</strong><sc-for list="{{ specLanding }}" as="s" hint-placeholder-count="5"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;font-weight:700;color:#5E5D58">{{ s.k }}</span><span>{{ s.v }}</span></div></sc-for></aside>
+  </section>
+
+  <!-- OWNER MOBILE JOURNEY -->
+  <section data-screen-label="Owner apply journey" style="display:flex;flex-direction:column;gap:24px">
+    <h2 style="margin:0;font-size:26px;font-weight:700">رحلة الفرد: التسجيل ← تقديم الطلب ← المتابعة (الجوال أولاً)</h2>
+    <div style="display:flex;gap:36px;align-items:flex-start;flex-wrap:wrap;max-width:2300px">
+      <sc-for list="{{ owner }}" as="o" hint-placeholder-count="10">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div dir="ltr" style="font:600 13px 'IBM Plex Mono';color:#22262A;text-align:right">{{ o.frame }}</div>
+          <div data-screen-label="{{ o.frame }}" style="width:390px;height:844px;background:#FAF9F6;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 16px 40px rgba(21,21,19,.14)">
+            <div style="height:60px;flex:none;background:#FFFFFF;border-bottom:1px solid #EDECE8;display:flex;align-items:center;gap:6px;padding:0 8px 0 12px"><button aria-label="رجوع" style="{{ o.backStyle }}"><span class="ms" aria-hidden="true" style="font-size:24px">arrow_forward</span></button><img src="assets/rahoon-symbol-full.svg" alt="" style="{{ o.logoStyle }}"><div style="flex:1;display:flex;flex-direction:column"><strong style="font-size:17px">{{ o.title }}</strong><span style="font-size:12px;color:#5E5D58">{{ o.sub }}</span></div><span style="font-size:13px;color:#5E5D58;padding:0 8px">{{ o.save }}</span></div>
+            <div role="progressbar" aria-label="{{ o.progAria }}" aria-valuenow="{{ o.progNow }}" aria-valuemin="0" aria-valuemax="5" style="{{ o.progWrap }}"><span style="display:block;height:100%;width:{{ o.progW }};background:#F4633A"></span></div>
+            <main style="flex:1;padding:20px;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+              <span style="{{ o.tagStyle }}"><span class="ms" aria-hidden="true" style="font-size:16px">{{ o.tagI }}</span>{{ o.tag }}</span>
+              <h3 style="margin:0;font-size:24px;line-height:36px;font-weight:700">{{ o.h }}</h3>
+              <p style="{{ o.pStyle }}">{{ o.p }}</p>
+              <sc-for list="{{ o.fields }}" as="f" hint-placeholder-count="2"><div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:16px;font-weight:600">{{ f.l }}</span><div style="{{ f.box }}">{{ f.v }}</div><span style="{{ f.hintStyle }}">{{ f.h }}</span></div></sc-for>
+              <sc-for list="{{ o.choices }}" as="c" hint-placeholder-count="3"><div style="{{ c.style }}"><span class="ms" aria-hidden="true" style="font-size:22px;color:{{ c.ic }}">{{ c.i }}</span><span style="flex:1;display:flex;flex-direction:column"><span style="font-size:16px;font-weight:{{ c.w }}">{{ c.t }}</span><span style="{{ c.dStyle }}">{{ c.d }}</span></span></div></sc-for>
+              <div style="{{ o.boxStyle }}"><sc-for list="{{ o.box }}" as="b" hint-placeholder-count="3"><div style="display:flex;gap:10px;font-size:15px;line-height:24px"><span class="ms" aria-hidden="true" style="font-size:20px;color:{{ b.c }}">{{ b.i }}</span><span style="flex:1">{{ b.t }}</span></div></sc-for></div>
+              <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px"><button style="{{ o.btnStyle }}">{{ o.btn }}</button><a href="#" style="{{ o.altStyle }}">{{ o.alt }}</a></div>
+            </main>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div role="table" aria-label="مواصفات شاشات رحلة الفرد" style="background:#FFFFFF;border-radius:14px;overflow:hidden;font-size:14px;line-height:22px;max-width:2000px">
+      <div role="row" style="display:grid;grid-template-columns:80px 1.1fr 1.8fr 1.4fr 1.6fr;gap:14px;padding:10px 20px;background:#FAF9F6;color:#5E5D58;font-weight:600"><span role="columnheader">#</span><span role="columnheader">الشاشة</span><span role="columnheader">هدف المستخدم والبيانات</span><span role="columnheader">الإجراءات</span><span role="columnheader">الحالات والصلاحية</span></div>
+      <sc-for list="{{ ownerSpec }}" as="s" hint-placeholder-count="10"><div role="row" style="display:grid;grid-template-columns:80px 1.1fr 1.8fr 1.4fr 1.6fr;gap:14px;padding:11px 20px;border-top:1px solid #EDECE8"><bdi role="cell" dir="ltr" style="font:500 12px 'IBM Plex Mono';text-align:right">{{ s.id }}</bdi><strong role="cell">{{ s.n }}</strong><span role="cell">{{ s.g }}</span><span role="cell">{{ s.a }}</span><span role="cell" style="color:#22262A">{{ s.s }}</span></div></sc-for>
+    </div>
+  </section>
+
+  <!-- LENDER INTAKE -->
+  <section data-screen-label="Lender intake" style="display:flex;gap:48px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P1-Lender-IntakeQueue-Desktop · 1440 (L00a) · PROPOSED</div>
+      <span style="align-self:flex-end;font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px;background:#FBF2DE;color:#8A5300;border:1px solid #E2C27A">نمط مقترح — طريقة إشراك الجهة تحتاج تأكيداً</span>
+      <div data-screen-label="P1-Lender-IntakeQueue-Desktop" style="width:1440px;min-height:900px;background:#FAF9F6;display:flex;box-shadow:0 16px 40px rgba(21,21,19,.14)">
+        <dc-import name="LenderSidebar" active="intake" intake="5" hint-size="264px,900px" style="min-height:900px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="LenderTopbar" crumb1="الطلبات الواردة" crumb2="بانتظار المراجعة" hint-size="100%,64px"></dc-import>
+          <main style="padding:28px 40px 40px;display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;align-items:flex-end;gap:12px"><div style="flex:1;display:flex;flex-direction:column;gap:4px"><h2 style="margin:0;font-size:28px;font-weight:700">الطلبات الواردة من الأفراد</h2><span style="font-size:14px;color:#5E5D58">طلبات قدّمها أصحاب عقارات اختاروا مصرف الأفق جهةً ممولة، ووافقوا على مشاركة بياناتهم معه.</span></div></div>
+            <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px"><sc-for list="{{ intakeKpis }}" as="k" hint-placeholder-count="4"><div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:4px"><span style="font-size:13px;color:#5E5D58">{{ k.k }}</span><strong style="font-size:26px;color:{{ k.c }}"><bdi>{{ k.v }}</bdi></strong><span style="font-size:12px;color:#5E5D58">{{ k.s }}</span></div></sc-for></div>
+            <div role="table" aria-label="الطلبات الواردة" style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;overflow:hidden;font-size:14px">
+              <div role="row" style="display:grid;grid-template-columns:1.1fr 1.2fr 1.3fr 1.6fr 1fr 1fr;gap:12px;padding:10px 18px;background:#FAF9F6;color:#5E5D58;font-weight:600"><span role="columnheader">رقم الطلب</span><span role="columnheader">مقدم الطلب</span><span role="columnheader">العقد المذكور</span><span role="columnheader">المطابقة مع نظام التمويل</span><span role="columnheader">مهلة الرد</span><span role="columnheader">الحالة</span></div>
+              <sc-for list="{{ intake }}" as="r" hint-placeholder-count="6"><div role="row" style="display:grid;grid-template-columns:1.1fr 1.2fr 1.3fr 1.6fr 1fr 1fr;gap:12px;padding:12px 18px;border-top:1px solid #EDECE8;align-items:center;background:{{ r.bg }};box-shadow:{{ r.mark }}"><bdi role="cell" dir="ltr" style="text-align:right;font:600 13px 'IBM Plex Mono'">{{ r.id }}</bdi><span role="cell" style="display:flex;flex-direction:column"><strong>{{ r.n }}</strong><span style="font-size:12px;color:#5E5D58">{{ r.city }}</span></span><bdi role="cell" dir="ltr" style="text-align:right;font:500 13px 'IBM Plex Mono'">{{ r.c }}</bdi><span role="cell" style="display:flex;gap:6px;align-items:center;color:{{ r.mc }};font-weight:600"><span class="ms" aria-hidden="true" style="font-size:18px">{{ r.mi }}</span>{{ r.m }}</span><span role="cell" style="font-weight:600;color:{{ r.sc }}">{{ r.sla }}</span><span role="cell"><span style="font-size:12px;font-weight:600;padding:2px 8px;border-radius:4px;background:{{ r.stBg }};color:{{ r.stC }}">{{ r.st }}</span></span></div></sc-for>
+            </div>
+            <span style="font-size:13px;color:#5E5D58;display:flex;gap:6px;align-items:center"><span class="ms" aria-hidden="true" style="font-size:16px">lock</span>لا يرى مصرف الأفق طلبات قُدمت لجهات أخرى، ولا يعرف أن المالك تواصل مع غيره.</span>
+          </main>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div dir="ltr" style="font:600 14px 'IBM Plex Mono';color:#22262A;text-align:right">P1-Lender-IntakeReview-Desktop-Accept · 1440 (L00b) · PROPOSED</div>
+      <span style="align-self:flex-end;font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px;background:#FBF2DE;color:#8A5300;border:1px solid #E2C27A">نمط مقترح — المطابقة والمهلة وأسباب الاعتذار تحتاج تأكيداً</span>
+      <div data-screen-label="P1-Lender-IntakeReview-Desktop-Accept" style="width:1440px;min-height:900px;background:#FAF9F6;display:flex;box-shadow:0 16px 40px rgba(21,21,19,.14)">
+        <dc-import name="LenderSidebar" active="intake" intake="5" hint-size="264px,900px" style="min-height:900px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="LenderTopbar" crumb1="الطلبات الواردة" crumb2="REQ-2026-00318" hint-size="100%,64px"></dc-import>
+          <main style="padding:28px 40px 40px;display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:24px">
+            <div style="display:flex;flex-direction:column;gap:16px">
+              <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;color:#5E5D58"><bdi dir="ltr" style="font-family:'IBM Plex Mono'">REQ-2026-00318</bdi> · قُدّم <bdi dir="ltr">2026-08-12 21:40</bdi> · هوية متحقق منها</span><h2 style="margin:0;font-size:26px;font-weight:700">طلب معالجة تعثر — عبدالله م.</h2><span style="display:inline-flex;gap:6px;align-items:center;font-size:13px;font-weight:600;color:#8A5300;background:#FBF2DE;padding:3px 8px;border-radius:4px;align-self:flex-start"><span class="ms" aria-hidden="true" style="font-size:16px">alarm</span>الرد خلال 3 أيام عمل · <bdi dir="ltr">2026-08-17</bdi></span></div>
+              <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;overflow:hidden">
+                <div style="padding:12px 20px;border-bottom:1px solid #EDECE8;display:flex;justify-content:space-between"><strong style="font-size:16px">ما قدّمه المالك مقابل سجلاتكم</strong><span style="font-size:13px;color:#1E6A45;font-weight:600">4 من 5 متطابقة</span></div>
+                <div role="table" style="font-size:14px">
+                  <div role="row" style="display:grid;grid-template-columns:1.1fr 1.3fr 1.3fr 0.9fr;gap:12px;padding:8px 20px;background:#FAF9F6;color:#5E5D58;font-weight:600"><span role="columnheader">البيان</span><span role="columnheader">من المالك</span><span role="columnheader">نظام التمويل</span><span role="columnheader">النتيجة</span></div>
+                  <sc-for list="{{ match }}" as="m" hint-placeholder-count="5"><div role="row" style="display:grid;grid-template-columns:1.1fr 1.3fr 1.3fr 0.9fr;gap:12px;padding:10px 20px;border-top:1px solid #EDECE8;background:{{ m.bg }}"><span role="cell">{{ m.k }}</span><span role="cell">{{ m.a }}</span><span role="cell">{{ m.b }}</span><span role="cell" style="font-weight:600;color:{{ m.c }};display:flex;gap:4px;align-items:center"><span class="ms" aria-hidden="true" style="font-size:16px">{{ m.i }}</span>{{ m.r }}</span></div></sc-for>
+                </div>
+              </div>
+              <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:22px">
+                <strong style="font-size:16px">بكلمات المالك</strong>
+                <span>«انخفض راتبي بعد تغيير جهة عملي في يناير. أريد البقاء في منزلي وتقليل القسط، وأستطيع دفع نحو 15 ألفاً شهرياً.»</span>
+                <div style="display:flex;gap:8px;flex-wrap:wrap"><span style="font-size:12px;padding:3px 8px;border-radius:4px;background:#F2F1ED">السبب: انخفاض الدخل</span><span style="font-size:12px;padding:3px 8px;border-radius:4px;background:#F2F1ED">التفضيل: البقاء في المنزل</span><span style="font-size:12px;padding:3px 8px;border-radius:4px;background:#F2F1ED">مستندات أولية: 2</span></div>
+              </div>
+            </div>
+            <aside style="display:flex;flex-direction:column;gap:14px">
+              <div style="background:#FFFFFF;border:1px solid #CBCAC6;border-top:3px solid #F4633A;border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:22px">
+                <strong style="font-size:17px">قرار الاستلام</strong>
+                <div role="radiogroup" aria-label="القرار" style="display:flex;flex-direction:column;gap:8px">
+                  <label style="display:flex;gap:10px;align-items:center;min-height:48px;padding:0 12px;border:2px solid #151513;border-radius:8px;background:#FDF0EB;font-weight:700"><span style="width:16px;height:16px;border-radius:50%;border:5px solid #151513;box-sizing:border-box"></span>قبول وفتح حالة</label>
+                  <label style="display:flex;gap:10px;align-items:center;min-height:48px;padding:0 12px;border:1px solid #85847F;border-radius:8px"><span style="width:16px;height:16px;border-radius:50%;border:1px solid #85847F;box-sizing:border-box"></span>طلب استكمال من المالك</label>
+                  <label style="display:flex;gap:10px;align-items:center;min-height:48px;padding:0 12px;border:1px solid #85847F;border-radius:8px"><span style="width:16px;height:16px;border-radius:50%;border:1px solid #85847F;box-sizing:border-box"></span>الاعتذار مع سبب…</label>
+                </div>
+                <div style="background:#FAF9F6;border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:4px"><strong>عند القبول</strong><span>• تُنشأ الحالة <bdi dir="ltr">RH-2026-004172</bdi> بحالة «تحقق».</span><span>• تُسند إلى: سارة القحطاني (قاعدة الإسناد).</span><span>• يُبلَّغ المالك فوراً باسم مسؤولة حالته.</span><span>• يُصحَّح رقم الجوال من سجلاتكم بعد تأكيد المالك.</span></div>
+                <div style="display:flex;flex-direction:column;gap:6px"><label style="font-weight:600">ملاحظة داخلية</label><textarea style="min-height:56px;border:1px solid #85847F;border-radius:6px;padding:10px 12px;font-size:14px;line-height:22px">العقد مطابق؛ الجوال يختلف — يُطلب التأكيد.</textarea></div>
+                <button style="min-height:44px;border-radius:6px;border:0;background:#AA4528;color:#FFFFFF;font-weight:600;font-size:15px">قبول وفتح الحالة</button>
+              </div>
+              <div style="background:#F2F1ED;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:20px"><strong>أسباب الاعتذار المسموحة</strong><span>ليس عميلاً لدينا · العقد غير عقاري · العقد مسدد أو مغلق · حالة قائمة لدينا بالفعل (تُربط بدل الاعتذار). السبب يُعرض للمالك نصاً.</span></div>
+            </aside>
+          </main>
+        </div>
+      </div>
+    </div>
+    <aside style="width:380px;background:#FFFFFF;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:22px"><strong style="font-size:18px">L00a الطلبات الواردة · L00b المراجعة</strong><sc-for list="{{ specIntake }}" as="s" hint-placeholder-count="6"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;font-weight:700;color:#5E5D58">{{ s.k }}</span><span>{{ s.v }}</span></div></sc-for></aside>
+  </section>
+
+  <!-- PERMISSIONS -->
+  <section data-screen-label="Owner-first permissions" style="background:#FFFFFF;border-radius:14px;padding:28px;display:flex;flex-direction:column;gap:16px;max-width:1720px">
+    <h2 style="margin:0;font-size:24px;font-weight:700">الصلاحيات حسب المرحلة</h2>
+    <div role="table" style="font-size:14px;line-height:22px;border:1px solid #CBCAC6;border-radius:10px;overflow:hidden">
+      <div role="row" style="display:grid;grid-template-columns:1.2fr repeat(4,minmax(0,1fr));gap:12px;padding:10px 18px;background:#FAF9F6;color:#5E5D58;font-weight:600"><span role="columnheader">المرحلة</span><span role="columnheader">المالك</span><span role="columnheader">الجهة الممولة المختارة</span><span role="columnheader">جهات أخرى</span><span role="columnheader">مقدم الخدمة</span></div>
+      <sc-for list="{{ perms }}" as="p" hint-placeholder-count="5"><div role="row" style="display:grid;grid-template-columns:1.2fr repeat(4,minmax(0,1fr));gap:12px;padding:11px 18px;border-top:1px solid #EDECE8"><strong role="rowheader">{{ p.s }}</strong><span role="cell">{{ p.o }}</span><span role="cell">{{ p.l }}</span><span role="cell" style="color:#5E5D58">{{ p.x }}</span><span role="cell" style="color:#5E5D58">{{ p.v }}</span></div></sc-for>
+    </div>
+  </section>
+
+  <!-- OPEN QUESTIONS -->
+  <section data-screen-label="Open questions" style="background:#FFFFFF;border-radius:14px;padding:28px;display:flex;flex-direction:column;gap:14px;max-width:1720px">
+    <h2 style="margin:0;font-size:24px;font-weight:700">نقاط تحتاج تأكيداً من صاحب المشروع</h2>
+    <span style="font-size:14px;color:#5E5D58">لم نخترع مساراً لها؛ الشاشات المرتبطة موسومة «نمط مقترح» أو «افتراض».</span>
+    <div role="table" style="font-size:14px;line-height:22px">
+      <div role="row" style="display:grid;grid-template-columns:60px 1.4fr 2fr 1.4fr;gap:14px;padding:8px 0;color:#5E5D58;font-weight:600;border-bottom:1px solid #CBCAC6"><span role="columnheader">#</span><span role="columnheader">السؤال</span><span role="columnheader">لماذا يهم التصميم</span><span role="columnheader">الشاشات المتأثرة</span></div>
+      <sc-for list="{{ openQs }}" as="q" hint-placeholder-count="10"><div role="row" style="display:grid;grid-template-columns:60px 1.4fr 2fr 1.4fr;gap:14px;padding:11px 0;border-bottom:1px solid #EDECE8"><bdi role="cell" dir="ltr" style="font:600 12px 'IBM Plex Mono';text-align:right">{{ q.id }}</bdi><strong role="cell">{{ q.q }}</strong><span role="cell">{{ q.w }}</span><span role="cell" style="color:#22262A">{{ q.s }}</span></div></sc-for>
+    </div>
+  </section>
+
+  <!-- IMPACT -->
+  <section data-screen-label="Impact on existing screens" style="background:#FFFFFF;border-radius:14px;padding:28px;display:flex;flex-direction:column;gap:14px;max-width:1720px">
+    <h2 style="margin:0;font-size:24px;font-weight:700">جرد الشاشات: قبل ← بعد</h2>
+    <span style="font-size:14px;color:#5E5D58">اختبار كل شاشة: «إن كنت عميلاً متعثراً، ماذا أستفيد من هذه المنصة، وكيف تساعدني على حل مشكلتي؟»</span>
+    <div role="table" style="font-size:14px;line-height:22px">
+      <div role="row" style="display:grid;grid-template-columns:100px 1fr 1.6fr 1.8fr 110px;gap:14px;padding:8px 0;color:#5E5D58;font-weight:600;border-bottom:1px solid #CBCAC6"><span role="columnheader">#</span><span role="columnheader">الشاشة</span><span role="columnheader">قبل</span><span role="columnheader">بعد</span><span role="columnheader">الوضع</span></div>
+      <sc-for list="{{ impact }}" as="i" hint-placeholder-count="12"><div role="row" style="display:grid;grid-template-columns:100px 1fr 1.6fr 1.8fr 110px;gap:14px;padding:11px 0;border-bottom:1px solid #EDECE8;align-items:start"><bdi role="cell" dir="ltr" style="font:600 12px 'IBM Plex Mono';text-align:right">{{ i.id }}</bdi><strong role="cell">{{ i.n }}</strong><span role="cell" style="color:#5E5D58">{{ i.b }}</span><span role="cell">{{ i.d }}</span><span role="cell"><span style="font-size:12px;font-weight:600;padding:2px 8px;border-radius:4px;background:{{ i.bg }};color:{{ i.c }}">{{ i.st }}</span></span></div></sc-for>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const sp = a => a.map(([k,v]) => ({ k, v }));
+    const reqStates = [['REQ.draft','مسودة الطلب','يكتبها المالك ويحفظها تلقائياً.','المالك','#CBCAC6','#FFFFFF'],['REQ.submitted','مقدَّم','أرسله المالك بعد التحقق من هويته والموافقة على المشاركة.','المالك','#CBCAC6','#FFFFFF'],['REQ.lender_review','بانتظار الجهة الممولة','تراجعه الجهة المختارة. طريقة الإشراك والمهلة تحتاج تأكيداً (Q1، Q6).','الجهة','#E2C27A','#FBF2DE'],['REQ.info_requested','مُعاد للاستكمال','تطلب الجهة تصحيحاً أو مستنداً؛ المهلة تتوقف.','المالك','#9DC0DE','#EAF2F9'],['REQ.accepted','مقبول ← حالة','يُنشأ RH-… بحالة «تحقق» ويُسند لمسؤول.','الجهة','#9CCBB0','#EAF4EE'],['REQ.declined','اعتذار مسبب','لا حالة؛ السبب والخيارات للمالك. يمكنه الاعتراض.','الجهة','#EFA59C','#FCECEA']].map(([code,t,d,who,bd,bg]) => ({ code, t, d, who, bd, bg }));
+    const how = [['1','أنشئ حسابك','تحقق من هويتك برقم الهوية والجوال.','برقم الهوية والجوال','#22262A'],['2','قدّم طلبك','اختر جهتك الممولة، واشرح وضعك وما يناسبك.','اختر جهتك واشرح وضعك','#22262A'],['3','تراجع جهتك الطلب','يصلها طلبك موثقاً، وترى حالته هنا.','وترى حالته هنا','#22262A'],['4','تابع حالتك','أي حل تقترحه جهتك بعد المراجعة يُشرح لك هنا، والقرار لك.','أي حل يُشرح لك والقرار لك','#F4633A']].map(([k,t,d,s,c]) => ({ k, n: `الخطوة ${k}`, t, d, s, c }));
+    const promises = [['folder_shared','مكان واحد لطلبك','بياناتك ومستنداتك ورسائلك مع جهتك في مكان واحد، بدل التنقل بين القنوات.'],['person_check','تفهم قبل أن تقرر','أي عرض يصلك بعد مراجعته يُشرح بلغة واضحة: الشروط وما يترتب عليها وخياراتك في الرد.'],['visibility_off','تختار مع من تشارك','لا تُرسل بياناتك إلا للجهة التي تختارها بعد موافقتك. (نطاق الالتزامات يحتاج تأكيداً — Q12)']].map(([i,t,d]) => ({ i: i === 'gavel' ? 'policy' : i, t, d }));
+    const iso = s => typeof s === 'string' ? s.replace(/[+A-Za-z0-9•][A-Za-z0-9•+\-.,:/ ]*[A-Za-z0-9•]|[A-Za-z0-9•]/g, m => '\u2066' + m + '\u2069') : s;
+    const S = (o) => {
+      o = { ...o, p: iso(o.p), h: iso(o.h), fields: (o.fields || []).map(x => [x[0], iso(x[1]), iso(x[2]), x[3]]), choices: (o.choices || []).map(x => [iso(x[0]), iso(x[1]), x[2], x[3]]), box: o.box ? o.box.map(x => [x[0], x[1], iso(x[2])]) : o.box };
+      const f = (o.fields || []).map(([l,v,h,err]) => ({ l, v, h: h || '', box: `min-height:52px;box-sizing:border-box;border:${err ? '2px solid #B3261E' : '1px solid #85847F'};border-radius:8px;padding:13px 14px;background:#FFFFFF;font-size:17px;line-height:24px`, hintStyle: h ? `font-size:13px;line-height:20px;color:${err ? '#B3261E' : '#5E5D58'}` : 'display:none' }));
+      const c = (o.choices || []).map(([t,d,sel,i]) => ({ t, d: d || '', i: i || (sel ? 'radio_button_checked' : 'radio_button_unchecked'), ic: sel ? '#151513' : '#85847F', w: sel ? 700 : 500, dStyle: d ? 'font-size:13px;line-height:20px;color:#5E5D58' : 'display:none', style: `display:flex;gap:12px;align-items:center;min-height:52px;padding:10px 14px;box-sizing:border-box;border:${sel ? '2px solid #151513' : '1px solid #85847F'};border-radius:8px;background:${sel ? '#FDF0EB' : '#FFFFFF'}` }));
+      const T = { ok:['#1E6A45','#EAF4EE','#9CCBB0'], warn:['#8A5300','#FBF2DE','#E2C27A'], err:['#B3261E','#FCECEA','#EFA59C'], info:['#1D5A8C','#EAF2F9','#9DC0DE'] };
+      const tg = o.tag ? T[o.tag[2]] : null;
+      const step = o.step || 0;
+      return { frame: o.frame, title: o.title, sub: o.sub || '', save: o.save || '', h: o.h, p: o.p || '', fields: f, choices: c,
+        backStyle: o.back ? 'width:44px;height:44px;border:0;background:transparent;display:flex;align-items:center;justify-content:center' : 'display:none',
+        logoStyle: o.back ? 'display:none' : 'width:28px;margin:0 4px',
+        progWrap: step ? 'height:4px;flex:none;background:#EDECE8' : 'display:none', progW: `${step * 20}%`, progNow: String(step), progAria: `الخطوة ${step} من 5`,
+        tag: o.tag ? o.tag[0] : '', tagI: o.tag ? o.tag[1] : '', tagStyle: tg ? `align-self:flex-start;display:inline-flex;gap:6px;align-items:center;font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px;background:${tg[1]};color:${tg[0]};border:1px solid ${tg[2]}` : 'display:none',
+        pStyle: o.p ? 'margin:0;font-size:17px;line-height:28px;color:#22262A' : 'display:none',
+        box: (o.box || []).map(([i,c2,t]) => ({ i, c: c2, t })), boxStyle: o.box ? 'background:#FFFFFF;border:1px solid #CBCAC6;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px' : 'display:none',
+        btn: o.btn, btnStyle: 'min-height:54px;border-radius:8px;border:0;background:#AA4528;color:#FFFFFF;font-weight:600;font-size:17px',
+        alt: o.alt || '', altStyle: o.alt ? 'font-size:16px;font-weight:600;text-align:center;min-height:44px;display:flex;align-items:center;justify-content:center' : 'display:none' };
+    };
+    const owner = [
+      S({ frame:'P1-Owner-Register-Mobile · OR01', title:'إنشاء حساب', sub:'مجاني · دقيقتان', h:'لنبدأ بالتحقق من هويتك', p:'نحتاجها لحماية بياناتك، ولتتمكن جهتك الممولة من مطابقة طلبك.', fields:[['رقم الهوية الوطنية / الإقامة','1•••••••42','لن نشاركه إلا مع الجهة التي تختارها لاحقاً.'],['رقم الجوال','+966 5• ••• ••81','']], box:[['badge','#22262A','أو تحقق عبر الهوية الوطنية الرقمية (نمط محجوز — يتطلب تأكيد التكامل)']], btn:'إرسال رمز التحقق', alt:'لديّ حساب · تسجيل الدخول' }),
+      S({ frame:'P1-Owner-Consent-Mobile · OR02', title:'إنشاء حساب', sub:'الخطوة الأخيرة', back:true, h:'أدخل الرمز ووافق على الشروط', fields:[['الرمز المرسل إلى ••81','7 2 0 5 1 4','صالح 5 دقائق · إعادة الإرسال بعد 0:42']], box:[['check_box','#151513','أوافق على شروط الاستخدام وسياسة الخصوصية'],['check_box_outline_blank','#85847F','أرغب في تلقي رسائل توعوية (اختياري)']], btn:'إنشاء الحساب' }),
+      S({ frame:'P1-Owner-Apply-Mobile-Step1 · OA01', title:'طلب معالجة تعثر', sub:'1 من 5 · الجهة الممولة', back:true, save:'محفوظ', step:1, h:'من جهتك الممولة؟', p:'هذا الطلب لمعالجة تعثر في تمويل عقاري قائم على عقارك المرهون، وليس طلب تمويل جديد. اختر الجهة التي لديك معها هذا التمويل.', choices:[['مصرف الأفق','مشاركة في رهون',true],['شركة السنبلة للتمويل','مشاركة في رهون',false],['مصرف الواحة','مشاركة في رهون',false],['جهتي غير موجودة','نحفظ طلبك ونبلغك عند انضمامها',false,'add_circle']], btn:'التالي' }),
+      S({ frame:'P1-Owner-Apply-Mobile-Step2 · OA02', title:'طلب معالجة تعثر', sub:'2 من 5 · التمويل والعقار', back:true, save:'محفوظ', step:2, h:'عن تمويلك وعقارك', fields:[['رقم عقد التمويل (إن وجد)','MF-88-3317•••','تجده في كشف الحساب أو تطبيق المصرف. يمكنك تركه فارغاً.'],['القسط الشهري الحالي','13,774 ريال',''],['منذ متى تأخرت؟','7 أشهر تقريباً',''],['مدينة العقار','الرياض · حي النرجس','']], btn:'التالي' }),
+      S({ frame:'P1-Owner-Apply-Mobile-Step3 · OA03', title:'طلب معالجة تعثر', sub:'3 من 5 · وضعك', back:true, save:'محفوظ', step:3, h:'ما الذي تغيّر، وما الذي يناسبك؟', p:'لا تحتاج لشرح كل شيء. هذا يساعد جهتك على اقتراح حل مناسب.', choices:[['البقاء في منزلي وتقليل القسط','',true],['فترة مؤقتة دون أقساط','',false],['أفكر في بيع العقار بنفسي','',false],['لست متأكداً — أحتاج نصيحة','',false]], fields:[['كم تستطيع دفعه شهرياً؟ (اختياري)','نحو 15,000 ريال','']], btn:'التالي' }),
+      S({ frame:'P1-Owner-Apply-Mobile-Step4 · OA04', title:'طلب معالجة تعثر', sub:'4 من 5 · المستندات والمشاركة', back:true, save:'محفوظ', step:4, h:'مستندات تساعد على تسريع طلبك', p:'اختيارية الآن؛ قد تطلبها جهتك لاحقاً.', box:[['check_circle','#1E6A45','تعريف بالراتب · مرفوع'],['check_circle','#1E6A45','كشف حساب آخر 3 أشهر · مرفوع'],['upload_file','#AA4528','صورة الصك (اختياري) · رفع']], choices:[['أوافق على مشاركة طلبي ومستنداتي مع مصرف الأفق فقط','لمراجعة طلبي ومطابقته مع سجلاته. يمكنني سحب الموافقة قبل القبول.',true,'check_box']], btn:'التالي' }),
+      S({ frame:'P1-Owner-Apply-Mobile-Review · OA05', title:'طلب معالجة تعثر', sub:'5 من 5 · المراجعة', back:true, save:'محفوظ', step:5, h:'راجع طلبك قبل الإرسال', box:[['account_balance','#22262A','مصرف الأفق · عقد MF-88-3317•••'],['payments','#22262A','القسط 13,774 · متأخر 7 أشهر'],['home','#22262A','الرياض · النرجس · أفضّل البقاء وتقليل القسط'],['attach_file','#22262A','مستندان مرفقان']], p:'بعد الإرسال لا يمكن تعديل الطلب، لكن يمكنك إضافة معلومات أو سحبه قبل رد الجهة.', btn:'إرسال الطلب', alt:'تعديل' }),
+      S({ frame:'P1-Owner-Request-Mobile-Submitted · OA06', title:'طلبك', sub:'REQ-2026-00318', tag:['بانتظار الجهة الممولة','hourglass_top','warn'], h:'وصل طلبك إلى مصرف الأفق', p:'سنبلغك برسالة عند رد الجهة أو أي تحديث. (مهلة الرد تُعرض هنا بعد تأكيدها — Q6)', box:[['check_circle','#1E6A45','تحققنا من هويتك · 2026-08-12'],['check_circle','#1E6A45','أُرسل الطلب · 2026-08-12 21:40'],['radio_button_checked','#F4633A','مراجعة الجهة — الآن'],['radio_button_unchecked','#85847F','فتح حالتك وإسناد مسؤول']], btn:'إضافة معلومة للطلب', alt:'سحب الطلب' }),
+      S({ frame:'P1-Owner-Request-Mobile-InfoRequested · OA07', title:'طلبك', sub:'REQ-2026-00318', tag:['يحتاج استكمالاً','edit_note','info'], h:'مصرف الأفق يحتاج تأكيداً منك', p:'رقم الجوال المسجل لديهم يختلف عن رقمك هنا. أيهما الصحيح للتواصل؟', choices:[['+966 5• ••• ••81 (هنا)','',true],['+966 5• ••• ••27 (لدى المصرف)','',false]], btn:'إرسال التأكيد', alt:'تواصل مع الدعم' }),
+      S({ frame:'P1-Owner-Request-Mobile-Declined · OA08', title:'طلبك', sub:'REQ-2026-00341', tag:['لم يُقبل','info','err'], h:'لم يجد مصرف الأفق تمويلاً مطابقاً', p:'السبب كما ورد: «لا يوجد عقد تمويل عقاري باسمك لدينا.» لم تُفتح أي حالة ولم يُتخذ أي إجراء.', box:[['swap_horiz','#22262A','ربما تمويلك لدى جهة أخرى؟ يمكنك إعادة التقديم لها.'],['edit','#22262A','إن كان هناك خطأ، راجع رقم العقد وأعد الإرسال.'],['support_agent','#22262A','أو اعترض على الرد ليراجعه فريق رهون.']], btn:'تقديم لجهة أخرى', alt:'الاعتراض على الرد' }),
+    ];
+    const ownerSpec = [
+      ['OR01','إنشاء حساب','تحقق هوية بأقل بيانات: الهوية + الجوال. لا بيانات مالية.','إرسال رمز؛ مزود هوية وطني (محجوز)','هوية مسجلة مسبقاً ← دخول؛ رقم غير صالح ← خطأ حقلي'],
+      ['OR02','الرمز والموافقة','إثبات ملكية الجوال والموافقة على الشروط.','إنشاء الحساب','رمز خاطئ/منتهٍ؛ 5 محاولات ثم قفل مؤقت'],
+      ['OA01','الجهة الممولة','اختيار الجهة التي سيُرسل لها الطلب.','اختيار؛ «جهتي غير موجودة» (قائمة انتظار)','الجهات المشاركة فقط تستقبل؛ لا يُكشف للمالك أي بيانات من الجهة بعد'],
+      ['OA02','التمويل والعقار','بيانات تعريفية تسمح بالمطابقة.','التالي؛ الحفظ تلقائي','رقم العقد اختياري؛ المبالغ تقريبية ومصدرها «المالك»'],
+      ['OA03','الوضع والتفضيل','سبب التعثر وما يناسب المالك، دون حرج.','التالي','البيع الطوعي خيار يطرحه المالك فقط'],
+      ['OA04','المستندات والمشاركة','مستندات أولية + موافقة صريحة ومحددة النطاق على المشاركة.','رفع؛ موافقة إلزامية','الموافقة لجهة واحدة؛ قابلة للسحب قبل القبول'],
+      ['OA05','المراجعة','التأكد قبل الإرسال.','إرسال؛ تعديل','الطلب يُقفل بعد الإرسال (إضافة فقط)'],
+      ['OA06','متابعة الطلب','معرفة أين الطلب ومتى الرد. تصبح الرئيسية بعد القبول (D02).','إضافة معلومة؛ سحب','تجاوز المهلة ← تصعيد لرهون وإشعار المالك'],
+      ['OA07','استكمال','الرد على طلب الجهة.','إرسال التأكيد','المهلة موقوفة حتى الرد'],
+      ['OA08','اعتذار','فهم السبب والخطوة التالية بلا لوم.','جهة أخرى؛ اعتراض','لا حالة؛ الاعتراض يراجعه فريق رهون'],
+    ].map(([id,n,g,a,s]) => ({ id, n, g, a, s }));
+    const intakeKpis = [['بانتظار المراجعة','5','#151513','أقدمها منذ يومين'],['قريبة من المهلة','1','#8A5300','خلال 24 ساعة'],['مقبولة هذا الشهر','38','#151513','متوسط الرد 2.1 يوم'],['اعتذار هذا الشهر','4','#151513','أغلبها «ليس عميلاً»']].map(([k,v,c,s]) => ({ k, v, c, s }));
+    const intake = [['REQ-2026-00318','عبدالله م.','الرياض','MF-88-3317•••','مطابق · الجوال مختلف','rule','#8A5300','يومان متبقيان','#8A5300','جديد','#FDF0EB','#8E3920',true],['REQ-2026-00322','هيفاء ن.','جدة','MF-90-2204•••','مطابق كلياً','check_circle','#1E6A45','4 أيام','#1E6A45','جديد','#FDF0EB','#8E3920',false],['REQ-2026-00309','سعد ق.','الدمام','—','وُجد عقد بالهوية','search','#1D5A8C','اليوم','#B3261E','جديد','#FDF0EB','#8E3920',false],['REQ-2026-00315','نوف ر.','الرياض','MF-87-1140•••','حالة قائمة RH-2026-003944','link','#1D5A8C','3 أيام','#1E6A45','يُربط','#EAF2F9','#1D5A8C',false],['REQ-2026-00311','بندر ش.','مكة','MF-91-0071•••','مطابق','check_circle','#1E6A45','موقوفة','#5E5D58','بانتظار المالك','#F2F1ED','#22262A',false]].map(([id,n,city,c,m,mi,mc,sla,sc,st,stBg,stC,sel]) => ({ id, n, city, c, m, mi, mc, sla, sc, st, stBg, stC, bg: sel ? '#FDF0EB' : '#FFFFFF', mark: sel ? 'inset -3px 0 0 #F4633A' : 'none' }));
+    const match = [['الهوية','1•••••••42','1•••••••42','مطابق','check_circle','#1E6A45','#FFFFFF'],['رقم العقد','MF-88-3317•••','MF-88-3317•••','مطابق','check_circle','#1E6A45','#FFFFFF'],['نوع التمويل','عقاري','سكني · مرابحة','مطابق','check_circle','#1E6A45','#FFFFFF'],['القسط والتأخر','13,774 · 7 أشهر','13,774.29 · 7 أقساط','مطابق','check_circle','#1E6A45','#FFFFFF'],['الجوال','+966 5• ••• ••81','+966 5• ••• ••27','مختلف','error','#8A5300','#FBF2DE']].map(([k,a,b,r,i,c,bg]) => ({ k, a: iso(a), b: iso(b), r, i, c, bg }));
+    const perms = [['مسودة / مقدَّم','يرى ويعدّل طلبه','لا يرى شيئاً قبل الإرسال','لا شيء','لا شيء'],['بانتظار الجهة','يتابع ويضيف ويسحب','يرى الطلب والمستندات المشاركة فقط؛ يطابق ويقرر','لا شيء — ولا يعرف بوجود الطلب','لا شيء'],['مقبول ← حالة','بوابة المالك الكاملة (D02–D14)','مساحة عمل الحالة كاملة حسب الأدوار','لا شيء','عند التكليف فقط، بنطاقه'],['اعتذار','يرى السبب؛ يعترض أو يقدّم لجهة أخرى','يحتفظ بسجل الطلب للتدقيق فقط','لا شيء','لا شيء'],['سحب المالك','يرى الطلب مؤرشفاً','يرى «سُحب» دون المحتوى الجديد','لا شيء','لا شيء']].map(([s,o,l,x,v]) => ({ s, o, l, x, v }));
+    const Imp = (id,n,b,d,st) => { const m = { 'مُستبدل':['#8E3920','#FDF0EB'], 'ثانوي':['#1D5A8C','#EAF2F9'], 'مُعدّل':['#8A5300','#FBF2DE'], 'مُضاف':['#1E6A45','#EAF4EE'], 'مؤقت':['#8A5300','#FBF2DE'] }[st]; return { id, n, b, d, st, c: m[0], bg: m[1] }; };
+    const impact = [
+      Imp('S01','الصفحة العامة','تخاطب المنشآت: «أدِر حالات التعثر في محفظتك»، والإجراء «طلب عرض».','تخاطب الفرد المتعثر؛ الإجراء الأساسي «ابدأ طلب المعالجة»؛ لا وعود بنتيجة؛ المنشآت رابط وقسم ثانوي.','مُستبدل'),
+      Imp('S02','طلب عرض للمنشآت','الإجراء الرئيسي في الصفحة العامة.','صفحة ثانوية من «للجهات الممولة».','ثانوي'),
+      Imp('S03–S05','الدخول والتحقق والدعوة','الدخول يفترض موظف منشأة أو مالكاً مدعواً.','الفرد يسجّل بنفسه (OR01–OR02)؛ الدعوة مسار ثانوي.','مُعدّل'),
+      Imp('OR/OA','التسجيل وتقديم الطلب','غير موجود — الحالة تبدأ من الجهة.','OR01–OA08: ما المطلوب، حفظ تلقائي، إرسال، ماذا يحدث بعده.','مُضاف'),
+      Imp('D01','دعوة المالك','نقطة بداية رحلة المالك.','مسار ثانوي عندما تتواصل الجهة أولاً.','ثانوي'),
+      Imp('D02–D05','لوحة الفرد وحالته','تبدأ بعد فتح الجهة للحالة.','قبل القبول: متابعة الطلب (OA06)؛ بعده: الخطوة التالية والمستندات والرسائل كما صُممت.','مُعدّل'),
+      Imp('D06–D09','الحلول المقترحة','«الخيارات المتاحة لك» تعرض حلولاً كأنها متاحة.','الحلول تظهر فقط بعد مراجعة واعتماد؛ القائمة موسومة «مؤقتة» حتى تأكيد الحلول (Q11).','مؤقت'),
+      Imp('L00a–b','الطلبات الواردة','غير موجود.','أول عنصر في قائمة الجهة ونقطة دخولها الافتراضية — نمط مقترح (Q1).','مُضاف'),
+      Imp('L01','لوحة المحفظة','الصفحة الافتراضية للجهة وشاشة مرجعية في المرحلة 0.','لم تعد نقطة البداية؛ تبقى للتقارير.','ثانوي'),
+      Imp('L03','معالج إنشاء الحالة','الطريقة الأساسية لبدء أي حالة.','استثناء بسبب إلزامي (مثل عميل حضر للفرع).','ثانوي'),
+      Imp('L04','الاستيراد الجماعي','إدخال حالات المحفظة دفعة واحدة.','للترحيل فقط؛ لا تواصل مع المالك قبل دعوته.','ثانوي'),
+      Imp('PROTO-00','النماذج التفاعلية','أول نموذج «فتح حالة» من الجهة.','أول نموذج «الفرد يقدّم طلب معالجة».','مُضاف'),
+    ];
+    const openQs = [
+      ['Q1','كيف تُشرَك الجهة الممولة؟','استقبال داخل المنصة، أو إحالة من رهون عبر قناة أخرى، أو تفويض من المالك لرهون بالتواصل نيابة عنه — كل خيار يغيّر شاشات الجهة كلياً.','L00a، L00b، OA06'],
+      ['Q2','ماذا لو لم تكن الجهة مشاركة في المنصة؟','يحدد هل يُقبل الطلب أصلاً، أو يُحفظ، أو تتواصل رهون مع الجهة.','OA01 «جهتي غير موجودة»'],
+      ['Q3','هل تفحص رهون الطلب قبل إرساله للجهة؟','قد يلزم دور «فريق رهون» ومراجعة أولية ومعايير أهلية.','OA05، OA06، أدوار المنصة'],
+      ['Q4','معايير الأهلية','مثلاً: تمويل عقاري فقط، عقار مرهون، حد أدنى للتأخر، أفراد مقيمون.','شاشة أهلية قبل OA01 (غير مصممة)'],
+      ['Q5','ما البيانات المطلوبة عند التقديم؟','الحد الأدنى يقلل التخلي؛ المطابقة قد تحتاج رقم العقد إلزامياً.','OA02–OA04'],
+      ['Q6','مهلة رد الجهة وما بعد انقضائها','المالك يرى «حتى تاريخ…» فقط إذا كانت المهلة ملزمة.','OA06، L00a'],
+      ['Q7','هل يمكن التقديم لأكثر من جهة؟','للمالك أكثر من تمويل متعثر لدى جهات مختلفة.','OA01، الصلاحيات'],
+      ['Q8','خطوات المعالجة بعد القبول','المواصفات تحدد الحلول لكن ليس من يقود كل خطوة عند بدء المالك للطلب.','D02–D14، L05'],
+      ['Q9','هل الخدمة مجانية للفرد؟','أزلنا «مجاناً» من الصفحة حتى يتأكد نموذج التسعير.','الصفحة العامة، الشروط'],
+      ['Q10','مزود التحقق من الهوية','التحقق الوطني الرقمي أو رمز الجوال فقط.','OR01، OR02'],
+      ['Q11','ما الحلول التي تقدّمها رهون فعلياً؟','إعادة الجدولة، السماح، البيع الطوعي… أمثلة من المواصفات لم تُعتمد كخدمات؛ لا نعرضها للفرد كوعد.','الصفحة العامة، D06، D07'],
+      ['Q12','ما الذي يمكن أن تعد به رهون الفرد؟','مثلاً: مهلة رد، خصوصية، حق الاعتراض، عدم اتخاذ إجراء دون إشعار — كلها تحتاج أساساً قانونياً.','الصفحة العامة، OA06'],
+    ].map(([id,q,w,s]) => ({ id, q, w, s }));
+    return { openQs, reqStates, how, promises, owner, ownerSpec, intakeKpis, intake, match, perms, impact,
+      specLanding: sp([['الجمهور','الفرد صاحب العقار المتعثر أولاً؛ الجهات عبر رابط ثانوي وقسم مستقل.'],['الرسالة','لغة هادئة ومباشرة، بلا تخويف أو صور مزادات؛ «ابدأ طلبك» هو الإجراء الوحيد البارز.'],['الثقة','ثلاثة التزامات: القرار لك، بياناتك لجهتك فقط، لا إجراء مفاجئ.'],['القابلية للفهرسة','عناوين هرمية، محتوى نصي، hreflang عربي/إنجليزي.'],['التجاوب','768: البطل عمود واحد والصورة تحته؛ 390: الخطوات قائمة مرقمة.']]),
+      specIntake: sp([['هدف المستخدم','الرد بسرعة وعدل على طلبات الأفراد، ومطابقتها مع السجلات.'],['الترتيب','حسب مهلة الرد؛ المتأخر أولاً.'],['المطابقة','جنباً إلى جنب مع النتيجة نصاً؛ الاختلاف لا يمنع القبول بل يولّد تأكيداً.'],['القرار','قبول وفتح حالة، طلب استكمال، اعتذار بسبب من قائمة؛ حالة قائمة ← ربط.'],['الصلاحية','مدير الحالات أو فريق الاستلام؛ الطلب مرئي للجهة المختارة فقط.'],['التجاوب','سطح المكتب أولاً؛ 390: قائمة بطاقات ثم صفحة مراجعة كاملة.']]),
+    };
+  }
+}
+</script>
+</body>
+</html>
+

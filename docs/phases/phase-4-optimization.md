@@ -9,7 +9,17 @@
 - Predictive insights, each with its provenance, limitations and a human review.
 - Nothing binding is decided automatically, and no accuracy figures are fabricated.
 
-The backend is 🟨 on branch `worktree-agent-ae86d4e3d70e6413a` and is merged in Phase 1A step 4.
+The backend is 🟨 on branch `worktree-agent-ae86d4e3d70e6413a` and is merged in Phase 1A-2 step 2.
+
+## Direction review (added 2026-09-25, `docs/product/product-direction.md`)
+
+- **O01/O02 are institution-facing.** Add request-stage metrics once the intake mechanism exists (Q1):
+  - requests received
+  - response time
+  - accepted / declined, with reasons
+  - time from request to first proposal
+- **Individual-facing value.** Consider what, if anything, analytics should show the individual (e.g. typical steps). Nothing predictive ever reaches the owner; that rule is unchanged.
+- **O05 predictive insights** stay decision support for staff only, with provenance, limitations and human review.
 
 ## Definition of done
 

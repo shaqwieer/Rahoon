@@ -3,14 +3,19 @@
 Copy this into a new Claude Code session opened in the repo folder:
 
 ```text
-Continue رهون phase by phase. Read docs/phases/README.md, then the phase file marked ▶ CURRENT.
-Work only on the first unfinished step of that phase (one step per session, don't touch later phases).
-Before starting, check git status and `git worktree list`, and tell me in 3–5 lines what the step will do.
-When the step is done: run the checks listed in docs/phases/README.md ("How a step is done"),
-tick the step in the phase file, update its status table and Findings, commit, and tell me
-what is finished and what the next step is.
+Continue رهون phase by phase. First read docs/product/product-direction.md (product source of truth:
+individual-first, open questions Q1–Q15), then docs/phases/README.md and the phase file marked ▶ CURRENT.
+Work only on that phase, on its first unfinished step; don't touch other phases.
+Before starting, check git status and `git worktree list`, and tell me in 3–5 lines what the step will do
+and which open product questions (if any) it depends on. If a question blocks the step, stop and ask me
+instead of guessing.
+When the step is done: run the checks in docs/phases/README.md ("How a step is done"), tick the step,
+update the status table (tech status + direction review) and Findings, commit, and tell me what is
+finished and what the next step is.
 ```
 
-To work on a specific step instead, add a line such as: `Do Phase 1A step 3.`
+To target a specific step, add a line such as `Do Phase 1A step 3.`
 
-When a phase's *Definition of done* is fully ticked, move the **▶ CURRENT** marker in `docs/phases/README.md` to the next phase. That happens as part of the last step.
+**If you have answers to product questions**, paste them into the session and say so, for example: `Answers: Q1 = in-platform intake; Q11 = rescheduling only for now; …`. Claude records them in `docs/product/product-direction.md` §6 before building anything that depends on them.
+
+When a phase's *Definition of done* is fully ticked, the last step moves the **▶ CURRENT** marker in `docs/phases/README.md` to the next phase.

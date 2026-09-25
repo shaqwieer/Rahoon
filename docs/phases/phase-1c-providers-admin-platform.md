@@ -9,6 +9,15 @@
 
 The backend is ✅ on `master` (merged 2026-09-24, `fc0622e`; see `docs/progress/backend-B7.md`).
 
+## Direction review (added 2026-09-25, `docs/product/product-direction.md`)
+
+These screens serve staff, not the individual. They stay in scope, but each needs a check before it's built:
+- **Participating lenders.** PA02/PA03 onboarding decides which institutions appear in the individual's lender choice (OA01). An institution that becomes active must show up there; a suspended one must disappear, and its open requests need handling (Q2).
+- **Rahoon team role (Q3).** If Rahoon pre-screens requests or reviews objections to a declined request («يراجعه فريق رهون»), a platform role and queue are needed. Neither is designed yet.
+- **Monitoring (PA06).** It must also cover requests (`REQ-…`), not just cases, with the same masking.
+- **Templates (A05, PA09).** They need messages for request states: submitted, info requested, accepted, declined.
+- **Providers (V01–V04).** They only see a case after acceptance and assignment. They never see a request (B13 permissions table).
+
 ## Definition of done
 
 - [ ] Every row below is ✅.

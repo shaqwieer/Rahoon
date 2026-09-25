@@ -1,5 +1,13 @@
 # B6 — Debtor / Owner Journey (mobile first)
 
+> **Direction change (2026-09-25).** The owner journey now **starts with the individual's own request** (B13:
+> OR01–OA08). Design updates to this batch on that date:
+> - D01a eyebrow: «دعوة من جهتك المموّلة · **مسار ثانوي** — المسار الأساسي يبدأ بتسجيل الفرد (B13)» — invitation is secondary.
+> - D06: tag «قائمة مؤقتة — الحلول المتاحة لم تُعتمد بعد (Q11)» — the options list is provisional.
+> - D07: note «عرض راجعته واعتمدته جهتك الممولة بعد دراسة طلبك. ليس نهائياً حتى توافق عليه.»
+> - D02–D05: before acceptance the individual's home is the request tracker (OA06); after acceptance as specified below.
+> See `docs/product/product-direction.md` and `B13-owner-initiated-journey.md`.
+
 Source: `design-source/04 Phase 1 - B6 Debtor Journey.dc.html` (condensed `_condensed/04 Phase 1 - B6 …txt`). Page title `04 Phase 1 — B6 Debtor journey — رهون`; H1 «المرحلة 1 — الدفعة B6: رحلة المالك / المدين (الجوال أولاً)».
 
 **Global design principles (verbatim intro)**: «نص 18/30 للقراءة المريحة، أهداف لمس ≥ 48px، إجراء أساسي واحد لكل شاشة، و«أحتاج مساعدة» ظاهرة دائماً. لا صور منازل أو مفاتيح أو مطارق. المالك يرى حالته فقط وما سُمح له به.»

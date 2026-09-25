@@ -68,5 +68,11 @@ within platform minima). Enforcement is server-side on every endpoint (`RequireP
 | مدقق (منصة) | Platform | platform.ops, audit, temp_access_approve | audit trail |
 | المالك / المدين | — (owner session) | owner endpoints only | exactly one case; no internal notes, other parties or lender-only documents |
 
+> **Direction change (2026-09-25):** the individual becomes a first-class, self-registered user who owns requests
+> before any case (B13 «الصلاحيات حسب المرحلة»): nothing is visible to any lender before submission; during review only
+> the **chosen** lender sees the request and the shared documents (other lenders: nothing, not even its existence);
+> after acceptance the rules in the owner row above apply. The "exactly one case" scope is under review (Q7, Q14).
+> See `docs/product/product-direction.md` §4 and §7 (X4).
+
 Conditions marked ◐ are enforced by code, not by the grant alone: approval tier re-check at decision time,
 separation-of-duties exclusions, mandatory reasons, MFA step-up, reveal TTL, independence of reviewers.

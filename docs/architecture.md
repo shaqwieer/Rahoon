@@ -51,6 +51,10 @@ a static `Map(IEndpointRouteBuilder)` registered in `Modules/ModuleRegistry.cs`)
   referral, closure) require a fresh OTP step-up (`EndpointAccess.EnsureStepUp`).
 * **Owners** never use passwords: invitation link + last 4 digits of the national ID + SMS OTP.
   An owner session is pinned to exactly one case (`RequestContext.OwnerCaseId`).
+  > **Superseded by the product direction of 2026-09-25** (`docs/product/product-direction.md`, X3/X4).
+  > Individuals self-register (national ID/iqama + mobile + OTP) and own **requests** before any case exists; the
+  > lender invitation becomes a secondary route. The code above is still the implemented behaviour; the rework is
+  > planned in Phase 1A step 3 (open questions Q14, Q15).
 * **Tenancy** — `RequestContext` is resolved from the session and the *active membership*, never
   from client input. Every `IOrgOwned` entity has a global EF query filter on
   `RequestContext.DataOrganizationIds`, and `TenantWriteGuardInterceptor` refuses writes outside it.
