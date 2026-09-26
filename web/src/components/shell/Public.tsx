@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { buttonClasses } from "@/components/ui/buttonStyles";
@@ -9,6 +10,7 @@ import { SkipLink } from "@/components/ui/SkipLink";
 import { cn } from "@/lib/cn";
 import { useI18n } from "@/lib/i18n/client";
 import { LocaleSwitch } from "./LocaleSwitch";
+import staffLoginImage from "../../../public/images/rahoon-staff-login.png";
 
 export interface PublicHeaderProps {
   /** `full` landing header · `back` minimal with «العودة للرئيسية» (S02) · `logo` logo only (S05/S12). */
@@ -124,15 +126,23 @@ export interface AuthSplitProps {
 export function AuthSplit({ children, quote, note }: AuthSplitProps) {
   const { locale } = useI18n();
   return (
-    <div className="grid min-h-dvh grid-cols-1 bg-warm lg:grid-cols-[minmax(0,1fr)_560px]">
+    <div className="grid min-h-dvh grid-cols-1 bg-warm lg:grid-cols-[minmax(0,0.92fr)_minmax(520px,1.08fr)]">
       <SkipLink />
-      <main id="main" tabIndex={-1} className="flex items-center justify-center px-5 py-10 outline-none md:p-12">
-        <div className="w-full max-w-[420px]">{children}</div>
+      <main id="main" tabIndex={-1} className="relative flex items-center justify-center px-5 py-10 outline-none md:p-12 lg:px-16">
+        <div className="absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_50%_0%,rgba(244,99,58,0.1),transparent_70%)]" />
+        <div className="relative w-full max-w-[420px]">{children}</div>
       </main>
-      <aside className={cn("surface-dark hidden flex-col justify-end gap-5 bg-inv px-14 py-16 text-white lg:flex")}>
-        {locale === "ar" ? <Logo variant="app-icon" width={72} alt="" /> : null}
-        <p className="m-0 text-24 leading-[38px] font-semibold">{quote}</p>
-        <span className="text-14 leading-[22px] text-inv-2">{note}</span>
+      <aside className={cn("surface-dark relative hidden min-h-dvh overflow-hidden text-white lg:block")}>
+        <Image src={staffLoginImage} alt="" fill priority sizes="(min-width: 1024px) 55vw" className="object-cover object-center" />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/40 to-ink/20" />
+        <div className="absolute inset-x-0 bottom-0 flex flex-col gap-5 p-12 xl:p-16">
+          {locale === "ar" ? <Logo variant="app-icon" width={64} alt="" /> : null}
+          <p className="m-0 max-w-[22em] text-24 leading-[38px] font-semibold text-pretty">{quote}</p>
+          <span className="flex items-center gap-2 text-14 leading-[22px] text-white/75">
+            <span className="ms text-[18px] text-orange" aria-hidden="true">verified_user</span>
+            {note}
+          </span>
+        </div>
       </aside>
     </div>
   );

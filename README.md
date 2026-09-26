@@ -67,34 +67,39 @@ Stop: press Ctrl+C in the web and API terminals. Run `docker compose stop` to st
 
 ## Demo logins
 
-Every seeded user has the password `Rahoon-Demo-2026!`. The SMS code isn't sent anywhere (sandbox); it's shown on screen.
+All data is fictional. Staff password for every seeded user: `Rahoon-Demo-2026!`. SMS codes are never sent (sandbox); the code is shown on screen. Reset to this state any time with `bash scripts/dev-api.sh --reset`.
 
-**Individuals** don't have seeded logins for the demo: register live at **`/start`** with any valid-looking ID (10 digits starting with 1 or 2) and a Saudi mobile (05…). The code appears on screen.
+### Individuals (MVP) — sign in at **`/start?mode=signin`** with the national ID + mobile, then the on-screen code
 
-**«فريق رهون»** (sign in at `/login`, lands on `/team`):
+Each account has a request at a different stage, so every screen can be tried without replaying the journey. To start fresh, register any new ID (10 digits starting with 1 or 2) and a mobile starting with 05 at `/start`.
 
-| User | Email | Role |
+| Name | National ID | Mobile | Request · stage | What you can try |
+|---|---|---|---|---|
+| منيرة سعد الدوسري | `1087654321` | `0551110001` | REQ-2026-00301 · submitted, not assigned | Tracker, «ماذا ستفعل رهون لك», messages, withdraw; team: «غير مسندة» → take it |
+| سعد فهد العنزي | `1076543210` | `0551110002` | REQ-2026-00302 · under review (نايف) **and** REQ-2026-00306 · closed, offer accepted | Several requests on one account; a full closed timeline with the relayed response |
+| هيا عبدالرحمن القحطاني | `1065432109` | `0551110003` | REQ-2026-00303 · «نحتاج معلومة منك» | Answer the team from «إضافة معلومة أو مستند» (it returns to the team); a team message |
+| فيصل ناصر الشمري | `1054321098` | `0551110004` | REQ-2026-00304 · coordinating with the lender; offer recorded, awaiting verification | Waiting-on-lender view; team: عبير verifies the offer in `/team/verify`, then فيصل sees it |
+| نوف خالد العتيبي | `2043210987` (iqama) | `0551110005` | REQ-2026-00305 · settlement offer published | «مراجعة العرض» → accept with a code, ask a question, or «لا يناسبني»; the lender letter link |
+| ماجد سليمان الزهراني | `1032109876` | `0551110006` | REQ-2026-00307 · «غير مناسب للخدمة حالياً» | Object to the decision; the team answers in `/team/objections` and can reopen the study |
+
+### «فريق رهون» (MVP) — sign in at **`/login`**, lands on `/team`
+
+| Name | Email | Role | Try |
+|---|---|---|---|
+| لمى الحربي | `l.alharbi@team.rahoon.example` | Team lead | «الكل» tab, assign requests, answer objections and complaints, verify offers others recorded |
+| نايف اليامي | `n.alyami@team.rahoon.example` | Case coordinator | Owns 00302–00305: review, identity check, information requests, coordination log, record offers, relay responses, close |
+| تركي الشهري | `t.alshehri@team.rahoon.example` | Case coordinator | Take unassigned 00301; answer a complaint on نايف's requests (a coordinator can't answer complaints on their own) |
+| عبير القحطاني | `a.alqahtani@team.rahoon.example` | Offer verifier | `/team/verify` → REQ-2026-00304 → checklist → publish (SMS step-up) or return with a reason |
+
+### Secondary modes (built in earlier phases, outside the MVP journey)
+
+| Portal | Sign in | Users |
 |---|---|---|
-| لمى الحربي | l.alharbi@team.rahoon.example | Team lead (sees all, assigns) |
-| نايف اليامي | n.alyami@team.rahoon.example | Case coordinator (REQ-2026-00302 is assigned to him) |
-| تركي الشهري | t.alshehri@team.rahoon.example | Case coordinator |
-| عبير القحطاني | a.alqahtani@team.rahoon.example | Offer verifier (a different member than the recorder) |
-
-Two fictional requests are seeded (REQ-2026-00301 unassigned, REQ-2026-00302 in review). The lender-side users below are the **secondary** lender-on-platform mode; the owner invitation route is secondary too.
-
-| User | Email | Role |
-|---|---|---|
-| سارة القحطاني | s.alqahtani@alufuq.example | Case manager (also a member of a second institution, so it's asked which to use) |
-| فهد العتيبي | f.alotaibi@alufuq.example | Credit analyst |
-| نورة الشهري | n.alshehri@alufuq.example | Approver |
-| سلمان العمري | s.alomari@alufuq.example | Senior approver |
-| ماجد الحربي | m.alharbi@alufuq.example | Legal |
-| ريم الدوسري / عبدالعزيز الشمري | r.aldosari@ / a.alshammari@alufuq.example | Finance (payment maker / checker) |
-| هند المطيري | h.almutairi@alufuq.example | Compliance, complaints reviewer |
-| ليلى الغامدي | l.alghamdi@alufuq.example | Institution admin |
-| عمر العنزي | o.alanazi@valuer-b.example | Valuer (provider portal) |
-| أحمد المطيري | a.almutairi@rahoon.example | Platform operations |
-| Owner of RH-2026-004172 | open `/invite/demo-RH-2026-004172`, national ID `1098734542` | Property owner (debtor) |
+| Lender workspace (lender-on-platform mode) | `/login` | سارة القحطاني `s.alqahtani@alufuq.example` (case manager; also in a second institution, so it asks which) · فهد العتيبي `f.alotaibi@` (credit analyst) · نورة الشهري `n.alshehri@` (approver) · سلمان العمري `s.alomari@` (senior approver) · ماجد الحربي `m.alharbi@` (legal) · ريم الدوسري `r.aldosari@` / عبدالعزيز الشمري `a.alshammari@` (finance maker / checker) · هند المطيري `h.almutairi@` (compliance, complaints) · منصور القرني `m.alqarni@` (auditor) · خالد الزهراني `k.alzahrani@` (case officer) · ليلى الغامدي `l.alghamdi@` (institution admin) · سعود الراشد `s.alrashed@` (institution admin) — all `@alufuq.example`; مها الشهراني `m.alshahrani@sunbula.example` (second lender) |
+| Owner portal (lender invitation) | open `/invite/demo-RH-2026-004172`, national ID `1098734542` | Owner of case RH-2026-004172 |
+| Service providers | `/login` → `/provider` | عمر العنزي `o.alanazi@valuer-b.example` (valuer) · وليد القحطاني `w.alqahtani@broker-d.example` (broker) · حاتم الرشيد `h.alrashid@valuer-b.example` (provider admin) |
+| Judicial agent (on hold, V10) | `/login` → `/agent` | ياسر الحمدان `y.alhamdan@agent-j.example` |
+| Platform administration | `/login` → `/platform` | أحمد المطيري `a.almutairi@rahoon.example` (operations) · رنا السبيعي `r.alsubaie@` (support) · فيصل الدوسري `f.aldossary@` (auditor) · حصة العتيبي `h.alotaibi@` (compliance) — all `@rahoon.example` |
 
 ## Open the database in pgAdmin
 

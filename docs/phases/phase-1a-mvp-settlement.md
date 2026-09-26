@@ -294,6 +294,7 @@
 - **Step 8, dev setting:** `Auth:RateLimitPerMinute` is 120 in `appsettings.Development.json` so the local E2E suite can sign several users in within a minute; the default elsewhere stays 20/min per IP.
 - **Step 8, V9 still open:** who the specialists are and how a referral is made; today it is a record only.
 - **Step 9, lender-mode wording:** owner-portal deadlines are shown as the lender's condition, not removed; the lender-on-platform mode needs its own direction pass (1B).
+- **After step 9 (2026-09-26), demo seed:** six fictional individuals with requests at every MVP stage (submitted, in review, information requested, offer awaiting verification, offer published, closed, not suitable) so each screen can be tested directly; logins in the README «Demo logins». The live demo continues from REQ-2026-00308.
 - **Step 9, secondary E2E:** lender-flow maker-checker test is `fixme` (seed drift on RH-2026-004172).
 - **Tenancy change:** the MVP request isn't owned by a lender tenant. Covered by the ADR in step 2; today's lender-tenant case model is kept for later.
 - **Earlier design conflicts, still relevant:**
