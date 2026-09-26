@@ -105,6 +105,20 @@ public static class P
     public const string PlatformIntegrations = "platform.integrations";
     public const string PlatformComplaints = "platform.complaints";
 
+    // Rahoon team (operator tenant, ADR 0001 §4.2)
+    public const string RequestViewAssigned = "request.view_assigned";
+    public const string RequestViewAll = "request.view_all";
+    public const string RequestAssign = "request.assign";
+    public const string RequestReview = "request.review";
+    public const string RequestRequestInfo = "request.request_info";
+    public const string RequestCoordinate = "request.coordinate";
+    public const string RequestMessage = "request.message";
+    public const string RequestOfferRecord = "request.offer_record";
+    public const string RequestOfferVerify = "request.offer_verify";
+    public const string RequestResponseRelay = "request.response_relay";
+    public const string RequestClose = "request.close";
+    public const string RequestObjectionHandle = "request.objection_handle";
+
     public static readonly IReadOnlyList<PermissionDef> Catalog =
     [
         new(PortfolioView, "عرض المحفظة", "View portfolio", "الحالات", Sensitivity.Normal, PermissionScope.Institution),
@@ -172,6 +186,19 @@ public static class P
         new(TemplatePublish, "نشر قالب", "Publish template", "الإدارة", Sensitivity.Medium, PermissionScope.Institution, "اعتماد الامتثال"),
         new(ReportsView, "التقارير التشغيلية", "Operational reports", "الإدارة", Sensitivity.Normal, PermissionScope.Institution),
         new(AnalyticsView, "التحليلات ودعم القرار", "Analytics & decision support", "الإدارة", Sensitivity.Normal, PermissionScope.Institution),
+
+        new(RequestViewAssigned, "عرض الطلبات المسندة", "View assigned requests", "فريق رهون", Sensitivity.Medium, PermissionScope.Case),
+        new(RequestViewAll, "عرض كل الطلبات", "View all requests", "فريق رهون", Sensitivity.High, PermissionScope.Institution, "قائد الفريق"),
+        new(RequestAssign, "إسناد الطلبات", "Assign requests", "فريق رهون", Sensitivity.Medium, PermissionScope.Institution),
+        new(RequestReview, "دراسة الطلب", "Review request", "فريق رهون", Sensitivity.Medium, PermissionScope.Case),
+        new(RequestRequestInfo, "طلب استكمال من العميل", "Request information", "فريق رهون", Sensitivity.Normal, PermissionScope.Case),
+        new(RequestCoordinate, "سجل التنسيق مع الجهة", "Coordination log", "فريق رهون", Sensitivity.Medium, PermissionScope.Case, "بموافقة العميل الموثقة"),
+        new(RequestMessage, "مراسلة العميل", "Message the individual", "فريق رهون", Sensitivity.Normal, PermissionScope.Case),
+        new(RequestOfferRecord, "تسجيل عرض الجهة", "Record lender offer", "فريق رهون", Sensitivity.High, PermissionScope.Case, "مع خطاب الجهة"),
+        new(RequestOfferVerify, "التحقق من العرض ونشره", "Verify and publish offer", "فريق رهون", Sensitivity.High, PermissionScope.Case, "ليس المسجِّل · MFA"),
+        new(RequestResponseRelay, "نقل رد العميل للجهة", "Relay response", "فريق رهون", Sensitivity.Medium, PermissionScope.Case),
+        new(RequestClose, "إغلاق الطلب", "Close request", "فريق رهون", Sensitivity.Medium, PermissionScope.Case),
+        new(RequestObjectionHandle, "معالجة الاعتراضات", "Handle objections", "فريق رهون", Sensitivity.Medium, PermissionScope.Case),
 
         new(PlatformOps, "لوحة تشغيل المنصة", "Platform operations", "المنصة", Sensitivity.Medium, PermissionScope.Platform),
         new(PlatformInstitutions, "المنشآت والطلبات", "Institutions & applications", "المنصة", Sensitivity.High, PermissionScope.Platform),

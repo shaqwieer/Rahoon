@@ -6,7 +6,13 @@ import { KeyValueList } from "@/components/ui/KeyValueList";
 import { SkipLink } from "@/components/ui/SkipLink";
 import { IntegrationStateTag, type IntegrationState } from "@/components/ui/Status";
 import { EmptyState } from "@/components/ui/SystemState";
+import { Alert } from "@/components/ui/Alert";
+import { Icon } from "@/components/ui/Icon";
+import { RequestStatusChip, useRequestCopy, useRequestSubmit, WaitingOnLine } from "@/components/individual/ui";
 import { apiSend } from "@/lib/api/client";
+import type { MyRequestListItem } from "@/lib/api/requests";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { formatDate } from "@/lib/format";
 import { useI18n } from "@/lib/i18n/client";
 import { hardNavigate } from "@/lib/navigation";
@@ -23,11 +29,19 @@ export interface IndividualAccount {
   nationalIdProvider: IntegrationState;
 }
 
-/** Mobile-first individual home: «طلباتي» (empty until step 5) and the account card. No bottom nav yet. */
-export function MyHome({ account }: { account: IndividualAccount }) {
+/** Mobile-first individual home: «طلباتي» (each request with its status and «ننتظر») and the account card. No bottom nav yet. */
+export function MyHome({ account, requests }: { account: IndividualAccount; requests: MyRequestListItem[] }) {
   const { t } = useI18n();
   const M = t.individual.my;
+  const c = useRequestCopy();
+  const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const start = useRequestSubmit();
+
+  const startRequest = async () => {
+    const res = await start.run((key) => apiSend<{ reference: string }>("POST", "/my/requests", undefined, { idempotencyKey: key }));
+    if (res.ok) router.push(`/my/requests/${res.data.reference}/apply?step=1`);
+  };
 
   const signOut = async () => {
     setBusy(true);
@@ -59,7 +73,41 @@ export function MyHome({ account }: { account: IndividualAccount }) {
           <h2 id="requests-h" className="m-0 text-19 font-bold">
             {M.requestsTitle}
           </h2>
-          <EmptyState icon="description" title={M.requestsEmptyTitle} body={`${M.requestsEmptyBody} ${M.requestsSoon}`} headingLevel={3} />
+          {requests.length === 0 ? (
+            <EmptyState icon="description" title={c.home.emptyTitle} body={c.home.emptyBody} headingLevel={3} />
+          ) : (
+            <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
+              {requests.map((r) => {
+                const href = r.status === "draft" ? `/my/requests/${r.reference}/apply?step=1` : `/my/requests/${r.reference}`;
+                return (
+                  <li key={r.reference}>
+                    <Link
+                      href={href}
+                      className="flex flex-col gap-2 rounded-[12px] border border-line bg-white p-4 text-ink no-underline hover:bg-subtle hover:text-ink"
+                    >
+                      <span className="flex items-center justify-between gap-2">
+                        <bdi dir="ltr" className="font-mono text-14 text-muted">
+                          {r.reference}
+                        </bdi>
+                        <RequestStatusChip status={r.status} />
+                      </span>
+                      <strong className="text-17">{r.institutionName || c.home.draftLender}</strong>
+                      {r.status === "draft" ? null : <WaitingOnLine waitingOn={r.waitingOn} className="text-14" />}
+                      <span className="flex items-center gap-1 text-15 font-semibold text-rust-700">
+                        {r.status === "draft" ? c.home.continueDraft : c.home.open}
+                        <Icon name="chevron_left" size={20} mirror />
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {start.error ? <Alert tone="err">{start.error}</Alert> : null}
+          <Button size="xl" fullWidth icon="add" loading={start.busy} loadingLabel={c.home.starting} onClick={() => void startRequest()}>
+            {c.home.start}
+          </Button>
+          <p className="m-0 text-14 text-muted">{c.home.separateHint}</p>
         </section>
 
         <section aria-labelledby="account-h" className="flex flex-col gap-3 rounded-lg border border-line bg-white p-5">

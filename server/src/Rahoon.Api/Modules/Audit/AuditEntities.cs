@@ -26,6 +26,11 @@ public sealed class AuditEvent
     public string? DataJson { get; set; }
     public string? IpMasked { get; set; }
     public DateTimeOffset OccurredAt { get; set; }
+    /// <summary>Non-case subject (ADR 0001 §4.6): «request» + REQ-… reference. Hashed only from <see cref="HashVersion"/> 2.</summary>
+    public string? SubjectType { get; set; }
+    public string? SubjectReference { get; set; }
+    /// <summary>Canonical hash format: 1 = original (events before the request module), 2 = adds the subject fields.</summary>
+    public int HashVersion { get; set; } = AuditLog.CurrentHashVersion;
     public required string PrevHash { get; set; }
     public required string Hash { get; set; }
 }

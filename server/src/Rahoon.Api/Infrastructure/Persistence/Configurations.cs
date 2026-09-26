@@ -648,5 +648,8 @@ internal sealed class AuditEventConfig : IEntityTypeConfiguration<AuditEvent>
         b.Property(x => x.DataJson).HasColumnType("jsonb");
         b.Property(x => x.Hash).HasMaxLength(80);
         b.Property(x => x.PrevHash).HasMaxLength(80);
+        b.Property(x => x.SubjectType).HasMaxLength(20);
+        b.Property(x => x.SubjectReference).HasMaxLength(40);
+        b.HasIndex(x => new { x.SubjectReference, x.Seq });
     }
 }

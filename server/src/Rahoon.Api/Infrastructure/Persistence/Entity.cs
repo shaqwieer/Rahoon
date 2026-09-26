@@ -16,6 +16,16 @@ public interface IOrgOwned
     Guid OrganizationId { get; set; }
 }
 
+/// <summary>
+/// Operator-tenant data that also belongs to one self-registered individual (ADR 0001 §4.2). Besides the tenant
+/// filter, an individual session reads such a row only when it is theirs (<see cref="ApplicantUserId"/>), and may
+/// write only their own rows. The individual's session never gets the operator organization in its data set.
+/// </summary>
+public interface IApplicantOwned : IOrgOwned
+{
+    Guid ApplicantUserId { get; set; }
+}
+
 public interface IHasTimestamps
 {
     DateTimeOffset CreatedAt { get; set; }

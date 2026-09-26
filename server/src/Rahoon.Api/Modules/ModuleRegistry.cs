@@ -8,6 +8,7 @@ using Rahoon.Api.Modules.Documents;
 using Rahoon.Api.Modules.Ecosystem;
 using Rahoon.Api.Modules.Identity;
 using Rahoon.Api.Modules.Providers;
+using Rahoon.Api.Modules.Requests;
 using Rahoon.Api.Modules.Sale;
 using Rahoon.Api.Modules.Solutions;
 
@@ -38,6 +39,9 @@ public static class ModuleRegistry
         services.AddScoped<SaleService>();
         services.AddScoped<ProviderDirectory>();
         services.AddScoped<ConditionalIntegrations>();
+        services.AddScoped<RequestService>();
+        services.AddScoped<RequestAccess>();
+        services.AddScoped<RequestWorkflow>();
         return services;
     }
 
@@ -45,6 +49,7 @@ public static class ModuleRegistry
     {
         AuthEndpoints.Map(app);
         IndividualAuthEndpoints.Map(app);
+        MyRequestEndpoints.Map(app);
         CaseListEndpoints.Map(app);
         CaseDraftEndpoints.Map(app);
         CaseEndpoints.Map(app);

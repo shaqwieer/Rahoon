@@ -1,0 +1,556 @@
+import type { Locale } from "@/lib/i18n";
+
+/*
+ * Individual request copy (Phase 1A step 5). Arabic follows design requests D-2/D-3 («نص مقترح — يحتاج اعتماد صاحب
+ * المشروع»); consent wording is provisional (V4). Rules: no deadline or «حتى تاريخ», no «مجاني», no promised outcome
+ * (Q6, Q9, Q12). English mirrors the Arabic. Server-authored text (team next steps, timeline titles) stays Arabic.
+ */
+
+export type RequestStatusKey =
+  | "draft"
+  | "submitted"
+  | "team_review"
+  | "info_requested"
+  | "lender_coordination"
+  | "offer_available"
+  | "response_recorded"
+  | "closed"
+  | "not_eligible"
+  | "withdrawn";
+export type WaitingKey = "team" | "applicant" | "lender" | "none";
+export type PreferenceKey = "keep_home" | "settlement" | "sell_myself" | "not_sure";
+export type ArrearsKey = "not_late" | "lt3m" | "3to6m" | "6to12m" | "gt12m";
+export type PathKey = "p1" | "p2" | "p3" | "p4";
+export type DocKindKey = "salary_statement" | "bank_statement" | "title_deed" | "financing_contract" | "other";
+
+const ar = {
+  unit: "ريال",
+  back: "رجوع",
+  next: "التالي",
+  edit: "تعديل",
+  saving: "جارٍ الحفظ…",
+  saved: "محفوظ",
+  saveFailed: "لم يُحفظ — تحقق من الاتصال",
+  optional: "(اختياري)",
+  networkError: "تعذّر الاتصال. تحقق من الإنترنت ثم حاول مرة أخرى — لم يُفقد شيء مما كتبته.",
+  genericError: "حدث خطأ غير متوقع. حاول مرة أخرى بعد قليل.",
+  myRequests: "طلباتي",
+  signOut: "تسجيل الخروج",
+
+  status: {
+    draft: "مسودة",
+    submitted: "مقدَّم",
+    team_review: "قيد دراسة فريق رهون",
+    info_requested: "نحتاج معلومة منك",
+    lender_coordination: "قيد التنسيق مع جهتك الممولة",
+    offer_available: "وصل عرض من جهتك الممولة",
+    response_recorded: "سجّلنا ردك",
+    closed: "مغلق",
+    not_eligible: "غير مناسب للخدمة حالياً",
+    withdrawn: "مسحوب",
+  } satisfies Record<RequestStatusKey, string>,
+
+  waitingLabel: "ننتظر",
+  waiting: { team: "فريق رهون", applicant: "أنت", lender: "جهتك الممولة", none: "—" } satisfies Record<WaitingKey, string>,
+
+  /** Default «الخطوة التالية» when the team has not written one (no dates, Q6). */
+  nextStep: {
+    draft: "أكمل بيانات طلبك وأرسله إلى فريق رهون.",
+    submitted: "سيبدأ فريق رهون دراسة طلبك، ونبلغك هنا بأي تحديث أو سؤال.",
+    team_review: "يدرس فريق رهون طلبك ومستنداتك، وقد يطلب منك معلومة إضافية.",
+    info_requested: "أضف المعلومة المطلوبة ليكمل فريق رهون دراسة طلبك.",
+    lender_coordination: "يتواصل فريق رهون مع جهتك الممولة بشأن طلبك، ونبلغك بما يصلنا منها.",
+    offer_available: "راجع العرض الذي وصل من جهتك الممولة. القرار لك.",
+    response_recorded: "سينقل فريق رهون ردك إلى جهتك الممولة، ونبلغك بالخطوة التالية.",
+    closed: "أُغلق هذا الطلب. يمكنك تقديم طلب جديد متى احتجت.",
+    not_eligible: "اطّلع على السبب والخيارات المتاحة لك أدناه.",
+    withdrawn: "سحبت هذا الطلب. يمكنك تقديم طلب جديد متى احتجت.",
+  } satisfies Record<RequestStatusKey, string>,
+
+  /** «ما نقوم به الآن» — what Rahoon is doing in this state. */
+  doingNow: {
+    draft: "لم يصلنا طلبك بعد. لن يُشارك شيء منه قبل أن ترسله وتوافق على المشاركة.",
+    submitted: "وصل طلبك إلى فريق رهون، وسيُسند إلى منسق يدرسه.",
+    team_review: "نراجع ما قدمته ونتحقق من بياناتك قبل أي تواصل مع جهتك الممولة.",
+    info_requested: "الدراسة متوقفة مؤقتاً إلى أن تصلنا المعلومة المطلوبة منك.",
+    lender_coordination: "نشارك جهتك الممولة البيانات التي وافقت عليها فقط، وننسق معها بشأن طلبك.",
+    offer_available: "سجّلنا عرض جهتك الممولة وتحقق منه عضو آخر من الفريق، وننتظر ردك.",
+    response_recorded: "ننقل ردك إلى جهتك الممولة عبر قناة التواصل الموثقة.",
+    closed: "انتهى عملنا على هذا الطلب.",
+    not_eligible: "لم يُتخذ أي إجراء بخصوص تمويلك بسبب هذا الطلب.",
+    withdrawn: "توقفت أي مشاركة لبيانات هذا الطلب.",
+  } satisfies Record<RequestStatusKey, string>,
+
+  paths: {
+    title: "كيف يمكن أن تساعدك رهون",
+    p1: { title: "الاحتفاظ بالعقار", body: "ندرس ظروفك ونجهّز ونتابع طلب إعادة جدولة المديونية أو تخفيف ضغط الأقساط." },
+    p2: { title: "تسوية المديونية", body: "نجهّز مقترح تسوية وننسق التواصل بشأنه، ونوضح لك شروط أي عرض معتمد وأثره عليك." },
+    p3: { title: "البيع الرضائي عند تعذر الاستمرار", body: "ننسق التقييم والتعامل مع الجهة الممولة وأصحاب الحقوق وإجراءات البيع، ونوضح لك حصيلة البيع وما قد يتبقى من مديونية." },
+    p4: { title: "معالجة العقبات", body: "يمكنك الاعتراض على بيانات أو مبالغ غير صحيحة، واستكمال مستنداتك، وتقديم شكوى، ونحيلك لمختص مناسب عند الحاجة." },
+    footnote: "هذه مسارات مساعدة وليست نتائج مضمونة. شروط التمويل والعروض تقررها جهتك الممولة، وقرار القبول أو الرفض لك.",
+  } satisfies Record<PathKey, { title: string; body: string }> & { title: string; footnote: string },
+
+  wizard: {
+    title: "طلب معالجة تعثر",
+    stepOf: (n: number) => `${n} من 5`,
+    progress: (n: number) => `الخطوة ${n} من 5`,
+    stepNames: ["الجهة الممولة", "التمويل والعقار", "وضعك", "المستندات والموافقة", "المراجعة"],
+    lender: {
+      heading: "من جهتك الممولة؟",
+      lead: "هذا الطلب لمعالجة تعثر في تمويل عقاري قائم على عقارك المرهون، وليس طلب تمويل جديد. اختر الجهة التي لديك معها هذا التمويل.",
+      search: "ابحث باسم الجهة",
+      noMatch: "لا توجد جهة بهذا الاسم في القائمة. اختر «جهة أخرى» واكتب اسمها.",
+      other: "جهة أخرى",
+      otherLabel: "اسم الجهة الممولة",
+      otherError: "اكتب اسم الجهة الممولة.",
+      pickError: "اختر جهتك الممولة أو «جهة أخرى».",
+      hint: "يمكنك تقديم طلب منفصل لكل تمويل متعثر.",
+      bank: "مصرف",
+      financeCompany: "شركة تمويل",
+    },
+    finance: {
+      heading: "عن تمويلك وعقارك",
+      name: "اسمك الكامل كما في الهوية",
+      nameError: "اكتب اسمك الكامل.",
+      contract: "رقم عقد التمويل",
+      contractHint: "تجده في كشف الحساب أو تطبيق المصرف. يمكنك تركه فارغاً.",
+      installment: "القسط الشهري الحالي",
+      installmentError: "اكتب قيمة القسط الشهري التقريبية.",
+      arrears: "منذ متى تأخرت في السداد؟",
+      arrearsError: "اختر مدة التأخر.",
+      arrearsOptions: {
+        not_late: "لم أتأخر بعد، لكني أتوقع صعوبة",
+        lt3m: "أقل من 3 أشهر",
+        "3to6m": "من 3 إلى 6 أشهر",
+        "6to12m": "من 6 إلى 12 شهراً",
+        gt12m: "أكثر من سنة",
+      } satisfies Record<ArrearsKey, string>,
+      city: "مدينة العقار",
+      cityError: "اكتب مدينة العقار.",
+      note: "المبالغ تقريبية كما تذكرها أنت، ولا تغيّر أرقام جهتك الممولة.",
+    },
+    situation: {
+      heading: "ما الذي تغيّر، وما الذي يناسبك؟",
+      lead: "لا تحتاج لشرح كل شيء. هذا يساعد فريق رهون في دراسة طلبك.",
+      preference: "ما الذي تفكر فيه الآن؟",
+      preferenceError: "اختر ما يناسبك، أو «لست متأكداً».",
+      options: {
+        keep_home: "البقاء في منزلي وتخفيف الأقساط أو إعادة الجدولة",
+        settlement: "تسوية المديونية",
+        sell_myself: "أفكر في بيع العقار بنفسي",
+        not_sure: "لست متأكداً — أحتاج نصيحة",
+      } satisfies Record<PreferenceKey, string>,
+      note: "اختيارك يساعدنا في الدراسة، والمسار المناسب يتحدد بعد دراسة طلبك.",
+      affordable: "كم تستطيع دفعه شهرياً؟",
+      situationText: "ما الذي تغيّر؟ بكلماتك",
+      situationHelp: "مثلاً: انخفاض الدخل، مرض، تغيير العمل. لن نطلب منك أكثر مما تريد مشاركته.",
+    },
+    docs: {
+      heading: "مستندات تساعد في دراسة طلبك",
+      lead: "اختيارية الآن؛ قد يطلبها فريق رهون لاحقاً. الأنواع المقبولة: PDF أو JPG أو PNG، بحجم أقصاه 20 م.ب.",
+      kinds: {
+        salary_statement: "تعريف بالراتب",
+        bank_statement: "كشف حساب آخر 3 أشهر",
+        title_deed: "صورة الصك",
+        financing_contract: "عقد التمويل",
+        other: "مستند آخر",
+      } satisfies Record<DocKindKey, string>,
+      upload: "رفع",
+      replace: "استبدال",
+      uploading: "جارٍ الرفع",
+      uploaded: "مرفوع",
+      scanFailed: "رُفض الملف: فشل فحص الأمان.",
+      consentTitle: "الموافقة على مشاركة بياناتك",
+      consentDraft: "صيغة مبدئية — تتطلب مراجعة",
+      consentCheck: "أوافق على النص أعلاه",
+      consentCheckError: "ضع علامة الموافقة أولاً.",
+      consentWhy: "لن يتواصل فريق رهون مع جهتك الممولة بشأن طلبك إلا بعد تسجيل موافقتك.",
+      sendCode: "تأكيد الموافقة برمز الجوال",
+      codeSentTo: "أرسلنا رمز التأكيد إلى",
+      codeLabel: "رمز التأكيد",
+      confirm: "تأكيد الموافقة",
+      recorded: "سُجّلت موافقتك",
+      recordedOn: "سُجّلت موافقتك على المشاركة بتاريخ",
+      recipientChanged: "غيّرت الجهة الممولة، لذا تحتاج موافقة جديدة تسمّي الجهة الجديدة.",
+      viewText: "نص الموافقة",
+    },
+    review: {
+      heading: "راجع طلبك قبل الإرسال",
+      lender: "الجهة الممولة",
+      name: "الاسم",
+      contract: "رقم العقد",
+      installment: "القسط الشهري",
+      arrears: "مدة التأخر",
+      city: "مدينة العقار",
+      preference: "ما يناسبك",
+      affordable: "تستطيع دفعه شهرياً",
+      situation: "بكلماتك",
+      documents: "المستندات",
+      noDocuments: "لا مستندات بعد",
+      consent: "الموافقة على المشاركة",
+      consentMissing: "لم تُسجَّل بعد",
+      missingTitle: "أكمل هذه البيانات قبل الإرسال",
+      lockNote: "بعد الإرسال لا يمكن تعديل الطلب، لكن يمكنك إضافة معلومات أو مستندات، أو سحبه.",
+      duplicateTitle: "لديك طلب قائم لنفس الجهة",
+      duplicateBody: (ref: string) => `طلبك ${ref} لنفس الجهة ما زال مفتوحاً. إن كان هذا الطلب لتمويل آخر فأكّد ذلك، وإلا فتابع الطلب القائم.`,
+      duplicateLink: "عرض الطلب القائم",
+      duplicateAck: "هذا الطلب لتمويل مختلف",
+      duplicateAckError: "أكّد أن هذا الطلب لتمويل مختلف، أو تابع طلبك القائم.",
+      submit: "إرسال الطلب",
+      submitting: "جارٍ الإرسال",
+      cantSubmit: "لا يمكن الإرسال بعد:",
+    },
+  },
+
+  submitted: {
+    title: "وصل طلبك إلى فريق رهون",
+    reference: "رقم طلبك",
+    whatNext: "ماذا يحدث الآن",
+    bullets: [
+      "يدرس فريق رهون طلبك ومستنداتك.",
+      "إن احتجنا معلومة منك نطلبها في صفحة طلبك.",
+      "لا نتواصل مع جهتك الممولة إلا ضمن موافقتك الموثقة.",
+    ],
+    track: "متابعة طلبي",
+  },
+
+  home: {
+    title: "حسابي",
+    welcome: "أهلاً بك في رهون",
+    start: "ابدأ طلب معالجة جديد",
+    starting: "جارٍ البدء",
+    emptyTitle: "لا توجد طلبات بعد",
+    emptyBody: "قدّم طلبك عن تمويل عقاري متعثر، وسيدرسه فريق رهون ويخبرك بالخطوة التالية.",
+    separateHint: "يمكنك تقديم طلب منفصل لكل تمويل متعثر.",
+    continueDraft: "أكمل الطلب",
+    open: "فتح الطلب",
+    draftLender: "لم تُحدَّد الجهة بعد",
+  },
+
+  tracker: {
+    eyebrow: "طلبك",
+    nextStep: "الخطوة التالية",
+    whatRahoon: "ماذا ستفعل رهون لك",
+    provisional: "مبدئي — يتأكد بعد الدراسة",
+    likelyPaths: "المسارات التي سندرسها لطلبك",
+    doingNow: "ما نقوم به الآن",
+    allPaths: "كل مسارات المساعدة",
+    timeline: "ما حدث حتى الآن",
+    details: "بيانات طلبك",
+    documents: "مستنداتك",
+    addedLater: "أُضيف بعد الإرسال",
+    consent: "موافقتك على المشاركة",
+    consentWith: (name: string) => `توافق على أن تشارك منصة رهون مع ${name} البيانات اللازمة لطلبك.`,
+    consentNone: "لا توجد موافقة سارية. لن يتواصل فريق رهون مع جهتك الممولة بشأن طلبك.",
+    renewConsent: "تسجيل موافقة جديدة",
+    withdrawConsent: "سحب الموافقة",
+    withdrawConsentConfirm: "بسحب الموافقة يتوقف التنسيق مع جهتك الممولة إلى أن توافق من جديد. هل تريد المتابعة؟",
+    keepConsent: "إبقاء الموافقة",
+    addInfo: "إضافة معلومة أو مستند",
+    withdraw: "سحب الطلب",
+    submittedOn: "أُرسل",
+    startedOn: "بدأ",
+    outcome: "نتيجة الطلب",
+    reason: "السبب",
+    newRequest: "تقديم طلب جديد",
+  },
+
+  add: {
+    title: "إضافة معلومة",
+    heading: "أضف معلومة أو مستنداً إلى طلبك",
+    lead: "يصل ما تضيفه إلى فريق رهون مباشرة. لا يمكن تعديل بيانات الطلب بعد إرساله، لكن يمكنك التوضيح هنا.",
+    text: "المعلومة",
+    textError: "اكتب المعلومة التي تريد إضافتها.",
+    send: "إرسال",
+    sent: "أُضيفت المعلومة إلى طلبك.",
+    docsTitle: "إضافة مستند",
+  },
+
+  withdraw: {
+    title: "سحب الطلب",
+    heading: "هل تريد سحب طلبك؟",
+    body: "عند السحب يتوقف فريق رهون عن العمل على الطلب، وتتوقف أي مشاركة لبياناته مع جهتك الممولة. لا يمكن التراجع عن السحب، لكن يمكنك تقديم طلب جديد لاحقاً.",
+    reason: "السبب",
+    confirm: "سحب الطلب",
+    keep: "إبقاء الطلب",
+  },
+
+  consent: {
+    title: "موافقة جديدة",
+  },
+};
+
+export type RequestCopy = typeof ar;
+
+const en: RequestCopy = {
+  unit: "SAR",
+  back: "Back",
+  next: "Next",
+  edit: "Edit",
+  saving: "Saving…",
+  saved: "Saved",
+  saveFailed: "Not saved — check your connection",
+  optional: "(optional)",
+  networkError: "We couldn't connect. Check your internet and try again — nothing you typed was lost.",
+  genericError: "Something unexpected happened. Please try again shortly.",
+  myRequests: "My requests",
+  signOut: "Sign out",
+
+  status: {
+    draft: "Draft",
+    submitted: "Submitted",
+    team_review: "Being studied by the Rahoon team",
+    info_requested: "We need information from you",
+    lender_coordination: "Coordinating with your lender",
+    offer_available: "An offer arrived from your lender",
+    response_recorded: "We recorded your response",
+    closed: "Closed",
+    not_eligible: "Not suitable for the service right now",
+    withdrawn: "Withdrawn",
+  },
+
+  waitingLabel: "Waiting on",
+  waiting: { team: "the Rahoon team", applicant: "you", lender: "your lender", none: "—" },
+
+  nextStep: {
+    draft: "Complete your request and send it to the Rahoon team.",
+    submitted: "The Rahoon team will start studying your request; we'll post any update or question here.",
+    team_review: "The Rahoon team is studying your request and documents and may ask you for more information.",
+    info_requested: "Add the requested information so the Rahoon team can continue.",
+    lender_coordination: "The Rahoon team is in contact with your lender about your request and will tell you what we hear.",
+    offer_available: "Review the offer from your lender. The decision is yours.",
+    response_recorded: "The Rahoon team will pass your response to your lender and tell you the next step.",
+    closed: "This request is closed. You can submit a new one whenever you need.",
+    not_eligible: "See the reason and your options below.",
+    withdrawn: "You withdrew this request. You can submit a new one whenever you need.",
+  },
+
+  doingNow: {
+    draft: "We haven't received your request yet. Nothing is shared before you send it and consent to sharing.",
+    submitted: "Your request reached the Rahoon team and will be assigned to a coordinator.",
+    team_review: "We're reviewing what you provided and checking your details before any contact with your lender.",
+    info_requested: "The study is paused until we receive the information we asked for.",
+    lender_coordination: "We share with your lender only the data you consented to, and coordinate with them about your request.",
+    offer_available: "We recorded your lender's offer, another team member verified it, and we're waiting for your response.",
+    response_recorded: "We're passing your response to your lender through the documented channel.",
+    closed: "Our work on this request has ended.",
+    not_eligible: "No action was taken on your finance because of this request.",
+    withdrawn: "All sharing of this request's data has stopped.",
+  },
+
+  paths: {
+    title: "How Rahoon can help you",
+    p1: { title: "Keeping the property", body: "We study your circumstances and prepare and follow up a request to reschedule the debt or ease the installments." },
+    p2: { title: "Settling the debt", body: "We prepare a settlement proposal, coordinate the discussion, and explain the terms of any approved offer and its effect on you." },
+    p3: { title: "Consensual sale when continuing isn't possible", body: "We coordinate the valuation, the lender and other rights holders and the sale steps, and explain the proceeds and any remaining debt." },
+    p4: { title: "Removing obstacles", body: "You can object to incorrect data or amounts, complete your documents, file a complaint, and be referred to a suitable specialist when needed." },
+    footnote: "These are ways to help, not guaranteed outcomes. Your lender decides its finance terms and offers; accepting or declining is your decision.",
+  },
+
+  wizard: {
+    title: "Default resolution request",
+    stepOf: (n: number) => `${n} of 5`,
+    progress: (n: number) => `Step ${n} of 5`,
+    stepNames: ["Your lender", "Finance and property", "Your situation", "Documents and consent", "Review"],
+    lender: {
+      heading: "Who is your lender?",
+      lead: "This request is about difficulty repaying an existing mortgage on your property — it is not a request for new finance. Choose the institution that holds this finance.",
+      search: "Search by name",
+      noMatch: "No institution with that name in the list. Choose “Another institution” and type its name.",
+      other: "Another institution",
+      otherLabel: "Lender name",
+      otherError: "Type your lender's name.",
+      pickError: "Choose your lender or “Another institution”.",
+      hint: "You can submit a separate request for each finance in difficulty.",
+      bank: "Bank",
+      financeCompany: "Finance company",
+    },
+    finance: {
+      heading: "About your finance and property",
+      name: "Your full name as on your ID",
+      nameError: "Type your full name.",
+      contract: "Finance contract number",
+      contractHint: "Find it on your statement or your bank's app. You can leave it empty.",
+      installment: "Current monthly installment",
+      installmentError: "Type the approximate monthly installment.",
+      arrears: "How long have you been behind on payments?",
+      arrearsError: "Choose how long.",
+      arrearsOptions: {
+        not_late: "Not late yet, but I expect difficulty",
+        lt3m: "Less than 3 months",
+        "3to6m": "3 to 6 months",
+        "6to12m": "6 to 12 months",
+        gt12m: "More than a year",
+      },
+      city: "Property city",
+      cityError: "Type the property's city.",
+      note: "Amounts are approximate, as you state them; they don't change your lender's figures.",
+    },
+    situation: {
+      heading: "What changed, and what would suit you?",
+      lead: "You don't need to explain everything. This helps the Rahoon team study your request.",
+      preference: "What are you considering now?",
+      preferenceError: "Choose what suits you, or “I'm not sure”.",
+      options: {
+        keep_home: "Stay in my home and ease or reschedule the installments",
+        settlement: "Settle the debt",
+        sell_myself: "I'm thinking of selling the property myself",
+        not_sure: "I'm not sure — I need advice",
+      },
+      note: "Your choice helps our study; the suitable path is decided after we study your request.",
+      affordable: "How much can you pay each month?",
+      situationText: "What changed? In your own words",
+      situationHelp: "For example: lower income, illness, a change of job. Share only what you want to.",
+    },
+    docs: {
+      heading: "Documents that help us study your request",
+      lead: "Optional for now; the Rahoon team may ask for them later. Accepted: PDF, JPG or PNG up to 20 MB.",
+      kinds: {
+        salary_statement: "Salary certificate",
+        bank_statement: "Last 3 months' bank statement",
+        title_deed: "Copy of the title deed",
+        financing_contract: "Finance contract",
+        other: "Another document",
+      },
+      upload: "Upload",
+      replace: "Replace",
+      uploading: "Uploading",
+      uploaded: "Uploaded",
+      scanFailed: "File rejected: the security scan failed.",
+      consentTitle: "Consent to share your data",
+      consentDraft: "Provisional wording — under review",
+      consentCheck: "I agree to the text above",
+      consentCheckError: "Tick the consent box first.",
+      consentWhy: "The Rahoon team contacts your lender about your request only after your consent is recorded.",
+      sendCode: "Confirm consent with a mobile code",
+      codeSentTo: "We sent a confirmation code to",
+      codeLabel: "Confirmation code",
+      confirm: "Confirm consent",
+      recorded: "Your consent is recorded",
+      recordedOn: "Your consent to share was recorded on",
+      recipientChanged: "You changed the lender, so a new consent naming the new lender is needed.",
+      viewText: "Consent text",
+    },
+    review: {
+      heading: "Review your request before sending",
+      lender: "Lender",
+      name: "Name",
+      contract: "Contract number",
+      installment: "Monthly installment",
+      arrears: "Behind for",
+      city: "Property city",
+      preference: "What suits you",
+      affordable: "You can pay monthly",
+      situation: "In your words",
+      documents: "Documents",
+      noDocuments: "No documents yet",
+      consent: "Consent to share",
+      consentMissing: "Not recorded yet",
+      missingTitle: "Complete these details before sending",
+      lockNote: "After sending, the request can't be edited, but you can add information or documents, or withdraw it.",
+      duplicateTitle: "You have an open request for the same lender",
+      duplicateBody: (ref: string) => `Your request ${ref} for the same lender is still open. If this request is for a different finance, confirm it; otherwise continue with the open request.`,
+      duplicateLink: "View the open request",
+      duplicateAck: "This request is for a different finance",
+      duplicateAckError: "Confirm this request is for a different finance, or continue with your open request.",
+      submit: "Send request",
+      submitting: "Sending",
+      cantSubmit: "You can't send yet:",
+    },
+  },
+
+  submitted: {
+    title: "Your request reached the Rahoon team",
+    reference: "Your request number",
+    whatNext: "What happens now",
+    bullets: [
+      "The Rahoon team studies your request and documents.",
+      "If we need information from you, we ask on your request page.",
+      "We contact your lender only within your documented consent.",
+    ],
+    track: "Follow my request",
+  },
+
+  home: {
+    title: "My account",
+    welcome: "Welcome to Rahoon",
+    start: "Start a new request",
+    starting: "Starting",
+    emptyTitle: "No requests yet",
+    emptyBody: "Submit a request about a mortgage in difficulty; the Rahoon team will study it and tell you the next step.",
+    separateHint: "You can submit a separate request for each finance in difficulty.",
+    continueDraft: "Continue request",
+    open: "Open request",
+    draftLender: "Lender not chosen yet",
+  },
+
+  tracker: {
+    eyebrow: "Your request",
+    nextStep: "Next step",
+    whatRahoon: "What Rahoon will do for you",
+    provisional: "Provisional — confirmed after our study",
+    likelyPaths: "Paths we will study for your request",
+    doingNow: "What we're doing now",
+    allPaths: "All ways we can help",
+    timeline: "What has happened so far",
+    details: "Your request details",
+    documents: "Your documents",
+    addedLater: "Added after sending",
+    consent: "Your consent to share",
+    consentWith: (name: string) => `You agree that Rahoon may share with ${name} the data needed for your request.`,
+    consentNone: "No active consent. The Rahoon team won't contact your lender about your request.",
+    renewConsent: "Record a new consent",
+    withdrawConsent: "Withdraw consent",
+    withdrawConsentConfirm: "Withdrawing consent stops coordination with your lender until you consent again. Continue?",
+    keepConsent: "Keep my consent",
+    addInfo: "Add information or a document",
+    withdraw: "Withdraw request",
+    submittedOn: "Sent",
+    startedOn: "Started",
+    outcome: "Outcome",
+    reason: "Reason",
+    newRequest: "Submit a new request",
+  },
+
+  add: {
+    title: "Add information",
+    heading: "Add information or a document to your request",
+    lead: "What you add goes straight to the Rahoon team. The request's details can't be edited after sending, but you can clarify here.",
+    text: "Information",
+    textError: "Type the information you want to add.",
+    send: "Send",
+    sent: "The information was added to your request.",
+    docsTitle: "Add a document",
+  },
+
+  withdraw: {
+    title: "Withdraw request",
+    heading: "Do you want to withdraw your request?",
+    body: "When you withdraw, the Rahoon team stops working on the request and any sharing of its data with your lender stops. A withdrawal can't be undone, but you can submit a new request later.",
+    reason: "Reason",
+    confirm: "Withdraw request",
+    keep: "Keep the request",
+  },
+
+  consent: {
+    title: "New consent",
+  },
+};
+
+export function requestCopy(locale: Locale): RequestCopy {
+  return locale === "en" ? en : ar;
+}
+
+/** Likely help paths from the individual's preference — labelled provisional in the UI (D-3). */
+export function likelyPaths(pref: PreferenceKey | null): PathKey[] {
+  switch (pref) {
+    case "keep_home":
+      return ["p1"];
+    case "settlement":
+      return ["p2"];
+    case "sell_myself":
+      return ["p3"];
+    default:
+      return ["p1", "p2"];
+  }
+}

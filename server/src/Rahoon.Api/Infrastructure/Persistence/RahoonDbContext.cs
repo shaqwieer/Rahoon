@@ -14,6 +14,7 @@ using Rahoon.Api.Modules.Identity;
 using Rahoon.Api.Modules.Imports;
 using Rahoon.Api.Modules.Providers;
 using Rahoon.Api.Modules.Referral;
+using Rahoon.Api.Modules.Requests;
 using Rahoon.Api.Modules.Solutions;
 
 namespace Rahoon.Api.Infrastructure.Persistence;
@@ -98,6 +99,14 @@ public sealed class RahoonDbContext(DbContextOptions<RahoonDbContext> options, R
     public DbSet<ReconciliationLine> ReconciliationLines => Set<ReconciliationLine>();
     public DbSet<ClosureDocument> ClosureDocuments => Set<ClosureDocument>();
 
+    // Individuals' requests (ADR 0001): operator tenant + applicant
+    public DbSet<FinancingInstitution> FinancingInstitutions => Set<FinancingInstitution>();
+    public DbSet<Request> Requests => Set<Request>();
+    public DbSet<RequestConsent> RequestConsents => Set<RequestConsent>();
+    public DbSet<RequestDocument> RequestDocuments => Set<RequestDocument>();
+    public DbSet<RequestDocumentVersion> RequestDocumentVersions => Set<RequestDocumentVersion>();
+    public DbSet<RequestUpdate> RequestUpdates => Set<RequestUpdate>();
+
     // Providers, imports, administration, audit
     public DbSet<ProviderAssignment> Assignments => Set<ProviderAssignment>();
     public DbSet<AssignmentMessage> AssignmentMessages => Set<AssignmentMessage>();
@@ -133,7 +142,9 @@ public sealed class RahoonDbContext(DbContextOptions<RahoonDbContext> options, R
             if (typeof(IConcurrencyVersioned).IsAssignableFrom(clr))
                 mb.Entity(clr).Property(nameof(IConcurrencyVersioned.Version)).IsRowVersion();
 
-            if (typeof(IOrgOwned).IsAssignableFrom(clr))
+            if (typeof(IApplicantOwned).IsAssignableFrom(clr))
+                ApplyApplicantFilterMethod.MakeGenericMethod(clr).Invoke(this, [mb]);
+            else if (typeof(IOrgOwned).IsAssignableFrom(clr))
                 ApplyTenantFilterMethod.MakeGenericMethod(clr).Invoke(this, [mb]);
 
             // Referential integrity for the two ubiquitous foreign keys.
@@ -159,4 +170,12 @@ public sealed class RahoonDbContext(DbContextOptions<RahoonDbContext> options, R
 
     private void ApplyTenantFilter<T>(ModelBuilder mb) where T : class, IOrgOwned =>
         mb.Entity<T>().HasQueryFilter(e => _rc.SystemBypass || _rc.DataOrganizationIds.Contains(e.OrganizationId));
+
+    private static readonly MethodInfo ApplyApplicantFilterMethod =
+        typeof(RahoonDbContext).GetMethod(nameof(ApplyApplicantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+    /// <summary>One combined filter (a second HasQueryFilter call would replace the first): tenant match, or the individual's own row.</summary>
+    private void ApplyApplicantFilter<T>(ModelBuilder mb) where T : class, IApplicantOwned =>
+        mb.Entity<T>().HasQueryFilter(e => _rc.SystemBypass || _rc.DataOrganizationIds.Contains(e.OrganizationId)
+                                           || (_rc.Scope == SessionScope.Individual && e.ApplicantUserId == _rc.UserId));
 }

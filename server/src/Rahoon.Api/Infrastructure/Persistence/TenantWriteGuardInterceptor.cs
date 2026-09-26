@@ -51,6 +51,21 @@ public sealed class TenantWriteGuardInterceptor(IClock clock) : SaveChangesInter
             if (entry.State == EntityState.Added && owned.OrganizationId == Guid.Empty && rc.OrganizationId is { } org)
                 owned.OrganizationId = org;
 
+            if (entry.Entity is IApplicantOwned applicantRow && entry.State == EntityState.Modified
+                && entry.Property(nameof(IApplicantOwned.ApplicantUserId)).IsModified)
+                throw new TenantViolationException("Changing a row's applicant is not permitted.");
+
+            if (rc.IsIndividual)
+            {
+                // Individuals hold no tenant data set: they may write only their own applicant-owned rows,
+                // and only inside an operator organization (checked by the caller that sets OrganizationId).
+                if (entry.Entity is not IApplicantOwned mine || mine.ApplicantUserId != rc.UserId || mine.OrganizationId == Guid.Empty)
+                    throw new TenantViolationException($"Write to {entry.Metadata.ClrType.Name} outside the individual's own requests was blocked.");
+                if (entry.State == EntityState.Deleted)
+                    throw new TenantViolationException("Individuals cannot delete request records.");
+                continue;
+            }
+
             if (!rc.DataOrganizationIds.Contains(owned.OrganizationId))
                 throw new TenantViolationException($"Write to {entry.Metadata.ClrType.Name} outside the caller's organizations was blocked.");
 

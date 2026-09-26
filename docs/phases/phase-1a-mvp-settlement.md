@@ -117,15 +117,15 @@
 |---|---|---|---|---|
 | Landing | Owner-first public landing | 🟩 built 2026-09-25; browser ✓ at 390 and 1440 | New + **Needs design (D-1)** | B13 frames + proposed D-1 text (help paths, the Rahoon team step), labelled «بانتظار اعتماد التصميم» until D-1 is approved. No «مجاني», no deadlines, consent described as a mechanism (Q12) |
 | OR01, OR02 | Registration, code, terms | 🟩 built 2026-09-25; browser ✓ at 390 | New | `/start` (register) and `/start?mode=signin`; Q10 (digital ID «غير متاح») and Q15 (ID + mobile code) interim rules |
-| — | Individual account with **several requests** | 🟩 account and session built 2026-09-25 (`/my`); the requests themselves arrive in step 5 | New | Session scope `Individual`, not tied to any case (X4 superseded in code) |
-| OA01–OA05 | Request wizard | ⬜ | New + **Needs design (D-2)** | Lender named (V6); consent wording (V4); several requests (Q7) |
-| OA06 successor | «ماذا ستفعل رهون لك» + tracking (status, waiting-on, next step) | ⬜ | New + **Needs design (D-3)** | No deadlines (Q6) |
+| — | Individual account with **several requests** | ✅ 2026-09-26: `/my` lists every request (reference, lender, status, «ننتظر»); API test with 3 requests on one account; Playwright ✓ at 390 | New | Session scope `Individual`, not tied to any case (X4 superseded in code) |
+| OA01–OA05 | Request wizard | ✅ 2026-09-26: `/my/requests/[ref]/apply?step=1…5`, autosave per step, documents, consent confirmed by SMS code, review, submit; Playwright ✓ at 390 (768/1440 in step 9) | New + **Needs design (D-2)** «بانتظار اعتماد التصميم» | Built with the existing design system and the proposed D-2 text. Lender list + «جهة أخرى» (V6); consent text `request-consent-draft-2026-09` labelled «صيغة مبدئية — تتطلب مراجعة» (V4); duplicate warned and linked (V7); name collected in OA02 (Q5 interim) |
+| OA06 successor | «ماذا ستفعل رهون لك» + tracking (status, waiting-on, next step) | ✅ 2026-09-26: submission confirmation + `/my/requests/[ref]` (status, «ننتظر», next step, likely paths «مبدئي — يتأكد بعد الدراسة», what we're doing now, past timeline, documents, consent with withdraw/renew, add info, withdraw); Playwright ✓ at 390 | New + **Needs design (D-3)** «بانتظار اعتماد التصميم» | No deadlines (Q6): the E2E asserts no «حتى تاريخ/مجاني/خلال n» on the tracker. This is the D02 rework for the MVP |
 | OA07 | Completion requested by the Rahoon team | ⬜ | Rework (actor = Rahoon team) | |
 | OA08 | Declined / not suitable | ⬜ | Rework + **Needs design (D-6)** | The reason comes from the team, or is the lender's response relayed by the team |
 | — | **Rahoon team workspace** (queue, review, completion, consent evidence, coordination log, updates, offer recording and verification, response relay) | ⬜ | New + **Needs design (D-4)** | Uses the existing design system; no frames exist |
 | L00a, L00b | Lender intake queue and review | ⬜ | **Deferred** (X10) | Lender-on-platform mode, later |
 | D01 | Lender invitation | 🟩 | Secondary / Deferred | Not used in the MVP |
-| D02–D05 | Owner home, journey, documents, debt | 🟩 on `master` (merged 2026-09-25); browser smoke ✓ at 390 | Rework | Home = the request tracker. **Found:** D02 shows «لديك حتى 2026-10-05 (10 أيام)», a deadline that Q6 rules out. Debt figures from the individual carry the source «العميل» |
+| D02–D05 | Owner home, journey, documents, debt | 🟩 on `master` (merged 2026-09-25); browser smoke ✓ at 390 | Rework → **done for the MVP by the request tracker** (step 5); the case-bound D02 stays for the lender mode | Home = the request tracker. **Found:** D02 shows «لديك حتى 2026-10-05 (10 أيام)», a deadline that Q6 rules out. Debt figures from the individual carry the source «العميل» |
 | D06 | Options | 🟩 same; smoke ✓ | Rework | Becomes the **help paths explainer** (P1–P4). **Found:** titled «الخيارات المتاحة لك» (X6); lists «تأجيل مؤقت» (V8) and «البيع الطوعي» (V8 wording) |
 | D07 | Offer | 🟩 same; smoke ✓ | Rework + **Needs design (D-5)** | **Found:** «صالح حتى 2026-10-05» in the header (Q6); no approval note; «نتواصل معك أولاً… نمنحك 15 يوماً» is a commitment (Q12/V4); «بيتك يبقى ملكك» wording needs review (V4) |
 | D08, D09 | Counter / ask; accept with OTP consent | 🟩 same; smoke ✓ | OK (relay by the team) | A-05: a consent record, not a signature |
@@ -209,16 +209,20 @@
   - browser journey (Playwright, 20 checks at 390/1440, run three times): landing → validation → register → terms required → `/my` → staff page refused → sign out → protected redirect → sign in again; no web-storage token, no horizontal overflow, no console errors
 - [x] *Moved to step 5:* "the account can list several requests" — requests don't exist before step 5. Step 4 proves the session isn't tied to any case.
 
-### Step 5: Request wizard + «ماذا ستفعل رهون لك» + tracking ⬜ (Q4, Q5, V4, V6, V7 interim rules)
-- [ ] Backend:
-  - request module: `REQ-YYYY-NNNNN`, draft autosave, lender named (list + «أخرى»)
-  - document upload with the existing scanning and storage rules
-  - **consent record per request** (text version stored)
-  - submit lock (add-info only)
-  - several requests per account; duplicate warning
-  - audit
-- [ ] Web: OA01–OA05, the submission result, and the «ماذا ستفعل رهون لك» tracker (status, waiting-on, next step; no deadline).
-- [ ] Tests: the individual sees only their own requests; consent is required before submit; idempotent submit.
+### Step 5: Request wizard + «ماذا ستفعل رهون لك» + tracking ✅ 2026-09-26 (Q4, Q5, V4, V6, V7 interim rules)
+- [x] Backend (ADR 0001 §4.2–§4.6):
+  - organization kind `Operator` + seeded tenant «فريق رهون» (`rahoon-team`); role templates «منسق حالات», «مراجِع العروض», «قائد الفريق» and the `request.*` permission keys (users arrive in step 6)
+  - `IApplicantOwned`: one combined query filter (tenant **or** the individual's own row) and a write-guard branch (an individual writes only their own rows, never deletes, never changes the applicant). The individual's session keeps an empty tenant set
+  - new schema `requests`: `financing_institutions` (directory, not tenant data; 6 fictional institutions seeded), `requests` (`REQ-YYYY-NNNNN`), `request_consents`, `request_documents` + versions, `request_updates` (timeline; internal entries never projected)
+  - `RequestWorkflow` with the full ADR §4.5 table (submit, pick_up, request_info, info_provided, start_coordination, publish_offer, respond, continue_coordination, close, not_eligible, withdraw); guards; blocked attempts audited
+  - individual API `/api/my/requests`: draft autosave per step (locked after submit, add-only), documents (existing storage, magic-byte check, scanner), consent confirmed by SMS code with the text snapshot and version, consent withdrawal (pauses the request; a new consent resumes it), submit (idempotent), add information, withdraw
+  - several requests per account; a duplicate for the same lender (and the same contract number when both are given) is warned and linked, never blocked (V7)
+  - audit: `SubjectType`/`SubjectReference` + `HashVersion` (existing events stay format 1 and still verify); request events chain under the operator tenant; individual actor type `individual`
+  - the person's name is collected in OA02 (Q5 interim) and replaces the masked-ID display label on submit
+  - step-up now works for individuals (the phone is on the individual profile), needed for step 7
+  - migration `IndividualRequests`
+- [x] Web: `/my` («طلباتي» + «ابدأ طلب معالجة جديد»), OA01–OA05 wizard, submission confirmation, tracker, add information, new consent, withdraw. Request copy lives in `components/individual/copy.ts` (ar/en).
+- [x] Tests: `RequestTests` (12): full wizard → consent → submit; refused without consent (audited); a lender change voids the consent; idempotent submit + lock; another individual gets 404 and the blocked write is audited; staff/platform/anonymous refused; several requests + duplicate warned and linked; the DTO never carries team-only documents or internal entries; consent withdrawal pauses and a new consent resumes; withdraw; audit chain verifies (operator + older lender events); field errors. Backend **143/143**. Web typecheck, lint and build green. `web/e2e/owner-journey.spec.ts` (first part) ✓ at 390.
 
 ### Step 6: Rahoon team workspace ⬜ (V1, V2, V5 interim rules)
 - [ ] New platform role «فريق رهون» (coordinator; verifier), with permissions and seeded users.
@@ -256,15 +260,19 @@
   - the real owner of an ID can't be locked out by others' attempts
 
   A national identity provider (Q10) removes the gap.
-- **The person's name isn't collected** at registration (B13 OR01 collects only ID + mobile). The display label is the masked ID until step 5 collects the name (Q5).
+- ~~**The person's name isn't collected** at registration.~~ **Resolved in step 5:** OA02 asks «اسمك الكامل كما في الهوية» (Q5 interim), and the name replaces the masked-ID label on submit.
 - **SMS abuse:** codes are rate-limited per IP (`auth` policy) and per session (60-second resend cooldown). A per-mobile daily cap is still missing; add it before a real SMS gateway is enabled.
 - **Placeholders shown to users until later steps:**
-  - «تقديم طلب المعالجة يُتاح في هذه الصفحة قريباً» on `/my`, until step 5
+  - ~~«تقديم طلب المعالجة يُتاح في هذه الصفحة قريباً» on `/my`~~ removed in step 5
   - draft terms and privacy pages; the final legal text is **V11** (see `product-direction.md` §7)
 - **D-1 is pending design approval:** the landing uses the proposed D-1 text. It's labelled in this table, not on the page.
 
-- **Safety (found 2026-09-25, fix first thing in step 3):** `dotnet run -- reset-demo` calls `EnsureDeletedAsync()` in `server/src/Rahoon.Api/Program.cs:86` **before** the seeder's Development/Testing guard (`DevSeeder.cs:39`). Run against a non-development environment, it would drop that database before failing. Fix: check the environment before deleting, and add a test.
+- ✅ **Resolved in step 3 (`97cb644`).** Safety (found 2026-09-25): `dotnet run -- reset-demo` calls `EnsureDeletedAsync()` in `server/src/Rahoon.Api/Program.cs:86` **before** the seeder's Development/Testing guard (`DevSeeder.cs:39`). Run against a non-development environment, it would drop that database before failing. Fix: check the environment before deleting, and add a test.
 - **Design gap:** the Rahoon team workspace (D-4) has no frames. B13 designed a lender intake instead, and that is now deferred. The requests D-1 to D-6 are written (`docs/design-requests/1a-step2-design-requests.md`) and **await the product owner or designer**; steps 4–8 will use «بانتظار اعتماد التصميم» for any frame still missing.
+- **Step 5 (2026-09-26), design pending:** OA01–OA05 and the tracker are built with the existing design system and the proposed D-2/D-3 text, «بانتظار اعتماد التصميم».
+- **Step 5, deployment:** the «فريق رهون» operator tenant is created by the demo seeder only. A real environment needs it provisioned (platform admin, Phase 1C) before individuals can start requests; without it the API answers «خدمة الطلبات غير مهيأة بعد» (503).
+- **Step 5, consent effect (V4):** withdrawing consent after submission moves the request to «نحتاج معلومة منك» with the next step «توقف التنسيق… وافق من جديد، أو اسحب الطلب»; a new consent resumes it. The exact legal effect is still V4.
+- **Step 5, dev note:** running `next build` while `next dev` is running breaks the dev server's `.next` («Jest worker encountered 2 child process exceptions»). Restart `npm run dev` (after deleting `.next`) following a build.
 - **Tenancy change:** the MVP request isn't owned by a lender tenant. Covered by the ADR in step 2; today's lender-tenant case model is kept for later.
 - **Earlier design conflicts, still relevant:**
   - OR02 allows 5 OTP attempts; staff policy is 3.

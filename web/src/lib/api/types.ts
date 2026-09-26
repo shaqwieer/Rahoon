@@ -1,6 +1,6 @@
 /** Shapes shared by server and client API helpers. Mirrors server/src/Rahoon.Api (Identity/AuthEndpoints.cs). */
 
-export type OrgKind = "lender" | "serviceprovider" | "judicialagent" | "platform";
+export type OrgKind = "lender" | "serviceprovider" | "judicialagent" | "platform" | "operator";
 export type SessionScope = "none" | "organization" | "owner" | "individual";
 export type SessionStage = "mfapending" | "active";
 

@@ -20,7 +20,9 @@ public sealed record AuditEntry(
     bool Blocked = false,
     IReadOnlyList<string>? Evidence = null,
     object? Data = null,
-    Guid? OrganizationId = null);
+    Guid? OrganizationId = null,
+    string? SubjectType = null,
+    string? SubjectReference = null);
 
 /// <summary>
 /// Append-only, hash-chained audit trail. Each event hashes its content with the
@@ -30,6 +32,7 @@ public sealed record AuditEntry(
 public sealed class AuditLog(RahoonDbContext db, RequestContext rc, IClock clock, IServiceScopeFactory scopes)
 {
     public const string Genesis = "sha256:genesis";
+    public const int CurrentHashVersion = 2;
 
     /// <summary>Adds the event to the current unit of work (committed with the business change).</summary>
     public async Task RecordAsync(AuditEntry e)
@@ -82,6 +85,9 @@ public sealed class AuditLog(RahoonDbContext db, RequestContext rc, IClock clock
         IpMasked = ctx.IpMasked,
         // PostgreSQL keeps microseconds; truncate so the hash verifies after a round-trip.
         OccurredAt = new DateTimeOffset(clock.UtcNow.UtcTicks / 10 * 10, TimeSpan.Zero),
+        SubjectType = e.SubjectType,
+        SubjectReference = e.SubjectReference,
+        HashVersion = CurrentHashVersion,
         PrevHash = "",
         Hash = "",
     };
@@ -110,6 +116,8 @@ public sealed class AuditLog(RahoonDbContext db, RequestContext rc, IClock clock
         var canonical = string.Join('|', e.PrevHash, e.Id, e.OrganizationId, e.CaseId, e.Type, e.Title, e.FromState, e.ToState,
             e.ActorUserId, e.Reason, e.Detail, e.Blocked, string.Join(',', e.Evidence), e.DataJson,
             e.OccurredAt.UtcDateTime.ToString("O"));
+        // Version 2 appends the non-case subject; version-1 events keep their original canonical form and still verify.
+        if (e.HashVersion >= 2) canonical += "|" + e.SubjectType + "|" + e.SubjectReference;
         return "sha256:" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
     }
 

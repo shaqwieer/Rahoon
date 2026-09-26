@@ -1,6 +1,7 @@
 namespace Rahoon.Api.Modules.Identity;
 
-public enum OrganizationKind { Lender, ServiceProvider, JudicialAgent, Platform }
+/// <summary>Operator = «فريق رهون», the Rahoon team tenant that owns individuals' requests (ADR 0001 §4.1).</summary>
+public enum OrganizationKind { Lender, ServiceProvider, JudicialAgent, Platform, Operator }
 
 public sealed record RoleTemplate(string Key, string NameAr, string NameEn, OrganizationKind Kind, IReadOnlyList<string> Permissions);
 
@@ -26,6 +27,10 @@ public static class SystemRoles
     public const string ProviderAdmin = "provider_admin";
     public const string ProviderAgent = "provider_agent";
     public const string JudicialAgent = "judicial_agent";
+
+    public const string TeamCoordinator = "team_coordinator";
+    public const string TeamVerifier = "team_verifier";
+    public const string TeamLead = "team_lead";
 
     public const string PlatformOps = "platform_ops";
     public const string PlatformSupport = "platform_support";
@@ -99,6 +104,20 @@ public static class SystemRoles
             [P.AssignmentWork]),
         new(JudicialAgent, "وكيل البيع القضائي", "Judicial sale agent", OrganizationKind.JudicialAgent,
             [P.AgentWork]),
+
+        // «فريق رهون» (ADR 0001 §4.2). Separation of duties (verifier ≠ recorder) is enforced on the server regardless.
+        new(TeamCoordinator, "منسق حالات", "Case coordinator", OrganizationKind.Operator,
+        [
+            P.RequestViewAssigned, P.RequestReview, P.RequestRequestInfo, P.RequestCoordinate, P.RequestMessage, P.RequestOfferRecord,
+            P.RequestResponseRelay, P.RequestClose, P.RequestObjectionHandle,
+        ]),
+        new(TeamVerifier, "مراجِع العروض", "Offer verifier", OrganizationKind.Operator,
+            [P.RequestViewAssigned, P.RequestOfferVerify]),
+        new(TeamLead, "قائد الفريق", "Team lead", OrganizationKind.Operator,
+        [
+            P.RequestViewAssigned, P.RequestViewAll, P.RequestAssign, P.RequestReview, P.RequestRequestInfo, P.RequestCoordinate, P.RequestMessage,
+            P.RequestOfferRecord, P.RequestOfferVerify, P.RequestResponseRelay, P.RequestClose, P.RequestObjectionHandle,
+        ]),
 
         new(PlatformOps, "مسؤول عمليات", "Operations", OrganizationKind.Platform,
             [P.PlatformOps, P.PlatformInstitutions, P.PlatformUsers, P.PlatformDefaults, P.PlatformBilling, P.PlatformIntegrations]),

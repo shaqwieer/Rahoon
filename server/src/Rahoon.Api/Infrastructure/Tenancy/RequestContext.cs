@@ -41,11 +41,13 @@ public sealed class RequestContext
     public bool IsProvider => Scope == SessionScope.Organization && OrganizationKind == Modules.Identity.OrganizationKind.ServiceProvider;
     public bool IsJudicialAgent => Scope == SessionScope.Organization && OrganizationKind == Modules.Identity.OrganizationKind.JudicialAgent;
     public bool IsPlatform => Scope == SessionScope.Organization && OrganizationKind == Modules.Identity.OrganizationKind.Platform;
+    /// <summary>Rahoon team member (operator tenant, ADR 0001).</summary>
+    public bool IsOperator => Scope == SessionScope.Organization && OrganizationKind == Modules.Identity.OrganizationKind.Operator;
     public bool IsOwner => Scope == SessionScope.Owner;
     /// <summary>Self-registered individual (ADR 0001): no organization data at all; access to own requests only.</summary>
     public bool IsIndividual => Scope == SessionScope.Individual;
 
-    public string ActorType => IsOwner ? "owner" : IsIndividual ? "individual" : IsProvider || IsJudicialAgent ? "provider" : IsPlatform ? "platform" : "user";
+    public string ActorType => IsOwner ? "owner" : IsIndividual ? "individual" : IsProvider || IsJudicialAgent ? "provider" : IsPlatform ? "platform" : IsOperator ? "rahoon_team" : "user";
 
     public void SetAnonymous() => IsAuthenticated = false;
 

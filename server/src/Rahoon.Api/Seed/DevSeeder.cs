@@ -102,6 +102,19 @@ public sealed partial class DevSeeder(
             (IntegrationKeys.JudicialChannel, "القناة القضائية الرسمية", IntegrationState.Unavailable, "لا قناة معتمدة. تُدخل الإحالة والمرجع والحالة الرسمية يدوياً وحرفياً."),
             (IntegrationKeys.RealEstateRegistry, "السجل العقاري", IntegrationState.Unavailable, "لا تكامل. مطابقة الصك يدوية من القانونية."),
         ];
+        // V6 interim: a directory of (fictional) financing institutions + «أخرى» free text. None is linked to a tenant.
+        (string ar, string en, string kind)[] institutions =
+        [
+            ("مصرف الأفق", "Alufuq Bank", "bank"),
+            ("مصرف الواحة", "Alwaha Bank", "bank"),
+            ("بنك الريادة", "Alriyada Bank", "bank"),
+            ("مصرف النخيل", "Alnakheel Bank", "bank"),
+            ("شركة السنبلة للتمويل", "Sunbula Finance", "finance_company"),
+            ("شركة المسكن للتمويل العقاري", "Almaskan Home Finance", "finance_company"),
+        ];
+        for (var n = 0; n < institutions.Length; n++)
+            db.FinancingInstitutions.Add(new Modules.Requests.FinancingInstitution { NameAr = institutions[n].ar, NameEn = institutions[n].en, Kind = institutions[n].kind, SortOrder = n });
+
         foreach (var i in integrations)
             db.IntegrationSettings.Add(new IntegrationSetting { Key = i.key, NameAr = i.ar, State = i.state, Note = i.note, UpdatedAt = DemoToday });
 
@@ -149,6 +162,8 @@ public sealed partial class DevSeeder(
         Org("broker-d", "مكتب وساطة عقارية «د»", "Brokerage D", "وس", OrganizationKind.ServiceProvider, "الرياض", ["broker-d.example"]);
         Org("agent-j", "مكتب وكيل البيع «ج»", "Sale Agent J", "وك", OrganizationKind.JudicialAgent, "جدة", ["agent-j.example"]);
         Org("platform", "منصة رهون", "Rahoon Platform", "ره", OrganizationKind.Platform, "الرياض", ["rahoon.example"]);
+        // ADR 0001: the Rahoon team tenant that owns individuals' requests (separate from platform administration).
+        Org("rahoon-team", "فريق رهون", "Rahoon Team", "فر", OrganizationKind.Operator, "الرياض", ["team.rahoon.example"]);
     }
 
     private void Org(string code, string ar, string en, string initials, OrganizationKind kind, string city, List<string> domains)

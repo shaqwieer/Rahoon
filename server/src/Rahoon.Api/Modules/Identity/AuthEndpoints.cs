@@ -160,6 +160,7 @@ public static class AuthEndpoints
             OrganizationKind.ServiceProvider => "/provider",
             OrganizationKind.JudicialAgent => "/agent",
             OrganizationKind.Platform => "/platform",
+            OrganizationKind.Operator => "/team",
             _ when roles.Count > 0 && roles.All(r => r is SystemRoles.Approver or SystemRoles.SeniorApprover or SystemRoles.RiskCommittee) => "/approvals",
             _ => "/portfolio",
         };
@@ -253,6 +254,11 @@ public static class AuthEndpoints
         {
             var party = await db.Parties.FirstAsync(p => p.Id == rc.OwnerPartyId);
             phone = party.PhoneEnc is null ? null : pii.Unprotect(party.PhoneEnc);
+        }
+        else if (rc.IsIndividual)
+        {
+            var profile = await db.IndividualProfiles.FirstAsync(p => p.UserId == rc.UserId);
+            phone = pii.Unprotect(profile.PhoneEnc);
         }
         var issued = await otp.IssueAsync(OtpPurpose.StepUp, phone ?? "", rc.UserId, rc.SessionId);
         return Results.Ok(new { destination = issued.DestinationMasked, issued.ResendInSeconds, sandboxCode = issued.SandboxCode });
