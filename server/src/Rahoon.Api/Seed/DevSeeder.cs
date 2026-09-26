@@ -25,7 +25,8 @@ public sealed partial class DevSeeder(
     IClock clock,
     IConfiguration config,
     IHostEnvironment env,
-    ILogger<DevSeeder> log)
+    ILogger<DevSeeder> log,
+    Infrastructure.Security.PiiProtector pii)
 {
     private readonly Dictionary<string, Organization> _orgs = new();
     private readonly Dictionary<string, User> _users = new();
@@ -59,6 +60,7 @@ public sealed partial class DevSeeder(
         await SeedEcosystemAsync();
         await SeedVoluntarySaleAsync();
         await SeedProviderAdminAsync();
+        await SeedRequestsAsync(pii);
         await FlushAuditAsync();
         log.LogInformation("Seed complete.");
     }
@@ -214,6 +216,7 @@ public sealed partial class DevSeeder(
         User("rana", "r.alsubaie@rahoon.example", "رنا السبيعي", "0550000502", (_orgs["platform"], SystemRoles.PlatformSupport, "دعم تقني"));
         User("faisal", "f.aldossary@rahoon.example", "فيصل الدوسري", "0550000503", (_orgs["platform"], SystemRoles.PlatformAuditor, "مدقق"));
         User("hessa", "h.alotaibi@rahoon.example", "حصة العتيبي", "0550000504", (_orgs["platform"], SystemRoles.PlatformCompliance, "الامتثال"));
+        SeedRahoonTeamUsers();
 
         // Team structure (A02)
         var riyadh = new Team { OrganizationId = alufuq.Id, NameAr = "التحصيل — الرياض" };

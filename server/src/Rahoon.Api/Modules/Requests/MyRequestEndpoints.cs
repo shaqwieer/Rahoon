@@ -71,6 +71,34 @@ public static class MyRequestEndpoints
         g.MapPost("/{reference}/submit", Submit).Idempotent();
         g.MapPost("/{reference}/additions", AddInfo).Idempotent();
         g.MapPost("/{reference}/withdraw", Withdraw).Idempotent();
+        g.MapGet("/{reference}/messages", Messages);
+        g.MapPost("/{reference}/messages", SendMessage).Idempotent();
+    }
+
+    // ───────── messages with the Rahoon team (internal notes never projected) ─────────
+
+    private static async Task<IResult> Messages(string reference, RequestAccess access, RahoonDbContext db)
+    {
+        var r = await access.ForApplicantAsync(reference, track: false);
+        var items = await db.RequestMessages.AsNoTracking().Where(m => m.RequestId == r.Id && !m.IsInternal).OrderBy(m => m.At)
+            .Select(m => new { m.Id, m.AuthorKind, author = m.AuthorKind == "team" ? "فريق رهون" : "أنت", m.Body, m.At }).ToListAsync();
+        return Results.Ok(new { r.Reference, canSend = !RequestStatusInfo.IsTerminal(r.Status) && r.Status != RequestStatus.Draft, items });
+    }
+
+    private static async Task<IResult> SendMessage(string reference, AddInfoRequest body, RequestAccess access, RahoonDbContext db, RequestContext rc, IClock clock, AuditLog audit)
+    {
+        var text = Clean(body.Text, 2000);
+        if (text is null) Validate.Throw("text", "اكتب رسالتك.");
+        var r = await access.ForApplicantAsync(reference, write: true);
+        if (r.Status == RequestStatus.Draft || RequestStatusInfo.IsTerminal(r.Status)) throw new ConflictException("closed", "لا يمكن إرسال رسائل على هذا الطلب.");
+        db.RequestMessages.Add(new RequestMessage
+        {
+            OrganizationId = r.OrganizationId, RequestId = r.Id, ApplicantUserId = r.ApplicantUserId, AuthorKind = "applicant", AuthorUserId = rc.UserId,
+            AuthorLabel = r.ApplicantFullName ?? "العميل", Body = text!, At = clock.UtcNow,
+        });
+        await audit.RecordAsync(RequestWorkflow.Entry(r, "request.message_sent", "رسالة من العميل إلى فريق رهون"));
+        await db.SaveChangesAsync();
+        return Results.Ok(new { ok = true });
     }
 
     private static async Task<IResult> Institutions(RahoonDbContext db) =>

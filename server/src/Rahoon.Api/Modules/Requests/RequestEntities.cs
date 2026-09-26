@@ -44,6 +44,11 @@ public sealed class Request : OrgEntity, IApplicantOwned, IConcurrencyVersioned
     public DateTimeOffset StatusChangedAt { get; set; }
     public DateTimeOffset? SubmittedAt { get; set; }
     public Guid? AssignedCoordinatorId { get; set; }
+    public DateTimeOffset? AssignedAt { get; set; }
+    /// <summary>V12: identity is self-declared until Q10; a team member checks it (documents, lender match) before any coordination.</summary>
+    public DateTimeOffset? IdentityCheckedAt { get; set; }
+    public Guid? IdentityCheckedByUserId { get; set; }
+    public string? IdentityCheckNote { get; set; }
     /// <summary>Status to return to when the individual answers an information request.</summary>
     public RequestStatus? StatusBeforeInfoRequest { get; set; }
     /// <summary>True when «نحتاج معلومة منك» was caused by the individual withdrawing consent (resumed by a new consent).</summary>
@@ -156,5 +161,44 @@ public sealed class RequestUpdate : OrgEntity, IApplicantOwned
     public string? AuthorLabel { get; set; }
     public Guid? AuthorUserId { get; set; }
     public bool VisibleToApplicant { get; set; } = true;
+    public DateTimeOffset At { get; set; }
+}
+
+/// <summary>
+/// The manual channel with the lender (V2 wording provisional). Append-only: a correction is a new entry that references
+/// the corrected one. Only entries marked <see cref="VisibleToApplicant"/> reach the individual, as <see cref="ApplicantText"/>.
+/// Coordination means sharing consented data and relaying — never acting on the individual's behalf (V1).
+/// </summary>
+public sealed class CoordinationEntry : OrgEntity, IApplicantOwned
+{
+    public Guid RequestId { get; set; }
+    public Guid ApplicantUserId { get; set; }
+    /// <summary>general | response_relay | offer_received | lender_response</summary>
+    public string Kind { get; set; } = "general";
+    /// <summary>phone | email | letter | visit | other</summary>
+    public required string Channel { get; set; }
+    public DateTimeOffset OccurredAt { get; set; }
+    /// <summary>The lender-side counterpart, name/role as given.</summary>
+    public required string Counterpart { get; set; }
+    public required string Summary { get; set; }
+    public List<Guid> EvidenceDocumentIds { get; set; } = [];
+    public bool VisibleToApplicant { get; set; }
+    public string? ApplicantText { get; set; }
+    public Guid? CorrectsEntryId { get; set; }
+    public Guid RecordedByUserId { get; set; }
+    public required string RecordedByLabel { get; set; }
+}
+
+/// <summary>Messages between the individual and the Rahoon team. Internal notes are team-only and never projected.</summary>
+public sealed class RequestMessage : OrgEntity, IApplicantOwned
+{
+    public Guid RequestId { get; set; }
+    public Guid ApplicantUserId { get; set; }
+    /// <summary>applicant | team</summary>
+    public required string AuthorKind { get; set; }
+    public Guid AuthorUserId { get; set; }
+    public required string AuthorLabel { get; set; }
+    public required string Body { get; set; }
+    public bool IsInternal { get; set; }
     public DateTimeOffset At { get; set; }
 }

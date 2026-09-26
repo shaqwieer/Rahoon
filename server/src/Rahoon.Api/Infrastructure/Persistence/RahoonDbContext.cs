@@ -106,6 +106,8 @@ public sealed class RahoonDbContext(DbContextOptions<RahoonDbContext> options, R
     public DbSet<RequestDocument> RequestDocuments => Set<RequestDocument>();
     public DbSet<RequestDocumentVersion> RequestDocumentVersions => Set<RequestDocumentVersion>();
     public DbSet<RequestUpdate> RequestUpdates => Set<RequestUpdate>();
+    public DbSet<CoordinationEntry> CoordinationEntries => Set<CoordinationEntry>();
+    public DbSet<RequestMessage> RequestMessages => Set<RequestMessage>();
 
     // Providers, imports, administration, audit
     public DbSet<ProviderAssignment> Assignments => Set<ProviderAssignment>();

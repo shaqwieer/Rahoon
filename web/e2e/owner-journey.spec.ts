@@ -1,4 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Browser, type Page } from "@playwright/test";
+import { apiLogin } from "./helpers";
 
 /**
  * Primary MVP journey (individual-first, Phase 1A): on a 390px phone the individual registers, fills the request
@@ -98,4 +99,78 @@ test("individual registers, submits a request with consent and sees what Rahoon 
   await page.goto("/my");
   await expect(page.getByText(reference)).toBeVisible();
   await shot(page, "12-my-list");
+});
+
+/** A team member's page at 1440 (staff login through the API, as the lender specs do). */
+export async function teamPage(browser: Browser, email: string): Promise<Page> {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: "ar-SA", timezoneId: "Asia/Riyadh" });
+  const page = await ctx.newPage();
+  await page.goto("/login");
+  await apiLogin(page, email, "فريق رهون");
+  return page;
+}
+
+const tshot = (page: Page, name: string) => page.screenshot({ path: `test-results/team-${name}.png`, fullPage: true });
+
+test("the Rahoon team reviews, asks for information, checks identity and starts coordinating", async ({ page, browser }) => {
+  await registerIndividual(page);
+  const reference = await submitRequest(page);
+
+  const team = await teamPage(browser, "n.alyami@team.rahoon.example");
+  await team.goto("/team?tab=unassigned");
+  await expect(team.getByRole("heading", { name: "الطلبات" })).toBeVisible();
+  const row = team.locator("table").getByRole("link", { name: reference });
+  await expect(row).toBeVisible();
+  await tshot(team, "01-queue-unassigned");
+
+  await row.click();
+  await team.waitForURL(`**/team/requests/${reference}`);
+  await team.getByRole("button", { name: "بدء دراسة الطلب" }).click();
+  await expect(team.getByText("قيد الدراسة").first()).toBeVisible();
+
+  // T03: ask for information → the individual sees «نحتاج معلومة منك» and answers.
+  await team.getByRole("button", { name: "طلب استكمال…" }).click();
+  await team.getByLabel("ما نحتاجه").fill("كشف حساب آخر 3 أشهر");
+  await team.getByLabel("رسالة للعميل").fill("نحتاج كشف الحساب لنفهم دخلك الحالي قبل التواصل مع جهتك.");
+  await tshot(team, "02-request-info");
+  await team.getByRole("button", { name: "إرسال الطلب للعميل" }).click();
+  await expect(team.getByText("بانتظار معلومة من العميل").first()).toBeVisible();
+
+  await page.goto(`/my/requests/${reference}`);
+  await expect(page.getByText("نحتاج معلومة منك").first()).toBeVisible();
+  await expect(page.getByText("نحتاج كشف الحساب لنفهم دخلك").first()).toBeVisible();
+  await shot(page, "13-info-requested");
+  await page.getByRole("link", { name: "إضافة معلومة أو مستند" }).first().click();
+  await page.getByLabel("المعلومة").fill("أرفقت كشف الحساب في المستندات.");
+  await page.getByRole("button", { name: "إرسال" }).click();
+  await page.waitForURL(`**/my/requests/${reference}`);
+  await expect(page.getByText("قيد دراسة فريق رهون").first()).toBeVisible();
+
+  // V12 identity check, then T04 coordination entry (visible text only), then start coordination.
+  await team.reload();
+  await team.getByRole("button", { name: "تسجيل التحقق من الهوية…" }).click();
+  await team.getByLabel("كيف تحققت؟").fill("طابقنا صورة الهوية مع الاسم ورقم الجوال.");
+  await team.getByRole("button", { name: "حفظ" }).click();
+  await expect(team.getByText(/تحقق منها/)).toBeVisible();
+
+  await team.getByRole("button", { name: "إضافة قيد…" }).click();
+  await team.getByLabel("الطرف لدى الجهة").fill("إدارة التحصيل — أ. خالد");
+  await team.getByLabel("الملخص").fill("اتصلنا بإدارة التحصيل وأرسلنا ملخص الطلب بموافقة العميل.");
+  await team.getByRole("checkbox", { name: /يظهر للعميل؟/ }).check();
+  await team.getByLabel("النص الذي يراه العميل").fill("تواصلنا مع جهتك الممولة وأرسلنا لها ملخص طلبك.");
+  await tshot(team, "03-coordination-entry");
+  await team.getByRole("button", { name: "حفظ" }).click();
+  await expect(team.getByText("إدارة التحصيل — أ. خالد")).toBeVisible();
+
+  await team.getByRole("button", { name: "بدء التنسيق مع الجهة" }).click();
+  await expect(team.getByText("قيد التنسيق مع الجهة").first()).toBeVisible();
+  await tshot(team, "04-review-coordinating");
+
+  await page.reload();
+  await expect(page.getByText("قيد التنسيق مع جهتك الممولة").first()).toBeVisible();
+  await expect(page.getByText("تواصلنا مع جهتك الممولة وأرسلنا لها ملخص طلبك.")).toBeVisible();
+  await expect(page.locator("main")).not.toContainText("إدارة التحصيل");
+  await expect(page.locator("main")).not.toContainText("داخلي");
+  await shot(page, "14-coordinating");
+  await team.context().close();
 });

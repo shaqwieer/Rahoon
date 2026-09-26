@@ -124,5 +124,10 @@ public sealed class TestClient(HttpClient http)
     }
 
     public static string Str(JsonNode? n, string key) => n?[key]?.GetValue<string>() ?? "";
+
+    private static readonly JsonSerializerOptions RawJson = new() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+
+    /// <summary>JSON text with Arabic left unescaped — use for Contains/DoesNotContain on Arabic content (ToJsonString escapes it).</summary>
+    public static string Raw(JsonNode? n) => n?.ToJsonString(RawJson) ?? "";
     public static JsonSerializerOptions Json => new(JsonSerializerDefaults.Web);
 }

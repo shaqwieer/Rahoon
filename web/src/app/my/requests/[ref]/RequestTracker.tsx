@@ -201,6 +201,11 @@ export function RequestTracker({ detail }: { detail: MyRequestDetail }) {
             />
           </details>
 
+          {detail.status !== "draft" ? (
+            <Button href={`/my/requests/${ref}/messages`} variant="secondary" size="xl" fullWidth icon="chat">
+              {c.messages.open}
+            </Button>
+          ) : null}
           {detail.canAddInfo || detail.canWithdraw ? (
             <div className="flex flex-col gap-2.5">
               {detail.canAddInfo && detail.status !== "info_requested" ? (

@@ -207,9 +207,14 @@ public sealed class RequestWorkflow(RahoonDbContext db, RequestContext rc, ICloc
                 return dup is not null && !r.DuplicateAcknowledged ? $"لديك طلب قائم لنفس الجهة ({dup.Reference}). أكّد أن هذا الطلب لتمويل مختلف أو راجع الطلب القائم." : null;
             }
             case "identity_checked":
+                return r.IdentityCheckedAt is null ? "لم يُتحقق من هوية العميل بعد (الهوية مُعلنة من العميل)." : null;
             case "coordination_recorded":
+            {
+                var any = await db.CoordinationEntries.AnyAsync(e => e.RequestId == r.Id);
+                return any ? null : "لا يوجد قيد في سجل التنسيق مع الجهة بعد.";
+            }
             case "response_relayed":
-                // Wired with the Rahoon team workspace (Phase 1A steps 6–7).
+                // Wired with offers and responses (Phase 1A step 7).
                 return null;
             default:
                 throw new InvalidOperationException($"Unknown guard {guard}");

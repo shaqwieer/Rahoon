@@ -54,9 +54,9 @@ public sealed class RequestTests(ApiFixture api)
     internal static async Task ConsentAsync(TestClient c, string reference)
     {
         var (s, otp) = await c.PostAsync($"/api/my/requests/{reference}/consent/otp");
-        Assert.True(s == HttpStatusCode.OK, otp?.ToJsonString());
+        Assert.True(s == HttpStatusCode.OK, TestClient.Raw(otp));
         var (sc, body) = await c.PostAsync($"/api/my/requests/{reference}/consent", new { code = TestClient.Str(otp, "sandboxCode"), accept = true });
-        Assert.True(sc == HttpStatusCode.OK, body?.ToJsonString());
+        Assert.True(sc == HttpStatusCode.OK, TestClient.Raw(body));
     }
 
     internal static async Task<string> SubmittedAsync(ApiFixture api, TestClient? c = null)
@@ -65,7 +65,7 @@ public sealed class RequestTests(ApiFixture api)
         var reference = await DraftAsync(c);
         await ConsentAsync(c, reference);
         var (s, body) = await c.PostAsync($"/api/my/requests/{reference}/submit", new { acknowledgeDuplicate = false });
-        Assert.True(s == HttpStatusCode.OK, body?.ToJsonString());
+        Assert.True(s == HttpStatusCode.OK, TestClient.Raw(body));
         return reference;
     }
 
@@ -87,7 +87,7 @@ public sealed class RequestTests(ApiFixture api)
         Assert.Matches(@"^REQ-\d{4}-\d{5}$", reference);
 
         var (su, up) = await c.PostMultipartAsync($"/api/my/requests/{reference}/documents", Pdf("salary_statement"));
-        Assert.True(su == HttpStatusCode.OK, up?.ToJsonString());
+        Assert.True(su == HttpStatusCode.OK, TestClient.Raw(up));
 
         var (_, draft) = await c.GetAsync($"/api/my/requests/{reference}");
         Assert.Equal("draft", TestClient.Str(draft, "status"));
@@ -97,7 +97,7 @@ public sealed class RequestTests(ApiFixture api)
 
         await ConsentAsync(c, reference);
         var (s, submitted) = await c.PostAsync($"/api/my/requests/{reference}/submit", new { acknowledgeDuplicate = false });
-        Assert.True(s == HttpStatusCode.OK, submitted?.ToJsonString());
+        Assert.True(s == HttpStatusCode.OK, TestClient.Raw(submitted));
 
         var (_, detail) = await c.GetAsync($"/api/my/requests/{reference}");
         Assert.Equal("submitted", TestClient.Str(detail, "status"));
@@ -171,7 +171,7 @@ public sealed class RequestTests(ApiFixture api)
         var (s2, b2) = await c.PostAsync($"/api/my/requests/{reference}/submit", new { acknowledgeDuplicate = false }, key);
         Assert.Equal(HttpStatusCode.OK, s1);
         Assert.Equal(HttpStatusCode.OK, s2);
-        Assert.Equal(b1!.ToJsonString(), b2!.ToJsonString());
+        Assert.Equal(TestClient.Raw(b1), TestClient.Raw(b2));
         Assert.Equal(1, await api.WithDbAsync(db => db.AuditEvents.CountAsync(e => e.SubjectReference == reference && e.Type == "request.transition" && e.ToState == "submitted")));
 
         var (sp, locked) = await c.PatchAsync($"/api/my/requests/{reference}", new { step = "finance", applicantFullName = "اسم آخر" });
@@ -199,7 +199,7 @@ public sealed class RequestTests(ApiFixture api)
         var (sw, _) = await intruder.PostAsync($"/api/my/requests/{reference}/withdraw", new { reason = "x" });
         Assert.Equal(HttpStatusCode.NotFound, sw);
         var (_, list) = await intruder.GetAsync("/api/my/requests");
-        Assert.DoesNotContain(reference, list!.ToJsonString());
+        Assert.DoesNotContain(reference, TestClient.Raw(list));
 
         Assert.True(await api.WithDbAsync(db => db.AuditEvents.AnyAsync(e => e.SubjectReference == reference && e.Type == "request.access_blocked" && e.Blocked)));
         var (_, still) = await owner.GetAsync($"/api/my/requests/{reference}");
@@ -238,7 +238,7 @@ public sealed class RequestTests(ApiFixture api)
         Assert.Equal(first, TestClient.Str(draft!["duplicate"], "reference"));
         var (s, refused) = await c.PostAsync($"/api/my/requests/{dup}/submit", new { acknowledgeDuplicate = false });
         Assert.Equal(HttpStatusCode.UnprocessableEntity, s);
-        Assert.Contains(first, refused!.ToJsonString());
+        Assert.Contains(first, TestClient.Raw(refused));
         Assert.Equal(HttpStatusCode.OK, (await c.PostAsync($"/api/my/requests/{dup}/submit", new { acknowledgeDuplicate = true })).Status);
 
         var (_, list) = await c.GetAsync("/api/my/requests");
@@ -274,7 +274,7 @@ public sealed class RequestTests(ApiFixture api)
             return await db.SaveChangesAsync();
         });
         var (_, detail) = await c.GetAsync($"/api/my/requests/{reference}");
-        var json = detail!.ToJsonString();
+        var json = TestClient.Raw(detail);
         Assert.DoesNotContain("سرية", json);
         Assert.DoesNotContain("assignedCoordinator", json, StringComparison.OrdinalIgnoreCase);
     }

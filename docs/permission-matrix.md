@@ -67,7 +67,28 @@ within platform minima). Enforcement is server-side on every endpoint (`RequireP
 | الامتثال (منصة) | Platform | platform.ops, complaints, privacy, defaults, audit | metadata |
 | مدقق (منصة) | Platform | platform.ops, audit, temp_access_approve | audit trail |
 | المالك / المدين | — (owner session) | owner endpoints only | exactly one case; no internal notes, other parties or lender-only documents |
-| الفرد (حساب ذاتي التسجيل) | — (individual session, ADR 0001) | `/api/individual/*` and own-account auth endpoints only (`RequireIndividual`); no organization permissions | own account; own requests from Phase 1A step 5; no tenant data (empty `DataOrganizationIds`) |
+| الفرد (حساب ذاتي التسجيل) | — (individual session, ADR 0001) | `/api/individual/*` and own-account auth endpoints only (`RequireIndividual`); no organization permissions | own account; own requests (`/api/my/requests`, `IApplicantOwned` filter): drafts, consent, documents, messages, responses; never team-only documents, internal notes, coordination details or internal timers; no tenant data (empty `DataOrganizationIds`) |
+
+## «فريق رهون» (operator tenant, ADR 0001 §4.2 — Phase 1A step 6)
+
+| Permission | منسق حالات (team_coordinator) | مراجِع العروض (team_verifier) | قائد الفريق (team_lead) |
+|---|---|---|---|
+| request.view_assigned | ✓ (assigned to them, or unassigned) | ✓ (offers awaiting verification, step 7) | ✓ |
+| request.view_all | — | — | ✓ |
+| request.assign | — | — | ✓ |
+| request.review (pick up, identity check, internal notes, not eligible) | ✓ | — | ✓ |
+| request.request_info | ✓ | — | ✓ |
+| request.coordinate (coordination log; ◐ only with the individual's active consent) | ◐ | — | ◐ |
+| request.message | ✓ | — | ✓ |
+| request.offer_record | ✓ | — | ✓ |
+| request.offer_verify (◐ verifier ≠ recorder, MFA) | — | ◐ | ◐ |
+| request.response_relay | ✓ | — | ✓ |
+| request.close | ✓ | — | ✓ |
+| request.objection_handle | ✓ | — | ✓ |
+
+Data scope: operator membership (tenant filter) + assignment check (`RequestAccess`); drafts are never visible to the team; a
+refused open of a request assigned to someone else is audited. Lender staff, providers, agents and platform admins get 403 on
+`/api/team/*` (the platform temp-access grant is not extended to the operator tenant yet — Phase 1C).
 
 > **Direction change (2026-09-25):** the individual becomes a first-class, self-registered user who owns requests
 > before any case (B13 «الصلاحيات حسب المرحلة»): nothing is visible to any lender before submission; during review only

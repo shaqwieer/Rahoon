@@ -24,6 +24,7 @@ const PROTECTED = [
   "/provider",
   "/agent",
   "/platform",
+  "/team",
   "/select-context",
 ];
 

@@ -278,6 +278,16 @@ const ar = {
   consent: {
     title: "موافقة جديدة",
   },
+
+  messages: {
+    title: "الرسائل",
+    open: "الرسائل مع فريق رهون",
+    empty: "لا رسائل بعد. يمكنك مراسلة فريق رهون بشأن طلبك هنا.",
+    team: "فريق رهون",
+    you: "أنت",
+    write: "رسالتك",
+    send: "إرسال",
+  },
 };
 
 export type RequestCopy = typeof ar;
@@ -534,6 +544,16 @@ const en: RequestCopy = {
 
   consent: {
     title: "New consent",
+  },
+
+  messages: {
+    title: "Messages",
+    open: "Messages with the Rahoon team",
+    empty: "No messages yet. You can write to the Rahoon team about your request here.",
+    team: "Rahoon team",
+    you: "You",
+    write: "Your message",
+    send: "Send",
   },
 };
 

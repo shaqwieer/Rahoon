@@ -26,20 +26,33 @@ public sealed class RequestAccess(RahoonDbContext db, RequestContext rc, AuditLo
         throw new NotFoundException();
     }
 
-    /// <summary>Team access: operator membership (tenant filter) + assignment, unless the member may view all.</summary>
+    /// <summary>
+    /// Team access: operator membership (tenant filter) + assignment, unless the member may view all. Drafts are never
+    /// visible to the team — nothing is shared before the individual submits.
+    /// </summary>
     public async Task<Request> ForTeamAsync(string reference, bool track = true)
     {
         if (!rc.IsOperator) throw new ForbiddenException();
         var q = db.Requests.Include(r => r.Institution).AsQueryable();
         if (!track) q = q.AsNoTracking();
-        var r = await q.FirstOrDefaultAsync(x => x.Reference == reference) ?? throw new NotFoundException();
-        if (!CanSee(r)) throw new ForbiddenException("هذا الطلب غير مسند إليك.");
+        var r = await q.FirstOrDefaultAsync(x => x.Reference == reference && x.Status != RequestStatus.Draft) ?? throw new NotFoundException();
+        if (!await CanSeeAsync(r))
+        {
+            await audit.RecordBlockedAsync(RequestWorkflow.Entry(r, "request.access_blocked", "محاولة فتح طلب غير مسند", detail: "الطلب غير مسند للعضو.", blocked: true));
+            throw new ForbiddenException("هذا الطلب غير مسند إليك.");
+        }
         return r;
     }
 
-    public bool CanSee(Request r) =>
-        rc.Has(P.RequestViewAll) || r.AssignedCoordinatorId == rc.UserId
-        || (rc.Has(P.RequestOfferVerify) && r.Status == RequestStatus.LenderCoordination);
+    /// <summary>Lead: all. Coordinator: assigned to them, or not yet assigned. Verifier: offers awaiting their verification (step 7).</summary>
+    public async Task<bool> CanSeeAsync(Request r)
+    {
+        if (rc.Has(P.RequestViewAll) || r.AssignedCoordinatorId == rc.UserId) return true;
+        if (r.AssignedCoordinatorId is null && rc.Has(P.RequestReview)) return true;
+        return rc.Has(P.RequestOfferVerify) && await VerifierMaySeeAsync(r);
+    }
+
+    private Task<bool> VerifierMaySeeAsync(Request r) => Task.FromResult(false);
 
     /// <summary>An individual tried to change someone else's request: record it (own transaction), answer 404.</summary>
     private async Task AuditForeignWriteAsync(string reference)

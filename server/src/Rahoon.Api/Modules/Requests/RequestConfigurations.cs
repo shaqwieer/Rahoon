@@ -94,3 +94,29 @@ internal sealed class RequestUpdateConfig : IEntityTypeConfiguration<RequestUpda
         b.Property(x => x.AuthorLabel).HasMaxLength(200);
     }
 }
+
+internal sealed class CoordinationEntryConfig : IEntityTypeConfiguration<CoordinationEntry>
+{
+    public void Configure(EntityTypeBuilder<CoordinationEntry> b)
+    {
+        b.ToTable("coordination_entries", "requests");
+        b.HasOne<Request>().WithMany().HasForeignKey(x => x.RequestId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(x => new { x.RequestId, x.OccurredAt });
+        b.Property(x => x.Kind).HasMaxLength(30);
+        b.Property(x => x.Channel).HasMaxLength(20);
+        b.Property(x => x.Counterpart).HasMaxLength(200);
+        b.Property(x => x.RecordedByLabel).HasMaxLength(200);
+    }
+}
+
+internal sealed class RequestMessageConfig : IEntityTypeConfiguration<RequestMessage>
+{
+    public void Configure(EntityTypeBuilder<RequestMessage> b)
+    {
+        b.ToTable("request_messages", "requests");
+        b.HasOne<Request>().WithMany().HasForeignKey(x => x.RequestId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(x => new { x.RequestId, x.At });
+        b.Property(x => x.AuthorKind).HasMaxLength(20);
+        b.Property(x => x.AuthorLabel).HasMaxLength(200);
+    }
+}
