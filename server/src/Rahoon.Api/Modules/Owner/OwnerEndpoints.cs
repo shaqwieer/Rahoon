@@ -417,7 +417,7 @@ public static class OwnerEndpoints
         await audit.RecordAsync(new AuditEntry("owner.counteroffer", $"اقتراح بديل من المالك على العرض v{v.VersionNo}", c.Id, c.Reference, Detail: "طلب: " + string.Join(" · ", terms), OrganizationId: c.OrganizationId));
         await db.SaveChangesAsync();
         await tx.CommitAsync();
-        return Results.Ok(new { responseDueOn = c.StageDueOn, message = "وصل اقتراحك. سيُراجَع، وقد يُقبل أو يُعدَّل، وسنرد خلال 3 أيام عمل." });
+        return Results.Ok(new { responseDueOn = c.StageDueOn, message = "وصل اقتراحك. سيُراجَع، وقد يُقبل أو يُعدَّل، ونبلغك بالرد هنا." });
     }
 
     private static async Task<IResult> ConsentOtp(Guid id, RahoonDbContext db, RequestContext rc, OtpService otp, PiiProtector pii, IClock clock)
@@ -647,7 +647,7 @@ public static class OwnerEndpoints
         var c = await OwnCaseAsync(db, rc, track: true);
         var complaint = await complaints.SubmitAsync(c, req.Type == "objection" ? ComplaintType.Objection : ComplaintType.Complaint,
             req.Subject ?? (req.Type == "objection" ? "اعتراض على مبلغ أو قرار" : "شكوى على طريقة التعامل"), req.Body.Trim(), "owner_portal", rc.UserId, rc.UserName);
-        return Results.Ok(new { reference = complaint.Reference, dueOn = complaint.DueOn, message = $"وصلت شكواك برقم {complaint.Reference}. ستراجعها جهة مستقلة عن فريق حالتك، ونرد عليك كتابياً خلال 5 أيام عمل." });
+        return Results.Ok(new { reference = complaint.Reference, dueOn = complaint.DueOn, message = $"وصلت شكواك برقم {complaint.Reference}. ستراجعها جهة مستقلة عن فريق حالتك، ونبلغك بالرد كتابياً." });
     }
 
     private static async Task<IResult> ClosureView(RahoonDbContext db, RequestContext rc)

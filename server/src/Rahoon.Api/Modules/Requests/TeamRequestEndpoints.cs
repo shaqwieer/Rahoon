@@ -152,6 +152,11 @@ public static class TeamRequestEndpoints
         var offers = await db.RequestOffers.AsNoTracking().Where(o => o.RequestId == r.Id).OrderByDescending(o => o.VersionNo).ToListAsync();
         var responses = await db.RequestResponses.AsNoTracking().Where(x => x.RequestId == r.Id).OrderByDescending(x => x.At)
             .Select(x => new { x.Id, x.Reference, x.Kind, x.Text, x.At, x.RelayedAt, x.ConsentTextSnapshot, x.OtpVerifiedAt }).ToListAsync();
+        var concerns = await db.RequestConcerns.AsNoTracking().Where(c => c.RequestId == r.Id).OrderByDescending(c => c.CreatedAt)
+            .Select(c => new { c.Id, c.Reference, c.Kind, c.Subject, c.Text, status = c.Status == RequestConcernStatus.Open ? "open" : "answered", c.Outcome, c.ResponseText, c.RespondedByLabel, c.RespondedAt, c.CreatedAt })
+            .ToListAsync();
+        var referrals = await db.SpecialistReferrals.AsNoTracking().Where(x => x.RequestId == r.Id).OrderByDescending(x => x.At)
+            .Select(x => new { x.SpecialistType, x.SpecialistName, x.Note, x.ApplicantText, x.RecordedByLabel, x.At }).ToListAsync();
 
         var actions = new List<object>();
         foreach (var t in RequestWorkflow.Transitions.Where(t => t.Permission.Length > 0 && t.From.Contains(r.Status) && rc.Has(t.Permission)))
@@ -219,6 +224,8 @@ public static class TeamRequestEndpoints
             actions,
             offers = offers.Select(o => OfferEndpoints.TeamOffer(o, rc.UserId)),
             responses,
+            concerns,
+            referrals,
             timer = Timer(r, clock.UtcNow),
             can = new
             {
@@ -232,6 +239,8 @@ public static class TeamRequestEndpoints
                 verify = rc.Has(P.RequestOfferVerify) && offers.Any(o => o.Status == RequestOfferStatus.PendingVerification && o.RecordedByUserId != rc.UserId),
                 relay = rc.Has(P.RequestResponseRelay) && r.Status == RequestStatus.ResponseRecorded && responses.Count > 0 && responses[0].RelayedAt == null,
                 close = rc.Has(P.RequestClose) && r.Status is RequestStatus.ResponseRecorded or RequestStatus.LenderCoordination,
+                refer = rc.Has(P.RequestReview) && (r.AssignedCoordinatorId == rc.UserId || rc.Has(P.RequestViewAll)),
+                answerConcerns = rc.Has(P.RequestObjectionHandle),
             },
         };
     }

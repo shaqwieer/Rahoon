@@ -97,6 +97,8 @@ public sealed class RequestWorkflow(RahoonDbContext db, RequestContext rc, ICloc
             RequiresReason: true, Guards: ["response_relayed"]),
         new("not_eligible", [RequestStatus.TeamReview], RequestStatus.NotEligible, "غير مناسب للخدمة", P.RequestReview, RequiresReason: true),
         new("withdraw", RequestStatusInfo.NonTerminal, RequestStatus.Withdrawn, "سحب الطلب", ""),
+        // Step 8 (P4): an upheld objection to «غير مناسب للخدمة» reopens the study. Not in the original ADR table (amendment).
+        new("reopen", [RequestStatus.NotEligible], RequestStatus.TeamReview, "إعادة فتح الدراسة بعد اعتراض", P.RequestObjectionHandle, RequiresReason: true),
     ];
 
     public static RequestTransitionDef Def(string key) => Transitions.First(t => t.Key == key);

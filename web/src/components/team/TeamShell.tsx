@@ -25,6 +25,7 @@ type TeamNavKey = "requests" | "verify" | "objections";
 const TEAM_NAV: Array<{ key: TeamNavKey; href: string; icon: string; permission: string }> = [
   { key: "requests", href: "/team", icon: "inbox", permission: "request.view_assigned" },
   { key: "verify", href: "/team/verify", icon: "fact_check", permission: "request.offer_verify" },
+  { key: "objections", href: "/team/objections", icon: "support_agent", permission: "request.objection_handle" },
 ];
 
 function useNav(user: ShellUser) {

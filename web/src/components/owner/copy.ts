@@ -122,7 +122,7 @@ const ar = {
     requestNew: "طلب عرض جديد",
     requestNewBody: (v: number) => `انتهت صلاحية العرض (v${v}). أرغب في عرض جديد.`,
     requestNewSent: "وصل طلبك إلى مسؤول حالتك، وسيرد عليك خلال يوم عمل.",
-    countered: "وصل اقتراحك البديل على هذا العرض، وسنرد عليك خلال 3 أيام عمل.",
+    countered: "وصل اقتراحك البديل على هذا العرض، ونبلغك بالرد هنا.",
     declined: "سجّلنا ردك على هذا العرض. سيتواصل معك مسؤول حالتك للبحث عن خيار آخر.",
     accepted: "وافقت على هذا العرض.",
     viewAgreement: "تفاصيل الاتفاق",
@@ -132,7 +132,7 @@ const ar = {
 
   counter: {
     title: "اقتراح بديل",
-    intro: "أخبرنا بما يناسبك. سيُراجَع اقتراحك، وقد يُقبل أو يُعدَّل، وسنرد خلال 3 أيام عمل.",
+    intro: "أخبرنا بما يناسبك. سيُراجَع اقتراحك، وقد يُقبل أو يُعدَّل، ونبلغك بالرد هنا.",
     legend: "ما الذي تود تغييره؟",
     day: "يوم القسط في الشهر",
     start: "موعد أول قسط",
@@ -277,7 +277,7 @@ const ar = {
 
   complaint: {
     title: "شكوى أو اعتراض",
-    intro: "تراجع شكواك جهة مستقلة عن فريق حالتك، ونرد عليك كتابياً خلال 5 أيام عمل.",
+    intro: "تراجع شكواك جهة مستقلة عن فريق حالتك، ونبلغك بالرد كتابياً.",
     legend: "نوع الطلب",
     complaint: "شكوى على طريقة التعامل",
     objection: "اعتراض على مبلغ أو قرار",
@@ -449,7 +449,7 @@ const en: OwnerCopy = {
     requestNew: "Ask for a new offer",
     requestNewBody: (v: number) => `انتهت صلاحية العرض (v${v}). أرغب في عرض جديد.`,
     requestNewSent: "Your request reached your case manager, who will reply within one business day.",
-    countered: "Your suggested change reached us. We'll reply within 3 business days.",
+    countered: "Your suggested change reached us. We'll tell you the answer here.",
     declined: "We recorded your answer. Your case manager will contact you to find another option.",
     accepted: "You accepted this offer.",
     viewAgreement: "Agreement details",
@@ -459,7 +459,7 @@ const en: OwnerCopy = {
 
   counter: {
     title: "Suggest a change",
-    intro: "Tell us what works for you. Your suggestion will be reviewed and may be accepted or adjusted; we'll reply within 3 business days.",
+    intro: "Tell us what works for you. Your suggestion will be reviewed and may be accepted or adjusted; we'll tell you the answer here.",
     legend: "What would you like to change?",
     day: "Day of the month",
     start: "First installment date",
@@ -603,7 +603,7 @@ const en: OwnerCopy = {
 
   complaint: {
     title: "Complaint or objection",
-    intro: "A reviewer independent of your case team handles your complaint, and we reply in writing within 5 business days.",
+    intro: "A reviewer independent of your case team handles your complaint, and we'll reply in writing.",
     legend: "Type of request",
     complaint: "A complaint about how I was treated",
     objection: "An objection to an amount or decision",

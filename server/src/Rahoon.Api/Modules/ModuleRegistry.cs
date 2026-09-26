@@ -52,6 +52,7 @@ public static class ModuleRegistry
         MyRequestEndpoints.Map(app);
         TeamRequestEndpoints.Map(app);
         OfferEndpoints.Map(app);
+        ConcernEndpoints.Map(app);
         CaseListEndpoints.Map(app);
         CaseDraftEndpoints.Map(app);
         CaseEndpoints.Map(app);

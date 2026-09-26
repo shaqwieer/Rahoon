@@ -152,3 +152,32 @@ internal sealed class RequestResponseConfig : IEntityTypeConfiguration<RequestRe
         b.Property(x => x.Kind).HasMaxLength(20);
     }
 }
+
+internal sealed class RequestConcernConfig : IEntityTypeConfiguration<RequestConcern>
+{
+    public void Configure(EntityTypeBuilder<RequestConcern> b)
+    {
+        b.ToTable("request_concerns", "requests");
+        b.HasOne<Request>().WithMany().HasForeignKey(x => x.RequestId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(x => x.Reference).IsUnique();
+        b.HasIndex(x => new { x.OrganizationId, x.Status });
+        b.Property(x => x.Reference).HasMaxLength(20);
+        b.Property(x => x.Kind).HasMaxLength(20);
+        b.Property(x => x.Subject).HasMaxLength(20);
+        b.Property(x => x.Outcome).HasMaxLength(20);
+        b.Property(x => x.RespondedByLabel).HasMaxLength(200);
+    }
+}
+
+internal sealed class SpecialistReferralConfig : IEntityTypeConfiguration<SpecialistReferral>
+{
+    public void Configure(EntityTypeBuilder<SpecialistReferral> b)
+    {
+        b.ToTable("specialist_referrals", "requests");
+        b.HasOne<Request>().WithMany().HasForeignKey(x => x.RequestId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(x => x.RequestId);
+        b.Property(x => x.SpecialistType).HasMaxLength(30);
+        b.Property(x => x.SpecialistName).HasMaxLength(200);
+        b.Property(x => x.RecordedByLabel).HasMaxLength(200);
+    }
+}

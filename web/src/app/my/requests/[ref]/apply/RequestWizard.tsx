@@ -400,6 +400,9 @@ export function DocRow({ reference, kind, label, doc, allowName }: { reference: 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
+  // After submission every file is an addition (no replacement), so remember what was just added.
+  const [added, setAdded] = useState<string | null>(null);
+  const shownName = doc?.fileName ?? added;
   const onFile = async (file: File | undefined) => {
     if (!file) return;
     setBusy(true);
@@ -410,6 +413,7 @@ export function DocRow({ reference, kind, label, doc, allowName }: { reference: 
     if (allowName && name.trim()) form.append("name", name.trim());
     try {
       await apiUpload(`/my/requests/${encodeURIComponent(reference)}/documents`, form);
+      setAdded(file.name);
       router.refresh();
     } catch (e) {
       setError(isApiError(e) && e.code === "file_infected" ? D.scanFailed : requestErrorText(e, c));
@@ -421,12 +425,12 @@ export function DocRow({ reference, kind, label, doc, allowName }: { reference: 
   return (
     <div className="flex flex-col gap-2 rounded-[12px] border border-line bg-white px-3.5 py-3">
       <div className="flex items-center gap-3">
-        <Icon name={doc ? "task" : "description"} size={24} className={doc ? "text-ok" : "text-muted"} />
+        <Icon name={shownName ? "task" : "description"} size={24} className={shownName ? "text-ok" : "text-muted"} />
         <div className="flex min-w-0 flex-1 flex-col">
           <strong className="text-15">{label}</strong>
-          {doc?.fileName ? (
+          {shownName ? (
             <span className="truncate text-13 text-muted">
-              {D.uploaded} · <bdi dir="ltr">{doc.fileName}</bdi>
+              {D.uploaded} · <bdi dir="ltr">{shownName}</bdi>
             </span>
           ) : null}
         </div>

@@ -271,3 +271,77 @@ test("an offer recorded from the lender letter is verified by another member, th
   await expect(page.getByText("نقلنا ردك إلى جهتك الممولة").first()).toBeVisible();
   await shot(page, "18-closed");
 });
+
+test("the individual declines an offer with no action against them, objects to an amount and gets the team's answer", async ({ page, browser }) => {
+  await registerIndividual(page);
+  const reference = await submitRequest(page);
+  const base = `/team/requests/${reference}`;
+
+  // Setup to a published offer through the API.
+  const nayef = await teamPage(browser, "n.alyami@team.rahoon.example");
+  for (const [path, body] of [
+    [`${base}/pick-up`, { nextStep: null }],
+    [`${base}/identity-check`, { note: "طابقنا الهوية." }],
+    [`${base}/coordination`, { channel: "phone", occurredAt: new Date(Date.now() - 600_000).toISOString(), counterpart: "إدارة التحصيل", summary: "عرضنا الطلب.", visibleToApplicant: false }],
+    [`${base}/start-coordination`, { nextStep: null }],
+  ] as const)
+    expect((await api(nayef, "POST", path, body)).status, path).toBe(200);
+  const csrf = (await nayef.context().cookies()).find((c) => c.name === "rahoon_csrf")?.value ?? "";
+  const up = await nayef.request.post(`/api${base}/documents`, {
+    headers: { Origin: "http://localhost:3000", "X-CSRF-Token": csrf, "Idempotency-Key": crypto.randomUUID() },
+    multipart: { file: { name: "letter.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4\n% l\n") }, kind: "lender_letter", visibleToApplicant: "false" },
+  });
+  const letterId = (await up.json()).documentId as string;
+  const rec = await api<{ id: string }>(nayef, "POST", `${base}/offers`, {
+    path: "p2", settlementAmount: 380000, paymentConditions: "دفعة واحدة", effectText: "تُسدَّد المديونية بمبلغ 380,000 ريال ويُفك الرهن بعد السداد.",
+    lenderReference: "AF-2026-8801", lenderLetterDate: new Date(Date.now() - 86_400_000).toISOString().slice(0, 10), letterDocumentId: letterId, shareLetter: true,
+  });
+  expect(rec.status).toBe(200);
+  await nayef.context().close();
+  const abeer = await teamPage(browser, "a.alqahtani@team.rahoon.example");
+  const start = await api<{ sandboxCode: string }>(abeer, "POST", "/auth/step-up/start");
+  expect((await api(abeer, "POST", "/auth/step-up/verify", { code: start.json.sandboxCode })).status).toBe(200);
+  expect((await api(abeer, "POST", `${base}/offers/${rec.json.id}/verify`, { decision: "publish", checklist: ["amounts_match_letter", "terms_match_letter", "reference_and_date_match", "effect_text_accurate"] })).status).toBe(200);
+  await abeer.context().close();
+
+  // «لا يناسبني»: no reason required, neutral wording, no legal-action promise.
+  await page.goto(`/my/requests/${reference}/offer`);
+  await expect(page.getByText("تسوية المديونية").first()).toBeVisible();
+  await page.getByRole("link", { name: "لا يناسبني" }).click();
+  await page.waitForURL(/respond\?kind=decline/);
+  await expect(page.getByText("سننقل ردك لجهتك الممولة ونبلغك بالخطوة التالية.")).toBeVisible();
+  await expect(page.locator("main")).not.toContainText("إجراء قانوني");
+  await shot(page, "19-decline");
+  await page.getByRole("button", { name: "إبلاغ الجهة أن العرض لا يناسبني" }).click();
+  await page.waitForURL(`**/my/requests/${reference}`);
+  await expect(page.getByText("العرض لا يناسبك").first()).toBeVisible();
+
+  // P4 objection to an amount.
+  await page.getByRole("link", { name: "اعتراض على بيانات أو مبالغ أو قرار" }).click();
+  await page.waitForURL(/concern\?kind=objection/);
+  await page.getByRole("radio", { name: "مبلغ غير صحيح" }).check();
+  await page.getByLabel("اشرح ما حدث وما تراه صحيحاً").fill("القسط الصحيح 4,500 ريال وليس 4,200.");
+  await shot(page, "20-objection");
+  await page.getByRole("button", { name: "إرسال" }).click();
+  await expect(page.getByRole("heading", { name: "وصل ما أرسلته" })).toBeVisible();
+  await expect(page.locator("main")).not.toContainText(/خلال \d|أيام عمل/);
+  const objectionRef = (await page.locator("main p").first().innerText()).match(/OBJ-\d{4}-\d{5}/)![0];
+
+  const lama = await teamPage(browser, "l.alharbi@team.rahoon.example");
+  await lama.goto("/team/objections");
+  const card = lama.locator("li").filter({ hasText: objectionRef });
+  await expect(card).toBeVisible();
+  await tshot(lama, "09-objections");
+  await card.getByRole("button", { name: "الرد…" }).click();
+  const dlg = lama.getByRole("dialog", { name: "الرد على العميل" });
+  await dlg.getByLabel("نتيجة المراجعة").selectOption("upheld");
+  await dlg.getByLabel("الرد كما سيراه العميل").fill("صححنا القسط في ملف طلبك إلى 4,500 ريال.");
+  await dlg.getByRole("button", { name: "إرسال" }).click();
+  await expect(lama.getByText(objectionRef)).toHaveCount(0);
+  await lama.context().close();
+
+  await page.goto(`/my/requests/${reference}`);
+  await expect(page.getByText("صححنا القسط في ملف طلبك إلى 4,500 ريال.").first()).toBeVisible();
+  await expect(page.getByText("تم الرد · قُبل")).toBeVisible();
+  await shot(page, "21-objection-answered");
+});

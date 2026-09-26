@@ -74,7 +74,16 @@ export function RequestTracker({ detail }: { detail: MyRequestDetail }) {
 
           {detail.status === "not_eligible" && detail.notEligibleReason ? (
             <Alert tone="warn" title={T.reason}>
-              {detail.notEligibleReason}
+              <p className="m-0">{detail.notEligibleReason}</p>
+              <p className="m-0 mt-1 text-14">{c.doingNow.not_eligible}</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Button href={`/my/requests/${ref}/concern?kind=objection&subject=decision`} size="lg" variant="secondary">
+                  {c.concern.objectDecision}
+                </Button>
+                <Button href="/my" size="lg" variant="text">
+                  {c.concern.newForOtherFinance}
+                </Button>
+              </div>
             </Alert>
           ) : null}
           {detail.status === "closed" && detail.outcome?.summary ? (
@@ -143,6 +152,45 @@ export function RequestTracker({ detail }: { detail: MyRequestDetail }) {
             </Link>
             <p className="m-0 text-13 leading-5 text-muted">{c.paths.footnote}</p>
           </Panel>
+
+          {detail.concerns.length > 0 || detail.referrals.length > 0 ? (
+            <Panel aria-labelledby="concerns-h">
+              <h2 id="concerns-h" className="m-0 text-18 font-bold">
+                {c.concern.listTitle}
+              </h2>
+              <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
+                {detail.concerns.map((x) => (
+                  <li key={x.reference} className="flex flex-col gap-1 rounded-md border border-line p-3">
+                    <span className="flex flex-wrap items-center gap-2 text-13">
+                      <strong className="text-15">{x.kind === "complaint" ? c.concern.titleComplaint : c.concern.titleObjection}</strong>
+                      <bdi dir="ltr" className="font-mono text-muted">
+                        {x.reference}
+                      </bdi>
+                      <span className={cn("font-semibold", x.status === "open" ? "text-warn" : "text-ok")}>
+                        {x.status === "open" ? c.concern.open : `${c.concern.answered}${x.outcome ? ` · ${c.concern.outcomes[x.outcome] ?? x.outcome}` : ""}`}
+                      </span>
+                    </span>
+                    <p className="m-0 text-14 leading-6 whitespace-pre-line text-charcoal">{x.text}</p>
+                    {x.responseText ? (
+                      <div className="rounded-sm bg-info-bg p-2 text-14 leading-6">
+                        <strong>{c.concern.response}: </strong>
+                        {x.responseText}
+                      </div>
+                    ) : null}
+                  </li>
+                ))}
+                {detail.referrals.map((x, i) => (
+                  <li key={`ref-${i}`} className="flex flex-col gap-1 rounded-md border border-line p-3">
+                    <strong className="text-15">{c.concern.referralsTitle}</strong>
+                    <p className="m-0 text-14 leading-6">{x.applicantText}</p>
+                    <span className="text-13 text-muted">
+                      {x.specialistName} · <bdi dir="ltr">{formatDate(x.at, fmt)}</bdi>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Panel>
+          ) : null}
 
           {/* Timeline — past events only. */}
           <Panel aria-labelledby="timeline-h">
@@ -220,6 +268,22 @@ export function RequestTracker({ detail }: { detail: MyRequestDetail }) {
             />
           </details>
 
+          {detail.canRaiseConcern ? (
+            <Panel aria-labelledby="obstacles-h">
+              <h2 id="obstacles-h" className="m-0 text-17 font-bold">
+                {c.concern.panelTitle}
+              </h2>
+              <p className="m-0 text-14 leading-6 text-charcoal">{c.concern.panelBody}</p>
+              <Link href={`/my/requests/${ref}/concern?kind=objection`} className="inline-flex min-h-11 items-center gap-1.5 text-15 font-semibold">
+                <Icon name="report" size={20} />
+                {c.concern.objection}
+              </Link>
+              <Link href={`/my/requests/${ref}/concern?kind=complaint`} className="inline-flex min-h-11 items-center gap-1.5 text-15 font-semibold">
+                <Icon name="support_agent" size={20} />
+                {c.concern.complaint}
+              </Link>
+            </Panel>
+          ) : null}
           {detail.status !== "draft" ? (
             <Button href={`/my/requests/${ref}/messages`} variant="secondary" size="xl" fullWidth icon="chat">
               {c.messages.open}

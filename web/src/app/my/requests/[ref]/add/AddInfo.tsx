@@ -53,9 +53,18 @@ export function AddInfo({ detail }: { detail: MyRequestDetail }) {
       </form>
       <section aria-labelledby="add-doc-h" className="flex flex-col gap-2">
         <h2 id="add-doc-h" className="m-0 text-18 font-bold">
-          {A.docsTitle}
+          {c.concern.docsTitle}
         </h2>
-        <DocRow reference={detail.reference} kind="other" label={c.wizard.docs.kinds.other} doc={null} allowName />
+        <ul className="m-0 flex list-none flex-col gap-2 p-0">
+          {(["salary_statement", "bank_statement", "title_deed", "financing_contract"] as const).map((k) => (
+            <li key={k}>
+              <DocRow reference={detail.reference} kind={k} label={c.wizard.docs.kinds[k]} doc={null} />
+            </li>
+          ))}
+          <li>
+            <DocRow reference={detail.reference} kind="other" label={c.wizard.docs.kinds.other} doc={null} allowName />
+          </li>
+        </ul>
       </section>
     </IndividualFrame>
   );

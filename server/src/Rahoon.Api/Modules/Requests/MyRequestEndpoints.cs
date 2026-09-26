@@ -164,6 +164,11 @@ public static class MyRequestEndpoints
         var letter = offer is null ? null : await db.RequestDocuments.AsNoTracking().FirstOrDefaultAsync(d => d.Id == offer.LetterDocumentId);
         var responses = await db.RequestResponses.AsNoTracking().Where(x => x.RequestId == r.Id).OrderByDescending(x => x.At)
             .Select(x => new { x.Reference, x.Kind, x.Text, x.At, relayed = x.RelayedAt != null, x.ConsentTextSnapshot }).ToListAsync();
+        var concerns = await db.RequestConcerns.AsNoTracking().Where(c => c.RequestId == r.Id).OrderByDescending(c => c.CreatedAt)
+            .Select(c => new { c.Reference, c.Kind, c.Subject, c.Text, status = c.Status == RequestConcernStatus.Open ? "open" : "answered", c.Outcome, c.ResponseText, c.RespondedAt, c.CreatedAt })
+            .ToListAsync();
+        var referrals = await db.SpecialistReferrals.AsNoTracking().Where(x => x.RequestId == r.Id).OrderByDescending(x => x.At)
+            .Select(x => new { x.SpecialistType, x.SpecialistName, x.ApplicantText, x.At }).ToListAsync();
         var recipient = string.IsNullOrWhiteSpace(r.InstitutionDisplayName) ? "جهتك الممولة" : r.InstitutionDisplayName;
         return new
         {
@@ -204,6 +209,9 @@ public static class MyRequestEndpoints
             canRespond = r.Status == RequestStatus.OfferAvailable,
             offerAcceptText = offer is null ? null : new { version = OfferEndpoints.AcceptTextVersion, text = OfferEndpoints.AcceptText(r.InstitutionDisplayName, offer.LenderReference) },
             responses,
+            concerns,
+            referrals,
+            canRaiseConcern = r.Status != RequestStatus.Draft,
             canEdit = r.Status == RequestStatus.Draft,
             canAddInfo = r.Status is not RequestStatus.Draft && !RequestStatusInfo.IsTerminal(r.Status),
             canWithdraw = !RequestStatusInfo.IsTerminal(r.Status),

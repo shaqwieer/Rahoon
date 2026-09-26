@@ -110,6 +110,8 @@ public sealed class RahoonDbContext(DbContextOptions<RahoonDbContext> options, R
     public DbSet<RequestMessage> RequestMessages => Set<RequestMessage>();
     public DbSet<RequestOffer> RequestOffers => Set<RequestOffer>();
     public DbSet<RequestResponse> RequestResponses => Set<RequestResponse>();
+    public DbSet<RequestConcern> RequestConcerns => Set<RequestConcern>();
+    public DbSet<SpecialistReferral> SpecialistReferrals => Set<SpecialistReferral>();
 
     // Providers, imports, administration, audit
     public DbSet<ProviderAssignment> Assignments => Set<ProviderAssignment>();

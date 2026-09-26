@@ -18,13 +18,14 @@ import { cn } from "@/lib/cn";
 import { formatDate, formatDateTime, formatMoney } from "@/lib/format";
 import { useI18n } from "@/lib/i18n/client";
 import { TeamStatusTag, TimerTag } from "../../TeamQueueView";
+import { ConcernPanels, ReferralDialog, ReopenDialog } from "./ConcernPanels";
 import { CloseDialog, OfferPanels } from "./OfferPanels";
 import { useTeamAction } from "./teamActions";
 
-type DialogKey = null | "assign" | "identity" | "info" | "coord" | "notEligible" | "update" | "upload" | "close";
+type DialogKey = null | "assign" | "identity" | "info" | "coord" | "notEligible" | "update" | "upload" | "close" | "refer" | "reopen";
 
 /** Workflow actions offered on this screen (publish_offer happens in the verification panel). */
-const HANDLED = new Set(["pick_up", "request_info", "start_coordination", "not_eligible", "continue_coordination", "close"]);
+const HANDLED = new Set(["pick_up", "request_info", "start_coordination", "not_eligible", "continue_coordination", "close", "reopen"]);
 
 export function TeamRequestView({ detail }: { detail: TeamRequestDetail }) {
   const c = useTeamCopy();
@@ -48,6 +49,7 @@ export function TeamRequestView({ detail }: { detail: TeamRequestDetail }) {
     else if (key === "start_coordination") void act.run("POST", `${base}/start-coordination`, { nextStep: null });
     else if (key === "continue_coordination") void act.run("POST", `${base}/continue`, { nextStep: null });
     else if (key === "close") setDialog("close");
+    else if (key === "reopen") setDialog("reopen");
   };
 
   const card = (title: ReactNode, children: ReactNode, extra?: ReactNode, id?: string) => (
@@ -203,6 +205,7 @@ export function TeamRequestView({ detail }: { detail: TeamRequestDetail }) {
           )}
 
           <OfferPanels detail={detail} base={base} />
+          <ConcernPanels detail={detail} onRefer={() => setDialog("refer")} />
 
           <section className="flex flex-col gap-3 rounded-lg border border-line bg-white p-5">
             <Tabs
@@ -325,6 +328,8 @@ export function TeamRequestView({ detail }: { detail: TeamRequestDetail }) {
       <UpdateDrawer open={dialog === "update"} onClose={() => setDialog(null)} base={base} />
       <UploadDialog open={dialog === "upload"} onClose={() => setDialog(null)} base={base} />
       <CloseDialog open={dialog === "close"} onClose={() => setDialog(null)} base={base} />
+      <ReferralDialog open={dialog === "refer"} onClose={() => setDialog(null)} base={base} />
+      <ReopenDialog open={dialog === "reopen"} onClose={() => setDialog(null)} base={base} />
     </div>
   );
 }

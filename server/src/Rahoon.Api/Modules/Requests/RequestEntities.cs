@@ -273,3 +273,47 @@ public sealed class RequestResponse : OrgEntity, IApplicantOwned
     public Guid? RelayedByUserId { get; set; }
     public Guid? RelayEntryId { get; set; }
 }
+
+public enum RequestConcernStatus { Open, Answered }
+
+/// <summary>
+/// P4 «معالجة العقبات»: an objection to data, amounts or a decision, or a complaint about the service, raised by the
+/// individual on one request and answered by the Rahoon team (T08). Kept separate from the lender-tenant complaints
+/// module (ADR 0001 amendment, step 8). No response time is promised (Q6/Q12); internal timers only.
+/// </summary>
+public sealed class RequestConcern : OrgEntity, IApplicantOwned
+{
+    public Guid RequestId { get; set; }
+    public Guid ApplicantUserId { get; set; }
+    public required string Reference { get; set; }
+    /// <summary>objection | complaint</summary>
+    public required string Kind { get; set; }
+    /// <summary>data | amount | decision | service | other</summary>
+    public required string Subject { get; set; }
+    public required string Text { get; set; }
+    public RequestConcernStatus Status { get; set; } = RequestConcernStatus.Open;
+    /// <summary>upheld | not_upheld | clarified</summary>
+    public string? Outcome { get; set; }
+    public string? ResponseText { get; set; }
+    public Guid? RespondedByUserId { get; set; }
+    public string? RespondedByLabel { get; set; }
+    public DateTimeOffset? RespondedAt { get; set; }
+}
+
+/// <summary>
+/// Manual record of referring the individual to a suitable specialist (V9: who the specialists are and how referral
+/// is made is still to be verified). Rahoon records the referral; it does not act on the individual's behalf (V1).
+/// </summary>
+public sealed class SpecialistReferral : OrgEntity, IApplicantOwned
+{
+    public Guid RequestId { get; set; }
+    public Guid ApplicantUserId { get; set; }
+    /// <summary>legal | financial_counselling | social_support | other</summary>
+    public required string SpecialistType { get; set; }
+    public required string SpecialistName { get; set; }
+    public string? Note { get; set; }
+    public required string ApplicantText { get; set; }
+    public Guid RecordedByUserId { get; set; }
+    public required string RecordedByLabel { get; set; }
+    public DateTimeOffset At { get; set; }
+}

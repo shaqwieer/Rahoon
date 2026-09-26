@@ -131,7 +131,8 @@
 | D07 | Offer | ✅ successor 2026-09-26: `/my/requests/[ref]/offer` — «عرض من جهتك الممولة», note that the team recorded it from the lender letter (date) and another member verified it, link to the letter, typed terms per path, «أثره عليك», any validity shown «بحسب خطاب الجهة», «ليس نهائياً حتى توافق عليه»; Playwright ✓ at 390 | Rework + **Needs design (D-5)** «بانتظار اعتماد التصميم» | The case-bound D07 (with «صالح حتى» and the Q12 commitments) stays for the lender mode only |
 | D08, D09 | Counter / ask; accept with OTP consent | ✅ successors 2026-09-26: `/offer/respond` (question or suggestion, text required; «لا يناسبني» with an optional reason and the neutral text «سننقل ردك لجهتك الممولة ونبلغك بالخطوة التالية.») and `/offer/accept` (consent text `offer-acceptance-draft-2026-09` + SMS code); Playwright ✓ accept path | OK (relay by the team) | A-05: a consent record, not a signature. B6's «لن يُتخذ أي إجراء قانوني بسبب رفضك» is **not** used (Q12/V4) |
 | D12 successor | Request messages with the Rahoon team | ✅ 2026-09-26: `/my/requests/[ref]/messages`; team internal notes never projected (API test) | New | |
-| D11–D13 | Help, messages, complaints | 🟩 same; smoke ✓; complaint filed as owner and opened by the reviewer | OK, one rework | **Found:** the complaint confirmation promises «نرد عليك كتابياً خلال 5 أيام عمل» (from `ComplaintService`; Q6/Q12) → fix in step 8 |
+| D11–D13 | Help, messages, complaints | 🟩 same; smoke ✓; complaint filed as owner and opened by the reviewer | OK — rework **done in step 8** | The owner-portal promises «خلال 5 أيام عمل» (complaint) and «خلال 3 أيام عمل» (counter-offer) were removed from `OwnerEndpoints` and `owner/copy.ts` (Q6/Q12); internal due dates stay internal |
+| — | **P4 obstacles on requests** (objection, complaint, document completion, specialist referral) | ✅ 2026-09-26: `/my/requests/[ref]/concern`, tracker panel «هل هناك خطأ أو مشكلة؟», D-6 options on «غير مناسب»; team T08 `/team/objections` + panels on the review page; Playwright ✓ | New | See step 8 |
 | L01–L26 lender workspace | — | ✅ (Phase 0 screens) / 🟩 (L06–L12, L18–L24, L04, C01 merged 2026-09-25; browser smoke ✓ at 1440) | **Secondary** (lender-on-platform mode) | Kept; not in the MVP demo. **Found:** seed case RH-2026-003870 is «تسوية معتمدة / نشطة» but has no agreement or schedule (Phase 1A-2 seed fix) |
 | L13–L17 solution builder / approvals | — | ✅ | **Secondary** (X11) | The mechanics may be reused for offer recording and verification in the team workspace (decided in step 2) |
 
@@ -243,9 +244,11 @@
 - [x] Tests: `OfferTests` (8). Backend **160/160**. E2E: the offer part of `owner-journey.spec.ts` ✓ (record via UI, verify with step-up via UI, accept with code at 390, relay and close). The shared `completeStepUp` e2e helper had an ambiguous locator (group and input share a name) and was fixed.
 - Migration `OffersAndResponses`.
 
-### Step 8: Obstacles, minimum (P4) ⬜
-- [ ] Objection to incorrect data or amounts on a request, with a Rahoon team response.
-- [ ] Document completion; complaint (reuse the complaints backend); manual record of a referral to a specialist (V9).
+### Step 8: Obstacles, minimum (P4) ✅ 2026-09-26
+- [x] Objection to incorrect data, amounts or a decision on a request, with a Rahoon team response (T08 `/team/objections`, outcome upheld / not upheld / clarified, answer shown on the tracker and timeline). References `OBJ-YYYY-NNNNN`. An upheld objection to «غير مناسب للخدمة» lets the team **reopen** the study (new transition, ADR amendment); D-6 options on the not-suitable screen: object to the decision, or start a request for another finance.
+- [x] Document completion: after submission the individual adds any document kind from «إضافة معلومة أو مستند» (each file is an addition); the team asks for documents through T03 items. Complaint on the service: `CMP-YYYY-NNNNN`, answered by a member **other than** the request's coordinator (enforced, refusal audited). **Decision (ADR amendment):** request objections and complaints are a separate `RequestConcern`, not the lender-tenant complaints module. Manual record of a referral to a specialist (V9) with an internal note and a text for the individual.
+- [x] The complaint confirmation promise from step 3 is fixed (and the 3-business-day counter-offer promise with it); new confirmations say «ونبلغك بالرد في صفحة طلبك» with no time.
+- [x] Tests: `ConcernTests` (5). Backend **165/165**. E2E: decline + objection part of `owner-journey.spec.ts` ✓. Migration `ConcernsAndReferrals`.
 
 ### Step 9: E2E, responsive QA, wrap-up ⬜
 - [ ] `web/e2e/owner-journey.spec.ts`: primary path, completion request, decline response, objection.
@@ -287,6 +290,9 @@
 - **Step 7, verifier access:** a verifier sees a request only while an offer awaits their check; after publishing or returning they are sent back to «بحاجة إلى تحقق». Their decision stays in the audit trail and on the offer.
 - **Step 7, wording to approve (V4):** the acceptance text `offer-acceptance-draft-2026-09` («…وليست توقيعاً ملزماً… تنفيذ العرض يتم مع جهتي الممولة») and the decline text are provisional.
 - **Step 7, shared E2E database:** the journey tests share the demo database; a failed run can leave items (e.g. an offer pending verification) that later runs see. Assertions check each test's own reference; reseed with `E2E_RESET=1` for a clean run.
+- **Step 8, design pending:** T08 and the P4 screens are built with the existing design system, «بانتظار اعتماد التصميم».
+- **Step 8, dev setting:** `Auth:RateLimitPerMinute` is 120 in `appsettings.Development.json` so the local E2E suite can sign several users in within a minute; the default elsewhere stays 20/min per IP.
+- **Step 8, V9 still open:** who the specialists are and how a referral is made; today it is a record only.
 - **Tenancy change:** the MVP request isn't owned by a lender tenant. Covered by the ADR in step 2; today's lender-tenant case model is kept for later.
 - **Earlier design conflicts, still relevant:**
   - OR02 allows 5 OTP attempts; staff policy is 3.

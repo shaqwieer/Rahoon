@@ -73,6 +73,9 @@ export interface MyRequestDetail {
   canEdit: boolean;
   canAddInfo: boolean;
   canWithdraw: boolean;
+  concerns: Array<{ reference: string; kind: "objection" | "complaint"; subject: string; text: string; status: "open" | "answered"; outcome: string | null; responseText: string | null; respondedAt: string | null; createdAt: string }>;
+  referrals: Array<{ specialistType: string; specialistName: string; applicantText: string; at: string }>;
+  canRaiseConcern: boolean;
   offer: MyOffer | null;
   canRespond: boolean;
   offerAcceptText: { version: string; text: string } | null;

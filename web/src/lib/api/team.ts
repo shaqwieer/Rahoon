@@ -133,7 +133,11 @@ export interface TeamRequestDetail {
     verify: boolean;
     relay: boolean;
     close: boolean;
+    refer: boolean;
+    answerConcerns: boolean;
   };
+  concerns: Array<{ id: string; reference: string; kind: string; subject: string; text: string; status: "open" | "answered"; outcome: string | null; responseText: string | null; respondedByLabel: string | null; respondedAt: string | null; createdAt: string }>;
+  referrals: Array<{ specialistType: string; specialistName: string; note: string | null; applicantText: string; recordedByLabel: string; at: string }>;
   offers: TeamOffer[];
   responses: Array<{ id: string; reference: string; kind: string; text: string | null; at: string; relayedAt: string | null; consentTextSnapshot: string | null; otpVerifiedAt: string | null }>;
 }
@@ -176,4 +180,26 @@ export interface VerifyItem {
   recordedByLabel: string;
   recordedAt: string;
   recordedByMe: boolean;
+}
+
+export interface ConcernQueue {
+  tab: "open" | "answered";
+  items: Array<{
+    id: string;
+    reference: string;
+    kind: string;
+    subject: string;
+    text: string;
+    createdAt: string;
+    outcome: string | null;
+    responseText: string | null;
+    respondedByLabel: string | null;
+    respondedAt: string | null;
+    requestReference: string;
+    requestStatus: string;
+    institutionName: string;
+    applicantName: string;
+    mayAnswer: boolean;
+    daysOpen: number;
+  }>;
 }
