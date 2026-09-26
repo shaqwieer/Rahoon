@@ -89,12 +89,12 @@ public sealed class RequestWorkflow(RahoonDbContext db, RequestContext rc, ICloc
         new("start_coordination", [RequestStatus.TeamReview], RequestStatus.LenderCoordination, "بدء التنسيق مع الجهة", P.RequestCoordinate,
             Guards: ["consent_active", "identity_checked", "coordination_recorded"]),
         new("publish_offer", [RequestStatus.LenderCoordination], RequestStatus.OfferAvailable, "نشر العرض للعميل", P.RequestOfferVerify,
-            RequiresStepUp: true),
+            RequiresStepUp: true, Guards: ["consent_active"]),
         new("respond", [RequestStatus.OfferAvailable], RequestStatus.ResponseRecorded, "رد العميل على العرض", ""),
         new("continue_coordination", [RequestStatus.ResponseRecorded], RequestStatus.LenderCoordination, "متابعة التنسيق", P.RequestResponseRelay,
             Guards: ["consent_active", "response_relayed"]),
         new("close", [RequestStatus.ResponseRecorded, RequestStatus.LenderCoordination], RequestStatus.Closed, "إغلاق الطلب", P.RequestClose,
-            RequiresReason: true),
+            RequiresReason: true, Guards: ["response_relayed"]),
         new("not_eligible", [RequestStatus.TeamReview], RequestStatus.NotEligible, "غير مناسب للخدمة", P.RequestReview, RequiresReason: true),
         new("withdraw", RequestStatusInfo.NonTerminal, RequestStatus.Withdrawn, "سحب الطلب", ""),
     ];
@@ -214,8 +214,10 @@ public sealed class RequestWorkflow(RahoonDbContext db, RequestContext rc, ICloc
                 return any ? null : "لا يوجد قيد في سجل التنسيق مع الجهة بعد.";
             }
             case "response_relayed":
-                // Wired with offers and responses (Phase 1A step 7).
-                return null;
+            {
+                var last = await db.RequestResponses.Where(x => x.RequestId == r.Id).OrderByDescending(x => x.At).FirstOrDefaultAsync();
+                return last is null || last.RelayedAt is not null ? null : "لم يُسجَّل نقل رد العميل إلى الجهة بعد.";
+            }
             default:
                 throw new InvalidOperationException($"Unknown guard {guard}");
         }

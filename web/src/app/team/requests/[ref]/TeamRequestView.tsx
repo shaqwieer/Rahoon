@@ -18,12 +18,13 @@ import { cn } from "@/lib/cn";
 import { formatDate, formatDateTime, formatMoney } from "@/lib/format";
 import { useI18n } from "@/lib/i18n/client";
 import { TeamStatusTag, TimerTag } from "../../TeamQueueView";
+import { CloseDialog, OfferPanels } from "./OfferPanels";
 import { useTeamAction } from "./teamActions";
 
-type DialogKey = null | "assign" | "identity" | "info" | "coord" | "notEligible" | "update" | "upload";
+type DialogKey = null | "assign" | "identity" | "info" | "coord" | "notEligible" | "update" | "upload" | "close";
 
-/** Actions this screen performs in step 6; offer/response actions arrive with step 7. */
-const HANDLED = new Set(["pick_up", "request_info", "start_coordination", "not_eligible"]);
+/** Workflow actions offered on this screen (publish_offer happens in the verification panel). */
+const HANDLED = new Set(["pick_up", "request_info", "start_coordination", "not_eligible", "continue_coordination", "close"]);
 
 export function TeamRequestView({ detail }: { detail: TeamRequestDetail }) {
   const c = useTeamCopy();
@@ -45,6 +46,8 @@ export function TeamRequestView({ detail }: { detail: TeamRequestDetail }) {
     else if (key === "not_eligible") setDialog("notEligible");
     else if (key === "pick_up") void act.run("POST", `${base}/pick-up`, { nextStep: null });
     else if (key === "start_coordination") void act.run("POST", `${base}/start-coordination`, { nextStep: null });
+    else if (key === "continue_coordination") void act.run("POST", `${base}/continue`, { nextStep: null });
+    else if (key === "close") setDialog("close");
   };
 
   const card = (title: ReactNode, children: ReactNode, extra?: ReactNode, id?: string) => (
@@ -199,6 +202,8 @@ export function TeamRequestView({ detail }: { detail: TeamRequestDetail }) {
             "docs-h",
           )}
 
+          <OfferPanels detail={detail} base={base} />
+
           <section className="flex flex-col gap-3 rounded-lg border border-line bg-white p-5">
             <Tabs
               label={R.tabsLabel}
@@ -319,6 +324,7 @@ export function TeamRequestView({ detail }: { detail: TeamRequestDetail }) {
       <NotEligibleDialog open={dialog === "notEligible"} onClose={() => setDialog(null)} base={base} />
       <UpdateDrawer open={dialog === "update"} onClose={() => setDialog(null)} base={base} />
       <UploadDialog open={dialog === "upload"} onClose={() => setDialog(null)} base={base} />
+      <CloseDialog open={dialog === "close"} onClose={() => setDialog(null)} base={base} />
     </div>
   );
 }

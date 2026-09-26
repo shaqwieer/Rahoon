@@ -49,6 +49,6 @@ export async function completeStepUp(page: Page) {
   const dialog = page.getByRole("dialog", { name: "تأكيد برمز التحقق" });
   await dialog.getByRole("button", { name: "إرسال الرمز" }).click();
   const code = (await dialog.locator("bdi.font-mono").first().innerText()).trim();
-  await dialog.getByLabel("رمز من 6 أرقام").fill(code);
+  await dialog.getByRole("textbox", { name: "رمز من 6 أرقام" }).fill(code);
   await dialog.getByRole("button", { name: "تحقق" }).click();
 }

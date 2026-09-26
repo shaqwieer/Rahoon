@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
-import { apiLogin } from "./helpers";
+import { api, apiLogin, completeStepUp } from "./helpers";
 
 /**
  * Primary MVP journey (individual-first, Phase 1A): on a 390px phone the individual registers, fills the request
@@ -173,4 +173,101 @@ test("the Rahoon team reviews, asks for information, checks identity and starts 
   await expect(page.locator("main")).not.toContainText("داخلي");
   await shot(page, "14-coordinating");
   await team.context().close();
+});
+
+test("an offer recorded from the lender letter is verified by another member, then the individual accepts with a code", async ({ page, browser }) => {
+  await registerIndividual(page);
+  const reference = await submitRequest(page);
+
+  // Setup through the API (the UI for these steps is covered by the previous test).
+  const nayef = await teamPage(browser, "n.alyami@team.rahoon.example");
+  const base = `/team/requests/${reference}`;
+  expect((await api(nayef, "POST", `${base}/pick-up`, { nextStep: null })).status).toBe(200);
+  expect((await api(nayef, "POST", `${base}/identity-check`, { note: "طابقنا الهوية." })).status).toBe(200);
+  expect(
+    (await api(nayef, "POST", `${base}/coordination`, { channel: "phone", occurredAt: new Date(Date.now() - 600_000).toISOString(), counterpart: "إدارة التحصيل", summary: "عرضنا الطلب.", visibleToApplicant: false })).status,
+  ).toBe(200);
+  expect((await api(nayef, "POST", `${base}/start-coordination`, { nextStep: null })).status).toBe(200);
+
+  // T05 through the UI: upload the lender letter, record the offer.
+  await nayef.goto(base);
+  await nayef.getByRole("button", { name: "رفع مستند…" }).click();
+  const upload = nayef.getByRole("dialog", { name: "رفع مستند للطلب" });
+  await upload.locator("input[type=file]").setInputFiles({ name: "letter.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4\n% letter\n") });
+  await upload.getByRole("button", { name: "حفظ" }).click();
+  await expect(nayef.getByText("خطاب الجهة الممولة").first()).toBeVisible();
+  await nayef.getByRole("button", { name: "تسجيل عرض الجهة…" }).click();
+  const rec = nayef.getByRole("dialog", { name: "تسجيل عرض الجهة من خطابها" });
+  await rec.getByLabel("خطاب الجهة (إلزامي)").selectOption({ index: 1 });
+  await rec.getByLabel("القسط الجديد").fill("3100");
+  await rec.getByLabel("المدة بالأشهر").fill("240");
+  await rec.getByLabel(/أثره عليك/).fill("ينخفض قسطك الشهري إلى 3,100 ريال وتطول مدة التمويل.");
+  await rec.getByLabel("مرجع خطاب الجهة").fill("AF-2026-7781");
+  await rec.getByLabel("تاريخ خطاب الجهة").fill(new Date(Date.now() - 86_400_000).toISOString().slice(0, 10));
+  await rec.getByLabel(/الصلاحية كما في الخطاب/).fill("صالح 30 يوماً من تاريخ الخطاب");
+  await tshot(nayef, "05-record-offer");
+  await rec.getByRole("button", { name: "إرسال للتحقق" }).click();
+  await expect(nayef.getByText("بانتظار التحقق").first()).toBeVisible();
+  await nayef.context().close();
+
+  // T06 through the UI: another member verifies with the checklist and an MFA step-up.
+  const abeer = await teamPage(browser, "a.alqahtani@team.rahoon.example");
+  await abeer.goto("/team/verify");
+  await expect(abeer.getByText(reference)).toBeVisible();
+  await tshot(abeer, "06-verify-queue");
+  await abeer.goto(base);
+  for (const label of ["المبالغ مطابقة للخطاب", "المسار والشروط مطابقة للخطاب", "المرجع والتاريخ مطابقان", "«أثره عليك» دقيق وغير مضلل"])
+    await abeer.getByRole("checkbox", { name: label }).check();
+  await tshot(abeer, "07-verify-panel");
+  await abeer.getByRole("button", { name: "اعتماد ونشر للعميل" }).click();
+  await completeStepUp(abeer);
+  await abeer.waitForURL("**/team/verify");
+  await expect(abeer.getByRole("heading", { name: "بحاجة إلى تحقق" })).toBeVisible();
+  await expect(abeer.getByText(reference)).toHaveCount(0);
+  await abeer.context().close();
+
+  // D07 + D09: the individual reviews and accepts with an SMS code.
+  await page.goto(`/my/requests/${reference}`);
+  await expect(page.getByText("وصل عرض من جهتك الممولة").first()).toBeVisible();
+  await page.getByRole("link", { name: "مراجعة العرض" }).click();
+  await page.waitForURL(/\/offer$/);
+  await expect(page.getByText("عرض من جهتك الممولة", { exact: true })).toBeVisible();
+  await expect(page.getByText("وتحقق منه عضو آخر من الفريق")).toBeVisible();
+  await expect(page.getByText("صالح 30 يوماً من تاريخ الخطاب")).toBeVisible();
+  await expect(page.getByText("بحسب خطاب الجهة")).toBeVisible();
+  await shot(page, "15-offer");
+  await page.getByRole("link", { name: "أوافق" }).click();
+  await page.waitForURL(/\/offer\/accept$/);
+  await page.getByRole("checkbox", { name: "قرأت النص أعلاه وأوافق عليه" }).check();
+  await page.getByRole("button", { name: "إرسال رمز التأكيد" }).click();
+  await page.locator("input[inputmode='numeric']").first().fill(await sandboxCode(page));
+  await shot(page, "16-accept");
+  await page.getByRole("button", { name: "تأكيد الموافقة" }).click();
+  await page.waitForURL(`**/my/requests/${reference}`);
+  await expect(page.getByText("سجّلنا ردك").first()).toBeVisible();
+  await expect(page.getByText("وافقت على العرض")).toBeVisible();
+  await shot(page, "17-response-recorded");
+
+  // T07: relay, then close with the outcome shown to the individual.
+  const back = await teamPage(browser, "n.alyami@team.rahoon.example");
+  await back.goto(base);
+  await back.getByRole("button", { name: "تسجيل نقل الرد للجهة…" }).click();
+  const relay = back.getByRole("dialog", { name: "نقل رد العميل إلى الجهة الممولة" });
+  await relay.getByLabel("الطرف لدى الجهة").fill("إدارة التحصيل");
+  await relay.getByLabel("الملخص").fill("أرسلنا موافقة العميل بالبريد الرسمي.");
+  await relay.getByRole("button", { name: "حفظ" }).click();
+  await expect(back.getByText("نُقل للجهة")).toBeVisible();
+  await back.getByRole("button", { name: "إغلاق الطلب…" }).click();
+  const close = back.getByRole("dialog", { name: "إغلاق الطلب" });
+  await close.getByLabel("النتيجة", { exact: true }).selectOption("offer_accepted");
+  await close.getByLabel(/ملخص النتيجة/).fill("قبلت عرض جهتك ونقلنا موافقتك إليها. تنفيذ الاتفاق يتم مع جهتك الممولة.");
+  await close.getByRole("button", { name: "إغلاق الطلب" }).click();
+  await expect(back.getByText("مغلق").first()).toBeVisible();
+  await tshot(back, "08-closed");
+  await back.context().close();
+
+  await page.reload();
+  await expect(page.getByText("قبلت العرض").first()).toBeVisible();
+  await expect(page.getByText("نقلنا ردك إلى جهتك الممولة").first()).toBeVisible();
+  await shot(page, "18-closed");
 });

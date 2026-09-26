@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { likelyPaths, type PathKey } from "@/components/individual/copy";
+import { likelyPaths } from "@/components/individual/copy";
 import { IndividualFrame, Panel, RequestStatusChip, useRequestCopy, useRequestSubmit, WaitingOnLine } from "@/components/individual/ui";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
@@ -16,7 +16,6 @@ import { cn } from "@/lib/cn";
 import { formatDate, formatDateTime, formatMoney } from "@/lib/format";
 import { useI18n } from "@/lib/i18n/client";
 
-const ALL_PATHS: PathKey[] = ["p1", "p2", "p3", "p4"];
 
 /**
  * D-3 request home. Every state shows the status label, «ننتظر» and the next step — never a date in the future (Q6).
@@ -61,6 +60,11 @@ export function RequestTracker({ detail }: { detail: MyRequestDetail }) {
               {T.nextStep}
             </h2>
             <p className="m-0 text-19 leading-8 font-semibold">{nextText}</p>
+            {detail.status === "offer_available" && detail.offer ? (
+              <Button href={`/my/requests/${ref}/offer`} size="xl" className="self-start" icon="local_offer">
+                {c.offer.review}
+              </Button>
+            ) : null}
             {detail.status === "info_requested" && detail.canAddInfo ? (
               <Button href={detail.consent ? `/my/requests/${ref}/add` : `/my/requests/${ref}/consent`} size="xl" className="self-start">
                 {detail.consent ? T.addInfo : T.renewConsent}
@@ -74,9 +78,34 @@ export function RequestTracker({ detail }: { detail: MyRequestDetail }) {
             </Alert>
           ) : null}
           {detail.status === "closed" && detail.outcome?.summary ? (
-            <Alert tone="info" title={T.outcome}>
+            <Alert tone="info" title={(detail.outcome.code && c.outcome[detail.outcome.code]) || T.outcome}>
               {detail.outcome.summary}
             </Alert>
+          ) : null}
+
+          {detail.responses.length > 0 ? (
+            <Panel aria-labelledby="responses-h">
+              <h2 id="responses-h" className="m-0 text-18 font-bold">
+                {c.offer.yourResponses}
+              </h2>
+              <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
+                {detail.responses.map((x) => (
+                  <li key={x.reference} className="flex flex-col gap-1 rounded-md border border-line p-3">
+                    <strong className="text-15">{c.offer.responseKinds[x.kind]}</strong>
+                    {x.text ? <p className="m-0 text-15 leading-6 whitespace-pre-line">{x.text}</p> : null}
+                    <span className="text-13 text-muted">
+                      <bdi dir="ltr">{x.reference}</bdi> · <bdi dir="ltr">{formatDateTime(x.at, fmt)}</bdi>
+                    </span>
+                    <span className={cn("text-13 font-semibold", x.relayed ? "text-ok" : "text-muted")}>{x.relayed ? c.offer.relayed : c.offer.notRelayed}</span>
+                  </li>
+                ))}
+              </ul>
+              {detail.offer ? (
+                <Link href={`/my/requests/${ref}/offer`} className="inline-flex min-h-11 items-center self-start text-15 font-semibold">
+                  {c.offer.title}
+                </Link>
+              ) : null}
+            </Panel>
           ) : null}
 
           {/* «ماذا ستفعل رهون لك» */}
@@ -108,20 +137,10 @@ export function RequestTracker({ detail }: { detail: MyRequestDetail }) {
                 </ul>
               </>
             ) : null}
-            <details className="group">
-              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 text-15 font-semibold [&::-webkit-details-marker]:hidden">
-                {T.allPaths}
-                <Icon name="expand_more" size={22} className="transition-transform group-open:rotate-180" />
-              </summary>
-              <ul className="m-0 mt-1 flex list-none flex-col gap-2 p-0">
-                {ALL_PATHS.map((p) => (
-                  <li key={p} className="flex flex-col gap-0.5">
-                    <strong className="text-15">{c.paths[p].title}</strong>
-                    <span className="text-14 leading-6 text-charcoal">{c.paths[p].body}</span>
-                  </li>
-                ))}
-              </ul>
-            </details>
+            <Link href={`/my/requests/${ref}/paths`} className="inline-flex min-h-11 items-center gap-1 self-start text-15 font-semibold">
+              {T.allPaths}
+              <Icon name="chevron_left" size={20} mirror />
+            </Link>
             <p className="m-0 text-13 leading-5 text-muted">{c.paths.footnote}</p>
           </Panel>
 

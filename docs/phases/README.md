@@ -14,7 +14,7 @@
 | # | Phase file | Goal | Status |
 |---|---|---|---|
 | 0 | [phase-0-foundation.md](phase-0-foundation.md) | Platform skeleton + five anchor screens | ✅ Done (direction review added) |
-| 1A | [phase-1a-mvp-settlement.md](phase-1a-mvp-settlement.md) | **MVP**: the individual enters Rahoon → submits a request → knows what Rahoon will do for them → follows the case study and communication (the Rahoon team leads and coordinates with the lender manually) → sees an approved offer if one exists → responds | ▶ **CURRENT** (steps 0–6 done; next: step 7, approved offer and the individual's response) |
+| 1A | [phase-1a-mvp-settlement.md](phase-1a-mvp-settlement.md) | **MVP**: the individual enters Rahoon → submits a request → knows what Rahoon will do for them → follows the case study and communication (the Rahoon team leads and coordinates with the lender manually) → sees an approved offer if one exists → responds | ▶ **CURRENT** (steps 0–7 done; next: step 8, obstacles (P4)) |
 | 1A-2 | [phase-1a2-settlement-execution.md](phase-1a2-settlement-execution.md) | After the response: tracking of the agreement, installments, payment confirmations and closure (Rahoon never holds funds). Not in the first MVP (Q13) | ⬜ Next |
 | 1B | [phase-1b-shared-and-lender-ops.md](phase-1b-shared-and-lender-ops.md) | Account/search/help, institutions' secondary page (S02), rework of secondary entry routes (D01/L03/L04), complaints and objections, referral package (L25) | ⬜ |
 | 1C | [phase-1c-providers-admin-platform.md](phase-1c-providers-admin-platform.md) | Provider portal, institution admin, platform admin (B7) | ⬜ (backend on master) |

@@ -73,4 +73,29 @@ export interface MyRequestDetail {
   canEdit: boolean;
   canAddInfo: boolean;
   canWithdraw: boolean;
+  offer: MyOffer | null;
+  canRespond: boolean;
+  offerAcceptText: { version: string; text: string } | null;
+  responses: Array<{ reference: string; kind: "accept" | "decline" | "question" | "counter"; text: string | null; at: string; relayed: boolean; consentTextSnapshot: string | null }>;
+}
+
+export interface MyOffer {
+  id: string;
+  versionNo: number;
+  path: "p1" | "p2" | "p3";
+  newInstallment: number | null;
+  termMonths: number | null;
+  startText: string | null;
+  settlementAmount: number | null;
+  paymentConditions: string | null;
+  remainingText: string | null;
+  saleTerms: string | null;
+  conditions: string | null;
+  effectText: string;
+  lenderReference: string;
+  lenderLetterDate: string;
+  lenderValidityText: string | null;
+  publishedAt: string | null;
+  letterVersionId: string | null;
+  verified: boolean;
 }

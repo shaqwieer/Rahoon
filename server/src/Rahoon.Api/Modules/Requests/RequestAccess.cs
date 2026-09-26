@@ -52,7 +52,8 @@ public sealed class RequestAccess(RahoonDbContext db, RequestContext rc, AuditLo
         return rc.Has(P.RequestOfferVerify) && await VerifierMaySeeAsync(r);
     }
 
-    private Task<bool> VerifierMaySeeAsync(Request r) => Task.FromResult(false);
+    private Task<bool> VerifierMaySeeAsync(Request r) =>
+        db.RequestOffers.AnyAsync(o => o.RequestId == r.Id && o.Status == RequestOfferStatus.PendingVerification);
 
     /// <summary>An individual tried to change someone else's request: record it (own transaction), answer 404.</summary>
     private async Task AuditForeignWriteAsync(string reference)

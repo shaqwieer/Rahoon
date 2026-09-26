@@ -120,3 +120,35 @@ internal sealed class RequestMessageConfig : IEntityTypeConfiguration<RequestMes
         b.Property(x => x.AuthorLabel).HasMaxLength(200);
     }
 }
+
+internal sealed class RequestOfferConfig : IEntityTypeConfiguration<RequestOffer>
+{
+    public void Configure(EntityTypeBuilder<RequestOffer> b)
+    {
+        b.ToTable("request_offers", "requests", t =>
+            t.HasCheckConstraint("ck_request_offers_verifier_not_recorder", "verified_by_user_id IS NULL OR verified_by_user_id <> recorded_by_user_id"));
+        b.HasOne<Request>().WithMany().HasForeignKey(x => x.RequestId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<RequestDocument>().WithMany().HasForeignKey(x => x.LetterDocumentId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(x => new { x.RequestId, x.VersionNo }).IsUnique();
+        b.Property(x => x.Path).HasMaxLength(4);
+        b.Property(x => x.LenderReference).HasMaxLength(100);
+        b.Property(x => x.LenderValidityText).HasMaxLength(300);
+        b.Property(x => x.RecordedByLabel).HasMaxLength(200);
+        b.Property(x => x.VerifiedByLabel).HasMaxLength(200);
+        b.Property(x => x.StartText).HasMaxLength(300);
+    }
+}
+
+internal sealed class RequestResponseConfig : IEntityTypeConfiguration<RequestResponse>
+{
+    public void Configure(EntityTypeBuilder<RequestResponse> b)
+    {
+        b.ToTable("request_responses", "requests");
+        b.HasOne<Request>().WithMany().HasForeignKey(x => x.RequestId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<RequestOffer>().WithMany().HasForeignKey(x => x.OfferId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(x => x.Reference).IsUnique();
+        b.HasIndex(x => x.RequestId);
+        b.Property(x => x.Reference).HasMaxLength(30);
+        b.Property(x => x.Kind).HasMaxLength(20);
+    }
+}

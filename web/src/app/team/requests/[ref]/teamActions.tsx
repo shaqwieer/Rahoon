@@ -14,7 +14,7 @@ export function useTeamAction() {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  async function run(method: HttpMethod, path: string, body?: unknown, form?: FormData): Promise<boolean> {
+  async function run(method: HttpMethod, path: string, body?: unknown, form?: FormData, then?: string): Promise<boolean> {
     setBusy(true);
     setError(null);
     setFieldErrors({});
@@ -22,7 +22,8 @@ export function useTeamAction() {
       if (form) await apiUpload(path, form, { idempotencyKey: key.get() });
       else await apiSend(method, path, body, { idempotencyKey: key.get() });
       key.reset();
-      router.refresh();
+      if (then) router.push(then);
+      else router.refresh();
       return true;
     } catch (e) {
       if (!(isApiError(e) && (e.code === "network" || e.code === "offline"))) key.reset();

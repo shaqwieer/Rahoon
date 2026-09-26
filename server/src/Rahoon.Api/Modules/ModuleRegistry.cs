@@ -51,6 +51,7 @@ public static class ModuleRegistry
         IndividualAuthEndpoints.Map(app);
         MyRequestEndpoints.Map(app);
         TeamRequestEndpoints.Map(app);
+        OfferEndpoints.Map(app);
         CaseListEndpoints.Map(app);
         CaseDraftEndpoints.Map(app);
         CaseEndpoints.Map(app);

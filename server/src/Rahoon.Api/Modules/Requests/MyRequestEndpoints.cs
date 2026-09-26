@@ -158,6 +158,12 @@ public static class MyRequestEndpoints
         var timeline = await db.RequestUpdates.AsNoTracking().Where(u => u.RequestId == r.Id && u.VisibleToApplicant)
             .OrderByDescending(u => u.At).Select(u => new { u.Kind, u.Title, u.Body, u.At, u.AuthorKind }).ToListAsync();
         var duplicate = await RequestWorkflow.FindDuplicateAsync(db, r);
+        // The current published offer, or (after a response) the one that was answered.
+        var offer = await db.RequestOffers.AsNoTracking().Where(o => o.RequestId == r.Id && (o.Status == RequestOfferStatus.Published || o.Status == RequestOfferStatus.Superseded) && o.PublishedAt != null)
+            .OrderByDescending(o => o.VersionNo).FirstOrDefaultAsync();
+        var letter = offer is null ? null : await db.RequestDocuments.AsNoTracking().FirstOrDefaultAsync(d => d.Id == offer.LetterDocumentId);
+        var responses = await db.RequestResponses.AsNoTracking().Where(x => x.RequestId == r.Id).OrderByDescending(x => x.At)
+            .Select(x => new { x.Reference, x.Kind, x.Text, x.At, relayed = x.RelayedAt != null, x.ConsentTextSnapshot }).ToListAsync();
         var recipient = string.IsNullOrWhiteSpace(r.InstitutionDisplayName) ? "جهتك الممولة" : r.InstitutionDisplayName;
         return new
         {
@@ -194,6 +200,10 @@ public static class MyRequestEndpoints
             missing = r.Status == RequestStatus.Draft ? RequestWorkflow.MissingFields(r) : [],
             outcome = r.Status is RequestStatus.Closed ? new { code = r.OutcomeCode, summary = r.OutcomeSummary } : null,
             notEligibleReason = r.Status == RequestStatus.NotEligible ? r.NotEligibleReason : null,
+            offer = OfferEndpoints.ApplicantOffer(offer, letter),
+            canRespond = r.Status == RequestStatus.OfferAvailable,
+            offerAcceptText = offer is null ? null : new { version = OfferEndpoints.AcceptTextVersion, text = OfferEndpoints.AcceptText(r.InstitutionDisplayName, offer.LenderReference) },
+            responses,
             canEdit = r.Status == RequestStatus.Draft,
             canAddInfo = r.Status is not RequestStatus.Draft && !RequestStatusInfo.IsTerminal(r.Status),
             canWithdraw = !RequestStatusInfo.IsTerminal(r.Status),

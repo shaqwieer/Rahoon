@@ -122,5 +122,58 @@ export interface TeamRequestDetail {
   outcome: { code: string | null; summary: string | null } | null;
   actions: TeamAction[];
   timer: TeamTimer;
-  can: { assign: boolean; take: boolean; identityCheck: boolean; coordinate: boolean; message: boolean; note: boolean };
+  can: {
+    assign: boolean;
+    take: boolean;
+    identityCheck: boolean;
+    coordinate: boolean;
+    message: boolean;
+    note: boolean;
+    recordOffer: boolean;
+    verify: boolean;
+    relay: boolean;
+    close: boolean;
+  };
+  offers: TeamOffer[];
+  responses: Array<{ id: string; reference: string; kind: string; text: string | null; at: string; relayedAt: string | null; consentTextSnapshot: string | null; otpVerifiedAt: string | null }>;
+}
+
+export interface TeamOffer {
+  id: string;
+  versionNo: number;
+  path: "p1" | "p2" | "p3";
+  status: "pendingverification" | "returned" | "published" | "superseded";
+  newInstallment: number | null;
+  termMonths: number | null;
+  startText: string | null;
+  settlementAmount: number | null;
+  paymentConditions: string | null;
+  remainingText: string | null;
+  saleTerms: string | null;
+  conditions: string | null;
+  effectText: string;
+  lenderReference: string;
+  lenderLetterDate: string;
+  lenderValidityText: string | null;
+  letterDocumentId: string;
+  shareLetterWithApplicant: boolean;
+  recordedByLabel: string;
+  recordedAt: string;
+  recordedByMe: boolean;
+  verifiedByLabel: string | null;
+  verifiedAt: string | null;
+  verificationChecklist: string[];
+  returnReason: string | null;
+  publishedAt: string | null;
+}
+
+export interface VerifyItem {
+  reference: string;
+  institutionName: string;
+  offerId: string;
+  versionNo: number;
+  path: string;
+  recordedByLabel: string;
+  recordedAt: string;
+  recordedByMe: boolean;
 }

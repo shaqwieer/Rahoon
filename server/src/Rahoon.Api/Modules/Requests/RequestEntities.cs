@@ -202,3 +202,74 @@ public sealed class RequestMessage : OrgEntity, IApplicantOwned
     public bool IsInternal { get; set; }
     public DateTimeOffset At { get; set; }
 }
+
+public enum RequestOfferStatus { PendingVerification, Returned, Published, Superseded }
+
+/// <summary>
+/// The lender's offer as received over the manual channel and recorded by the Rahoon team (T05, D-5). A second member
+/// verifies it against the lender's letter before the individual sees it (ASSUMPTION control; DB check verifier ≠
+/// recorder). Any validity is the lender's condition, shown «بحسب خطاب الجهة» — never a Rahoon deadline (Q6).
+/// </summary>
+public sealed class RequestOffer : OrgEntity, IApplicantOwned
+{
+    public Guid RequestId { get; set; }
+    public Guid ApplicantUserId { get; set; }
+    public int VersionNo { get; set; }
+    /// <summary>p1 keep the property · p2 settle the debt · p3 consensual sale</summary>
+    public required string Path { get; set; }
+    public RequestOfferStatus Status { get; set; } = RequestOfferStatus.PendingVerification;
+
+    // P1
+    public decimal? NewInstallment { get; set; }
+    public int? TermMonths { get; set; }
+    public string? StartText { get; set; }
+    // P2
+    public decimal? SettlementAmount { get; set; }
+    public string? PaymentConditions { get; set; }
+    public string? RemainingText { get; set; }
+    // P3
+    public string? SaleTerms { get; set; }
+    // all paths
+    public string? Conditions { get; set; }
+    /// <summary>«أثره عليك» — the plain-language effect on the individual.</summary>
+    public required string EffectText { get; set; }
+
+    public required string LenderReference { get; set; }
+    public DateOnly LenderLetterDate { get; set; }
+    /// <summary>Validity exactly as stated in the lender letter (optional), shown as the lender condition.</summary>
+    public string? LenderValidityText { get; set; }
+    public Guid LetterDocumentId { get; set; }
+    public bool ShareLetterWithApplicant { get; set; } = true;
+
+    public Guid RecordedByUserId { get; set; }
+    public required string RecordedByLabel { get; set; }
+    public DateTimeOffset RecordedAt { get; set; }
+    public Guid? VerifiedByUserId { get; set; }
+    public string? VerifiedByLabel { get; set; }
+    public DateTimeOffset? VerifiedAt { get; set; }
+    public List<string> VerificationChecklist { get; set; } = [];
+    public string? ReturnReason { get; set; }
+    public DateTimeOffset? PublishedAt { get; set; }
+}
+
+/// <summary>
+/// The individual answer to a published offer (D07–D09). Accept carries an SMS-confirmed consent record (A-05: a
+/// consent record, not a licensed signature). A decline triggers no action against the individual.
+/// </summary>
+public sealed class RequestResponse : OrgEntity, IApplicantOwned
+{
+    public Guid RequestId { get; set; }
+    public Guid ApplicantUserId { get; set; }
+    public Guid OfferId { get; set; }
+    public required string Reference { get; set; }
+    /// <summary>accept | decline | question | counter</summary>
+    public required string Kind { get; set; }
+    public string? Text { get; set; }
+    public string? ConsentTextSnapshot { get; set; }
+    public DateTimeOffset? OtpVerifiedAt { get; set; }
+    public string? IpMasked { get; set; }
+    public DateTimeOffset At { get; set; }
+    public DateTimeOffset? RelayedAt { get; set; }
+    public Guid? RelayedByUserId { get; set; }
+    public Guid? RelayEntryId { get; set; }
+}

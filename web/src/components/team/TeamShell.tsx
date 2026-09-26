@@ -24,6 +24,7 @@ export function useTeamCopy(): TeamCopy {
 type TeamNavKey = "requests" | "verify" | "objections";
 const TEAM_NAV: Array<{ key: TeamNavKey; href: string; icon: string; permission: string }> = [
   { key: "requests", href: "/team", icon: "inbox", permission: "request.view_assigned" },
+  { key: "verify", href: "/team/verify", icon: "fact_check", permission: "request.offer_verify" },
 ];
 
 function useNav(user: ShellUser) {

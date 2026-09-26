@@ -149,6 +149,9 @@ public static class TeamRequestEndpoints
             .Select(m => new { m.Id, m.AuthorKind, m.AuthorLabel, m.Body, m.IsInternal, m.At }).ToListAsync();
         var duplicateOf = r.DuplicateOfRequestId is { } dupId ? await db.Requests.AsNoTracking().Where(x => x.Id == dupId).Select(x => x.Reference).FirstOrDefaultAsync() : null;
         var docName = docs.ToDictionary(d => d.Id, d => d);
+        var offers = await db.RequestOffers.AsNoTracking().Where(o => o.RequestId == r.Id).OrderByDescending(o => o.VersionNo).ToListAsync();
+        var responses = await db.RequestResponses.AsNoTracking().Where(x => x.RequestId == r.Id).OrderByDescending(x => x.At)
+            .Select(x => new { x.Id, x.Reference, x.Kind, x.Text, x.At, x.RelayedAt, x.ConsentTextSnapshot, x.OtpVerifiedAt }).ToListAsync();
 
         var actions = new List<object>();
         foreach (var t in RequestWorkflow.Transitions.Where(t => t.Permission.Length > 0 && t.From.Contains(r.Status) && rc.Has(t.Permission)))
@@ -214,6 +217,8 @@ public static class TeamRequestEndpoints
             r.NotEligibleReason,
             outcome = r.Status == RequestStatus.Closed ? new { code = r.OutcomeCode, summary = r.OutcomeSummary } : null,
             actions,
+            offers = offers.Select(o => OfferEndpoints.TeamOffer(o, rc.UserId)),
+            responses,
             timer = Timer(r, clock.UtcNow),
             can = new
             {
@@ -223,6 +228,10 @@ public static class TeamRequestEndpoints
                 coordinate = rc.Has(P.RequestCoordinate) && CoordinationOpen(r) && active is not null,
                 message = rc.Has(P.RequestMessage) && !RequestStatusInfo.IsTerminal(r.Status),
                 note = rc.Has(P.RequestReview),
+                recordOffer = rc.Has(P.RequestOfferRecord) && r.Status == RequestStatus.LenderCoordination && active is not null,
+                verify = rc.Has(P.RequestOfferVerify) && offers.Any(o => o.Status == RequestOfferStatus.PendingVerification && o.RecordedByUserId != rc.UserId),
+                relay = rc.Has(P.RequestResponseRelay) && r.Status == RequestStatus.ResponseRecorded && responses.Count > 0 && responses[0].RelayedAt == null,
+                close = rc.Has(P.RequestClose) && r.Status is RequestStatus.ResponseRecorded or RequestStatus.LenderCoordination,
             },
         };
     }
