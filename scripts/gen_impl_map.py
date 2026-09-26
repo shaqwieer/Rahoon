@@ -103,27 +103,37 @@ def load_rows():
         rows.append(dict(id=sid, ar=ar, en=en, role=role, key=key, phase=phase, nav=nav, batch=batch, frame=f"{phase}-{key}-{slug}-Desktop/Mobile"))
     return rows
 
-# B13 (2026-09-25) is not in the Brief's RAW matrix; its screens are listed here. Product direction and open
-# questions: docs/product/product-direction.md. Nothing below is implemented yet (Phase 1A steps 3–5).
+# B13 (2026-09-25) is not in the Brief's RAW matrix; its screens and the Phase 1A MVP additions are listed here.
+# Product direction and open questions: docs/product/product-direction.md. Status as of Phase 1A step 9 (2026-09-26).
 B13_SECTION = [
-    "## B13 — Owner-initiated journey (primary path, added 2026-09-25)", "",
+    "## B13 — Owner-initiated journey (primary path, added 2026-09-25; MVP built in Phase 1A, 2026-09-26)", "",
     "Source: `04 Phase 1 - B13 Owner-Initiated Journey.dc.html` · spec `docs/design-specs/B13-owner-initiated-journey.md` · "
-    "product decisions `docs/product/product-direction.md`. **Direction** marks screens the design labels «نمط مقترح» (PROPOSED, gated by an open question).", "",
-    "| # | Screen | Role | Frame | Planned route | Status | Direction |",
+    "product decisions `docs/product/product-direction.md` · design requests `docs/design-requests/1a-step2-design-requests.md` (D-1…D-6, all "
+    "«بانتظار اعتماد التصميم»). *Verified* = API tests + Playwright (`web/e2e/owner-journey.spec.ts`, `responsive-qa.spec.ts` at 390/768/1440 and 200% zoom).", "",
+    "| # | Screen | Role | Frame | Route | Status | Direction |",
     "|---|---|---|---|---|---|---|",
-    "| Landing | الصفحة العامة للفرد (تحل محل S01) | عام | `P1-Public-Landing-Desktop/Mobile-OwnerFirst` | `/` | **implemented** (1A step 4; D-1 text pending approval) | primary (Q9, Q12 labelled) |",
-    "| OR01 | إنشاء حساب | الفرد | `P1-Owner-Register-Mobile` | `/start` | **implemented** (1A step 4) | primary (Q10, Q15 interim) |",
-    "| OR02 | الرمز والموافقة | الفرد | `P1-Owner-Consent-Mobile` | `/start` (code step) | **implemented** (1A step 4) | primary |",
-    "| OA01–OA05 | طلب معالجة تعثر (5 خطوات) | الفرد | `P1-Owner-Apply-Mobile-Step1…Review` (copy changes D-2) | `/request/[ref]/…` | planned | primary; several requests per account (Q7/Q14 decided); Q4, Q5 open |",
-    "| OA06 | متابعة الطلب + «ماذا ستفعل رهون لك» | الفرد | `P1-Owner-Request-Mobile-Submitted` (copy change D-3) | `/request/[ref]` | planned | primary; no deadlines (Q6 decided) |",
-    "| OA07 | استكمال | الفرد | `P1-Owner-Request-Mobile-InfoRequested` | `/request/[ref]` | planned | primary |",
-    "| OA08 | اعتذار | الفرد | `P1-Owner-Request-Mobile-Declined` | `/request/[ref]` | planned | primary (Q3 for objections) |",
-    "| L00a | الطلبات الواردة | مدير الحالات / فريق الاستلام | `P1-Lender-IntakeQueue-Desktop` | `/intake` | planned | **Deferred**: lender-on-platform mode (Q1 decided: Rahoon team coordinates manually) |",
+    "| Landing | الصفحة العامة للفرد (تحل محل S01) | عام | `P1-Public-Landing-Desktop/Mobile-OwnerFirst` | `/` | **verified** (1A step 4, QA step 9) | primary; D-1 text pending approval |",
+    "| OR01 | إنشاء حساب | الفرد | `P1-Owner-Register-Mobile` | `/start` | **verified** | primary (Q10, Q15 interim) |",
+    "| OR02 | الرمز والموافقة | الفرد | `P1-Owner-Consent-Mobile` | `/start` (code step) | **verified** | primary |",
+    "| — | حسابي + طلباتي | الفرد | (D-3 «طلباتي») | `/my` | **verified** (step 5) | primary; several requests (Q7/Q14) |",
+    "| OA01–OA05 | طلب معالجة تعثر (5 خطوات) | الفرد | `P1-Owner-Apply-Mobile-Step1…Review` (D-2) | `/my/requests/[ref]/apply?step=1…5` | **verified** (step 5) | primary; Q4, Q5, V4, V6, V7 interim |",
+    "| OA06 | متابعة الطلب + «ماذا ستفعل رهون لك» | الفرد | `P1-Owner-Request-Mobile-Submitted` (D-3) | `/my/requests/[ref]`, `/submitted` | **verified** (step 5) | primary; no deadlines (Q6) |",
+    "| OA07 | استكمال | الفرد | `P1-Owner-Request-Mobile-InfoRequested` | `/my/requests/[ref]/add` | **verified** (step 6) | primary |",
+    "| OA08 | اعتذار / غير مناسب / سُحب | الفرد | `P1-Owner-Request-Mobile-Declined` (D-6) | `/my/requests/[ref]` | **implemented** (API-tested; steps 6–8) | primary; Q4 interim |",
+    "| D06 | المسارات التي يمكن أن تساعدك بها رهون | الفرد | B6 D06 (D-5) | `/my/requests/[ref]/paths` | **implemented** (step 7) | primary (Q11) |",
+    "| D07 | عرض من جهتك الممولة | الفرد | B6 D07 (D-5) | `/my/requests/[ref]/offer` | **verified** (step 7) | primary |",
+    "| D08, D09 | سؤال/اقتراح/لا يناسبني؛ الموافقة برمز | الفرد | B6 D08/D09 (D-5) | `/offer/respond`, `/offer/accept` | **verified** (step 7–8) | primary (A-05 consent record) |",
+    "| D12 | الرسائل مع فريق رهون | الفرد | B6 D12 | `/my/requests/[ref]/messages` | **implemented** (step 6) | primary |",
+    "| P4 | اعتراض / شكوى | الفرد | — (D-4 T08 counterpart) | `/my/requests/[ref]/concern` | **verified** (step 8) | primary |",
+    "| T01 | الطلبات | فريق رهون | **not designed (D-4)** | `/team` | **verified** (step 6) | MVP (Q1, Q3, Q8); V5 internal timers |",
+    "| T02–T04 | مراجعة الطلب، طلب استكمال، سجل التنسيق | فريق رهون | **not designed (D-4)** | `/team/requests/[ref]` | **verified** (step 6) | MVP; V1, V2, V12 |",
+    "| T05–T07 | تسجيل عرض الجهة، التحقق، نقل الرد والإغلاق | فريق رهون | **not designed (D-4)** | `/team/requests/[ref]`, `/team/verify` | **verified** (step 7) | MVP (verifier ≠ recorder) |",
+    "| T08 | الاعتراضات والشكاوى، الإحالة لمختص | فريق رهون | **not designed (D-4)** | `/team/objections` | **verified** (step 8) | MVP; V9 |",
+    "| L00a | الطلبات الواردة | مدير الحالات / فريق الاستلام | `P1-Lender-IntakeQueue-Desktop` | `/intake` | planned | **Deferred**: lender-on-platform mode (Q1) |",
     "| L00b | مراجعة الطلب | مدير الحالات / فريق الاستلام | `P1-Lender-IntakeReview-Desktop-Accept` | `/intake/[ref]` | planned | **Deferred** (as L00a) |",
-    "| — | مساحة عمل فريق رهون (مراجعة، استكمال، موافقة موثقة، سجل تنسيق يدوي، تسجيل العرض والتحقق، نقل الرد) | فريق رهون | **not designed (D-4)** | `/team/…` | planned | **MVP** (Q1, Q3, Q8) |",
     "",
     "Effect on the matrix below (design «جرد الشاشات: قبل ← بعد»): S01 **replaced**; S02, D01, L01, L03, L04 **secondary**; "
-    "S03–S05 and D02–D05 **modified**; D06–D09 **provisional (Q11)**.", "",
+    "S03–S05 **modified**; the case-bound D02–D09 stay for the lender-on-platform mode (their MVP successors are above).", "",
 ]
 
 def status(sid):

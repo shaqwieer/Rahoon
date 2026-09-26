@@ -1,4 +1,4 @@
-# Phase 1A-2: After the outcome (agreement → payments → closure) ⬜
+# Phase 1A-2: After the outcome (agreement → payments → closure) ⬜ ▶ CURRENT
 
 **Start only after Phase 1A (MVP) is done.** **Q13 decided (2026-09-25):** this phase is **not** part of the first MVP.
 

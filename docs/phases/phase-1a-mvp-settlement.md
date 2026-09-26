@@ -1,4 +1,4 @@
-# Phase 1A: MVP (the individual starts the request, the Rahoon team leads) ▶ CURRENT
+# Phase 1A: MVP (the individual starts the request, the Rahoon team leads) ✅ Done 2026-09-26 (tag `mvp-1`)
 
 > **Re-planned twice on 2026-09-25**, following `docs/product/product-direction.md`:
 > 1. Individual-first direction. The MVP starts with the individual; settlement execution moved to [`phase-1a2-settlement-execution.md`](phase-1a2-settlement-execution.md).
@@ -40,42 +40,42 @@
 | V6 lender identification | Step 5 | Assumption: a list of seeded lenders + «أخرى» free text |
 | V7 duplicate request for the same finance | Step 5 | Warn and link; don't block (assumption) |
 
-## Definition of done (acceptance criteria)
+## Definition of done (acceptance criteria) — ✅ met 2026-09-26
 
-- [ ] **Primary journey in the browser on a 390 phone:** landing → registration → request (with documented consent for Rahoon to share the necessary data) → submitted, with autosave and return-later working.
-- [ ] **«ماذا ستفعل رهون لك»:** after submission, the individual sees:
+- [x] **Primary journey in the browser on a 390 phone:** landing → registration → request (with documented consent for Rahoon to share the necessary data) → submitted, with autosave and return-later working. *(Playwright at 390; a draft is listed on `/my` as «أكمل الطلب».)*
+- [x] **«ماذا ستفعل رهون لك»:** after submission, the individual sees:
   - the relevant help path(s) (P1–P4) in plain language
   - the current status
   - **who we're waiting for** (فريق رهون / أنت / الجهة الممولة)
   - the next step
   - no deadline, no promised outcome
-- [ ] **The Rahoon team workspace** lets a team member:
+- [x] **The Rahoon team workspace** lets a team member:
   - review the request
   - ask the individual for completion
   - see the consent evidence
   - log each manual coordination with the lender (channel, date, counterpart, summary, evidence)
   - post updates and next steps the individual sees
-- [ ] **Approved offer:** the team records the lender's offer **with the lender's source document**, and a second team member verifies it before the individual sees it (ASSUMPTION control, reversible). The individual then sees:
+- [x] **Approved offer:** the team records the lender's offer **with the lender's source document**, and a second team member verifies it before the individual sees it (ASSUMPTION control, reversible; enforced in code and by a DB check). The individual then sees:
   - the terms and their effect in plain language, per path
   - «ليس نهائياً حتى توافق عليه»
   - nothing presented as guaranteed
-- [ ] **Response:** the individual accepts (OTP consent record), declines, or asks a question / counter-proposes. The response is documented with reference and time, and the team records relaying it to the lender over the manual channel.
-- [ ] **Obstacles, minimum (P4):** the individual can object to incorrect data or amounts, complete documents and file a complaint. Referral to a specialist is recorded manually (V9).
-- [ ] **Several requests per account:** each request has its own reference, status, documents and access. The session isn't tied to one case.
-- [ ] **Privacy and access are enforced on the server and tested:**
+- [x] **Response:** the individual accepts (OTP consent record), declines, or asks a question / counter-proposes. The response is documented with reference and time, and the team records relaying it to the lender over the manual channel.
+- [x] **Obstacles, minimum (P4):** the individual can object to incorrect data or amounts, complete documents and file a complaint. Referral to a specialist is recorded manually (V9).
+- [x] **Several requests per account:** each request has its own reference, status, documents and access. The session isn't tied to one case.
+- [x] **Privacy and access are enforced on the server and tested:**
   - no lender sees anything; lenders have no MVP access
-  - only assigned Rahoon team members see a request
+  - Rahoon team access: a coordinator sees requests **assigned to them or not yet assigned** (and may take them); a verifier sees a request only **while an offer awaits their check**; the team lead sees all; drafts never reach the team (ADR 0001 amendment, step 6)
   - the individual sees only their own requests
   - consent is recorded per request, before any sharing is logged
   - amounts from the individual keep the source «العميل»
   - no internal notes reach the individual
-- [ ] **No unapproved promise:** no deadline, "free", guaranteed discount, rescheduling approval or sale completion on any screen.
-- [ ] **Every screen in scope passed a direction review** (table below).
-- [ ] **Tests and checks:**
-  - Playwright `web/e2e/owner-journey.spec.ts`: primary path + completion request + decline response + objection.
-  - `dotnet test` is green.
+- [x] **No unapproved promise:** no deadline, "free", guaranteed discount, rescheduling approval or sale completion on any screen the individual sees. The MVP screens show none (asserted in E2E); in the secondary lender-mode owner portal the remaining lender deadlines were reframed as the lender's own condition («المهلة التي حددتها جهتك», «بحسب جهتك، العرض صالح حتى», breach notice) and the 3/5-business-day promises removed. Staff-only screens keep internal SLAs.
+- [x] **Every screen in scope passed a direction review** (table below).
+- [x] **Tests and checks:**
+  - Playwright `web/e2e/owner-journey.spec.ts`: primary path + completion request + decline response + objection (+ the offer/accept path), and `responsive-qa.spec.ts`: 390/768/1440 + 200% zoom, no horizontal scroll, AA text contrast. Full suite with `E2E_RESET=1`: **7 passed, 1 skipped** — the secondary lender-flow maker-checker test is `fixme` (seed drift, see Findings).
+  - `dotnet test` is green (**165/165**).
   - Web typecheck, lint and build are green.
-- [ ] **Wrap-up:** README demo script (owner-first) and tag `mvp-1`.
+- [x] **Wrap-up:** README demo script (owner-first) and tag `mvp-1`.
 
 ## Demo cast
 
@@ -250,11 +250,11 @@
 - [x] The complaint confirmation promise from step 3 is fixed (and the 3-business-day counter-offer promise with it); new confirmations say «ونبلغك بالرد في صفحة طلبك» with no time.
 - [x] Tests: `ConcernTests` (5). Backend **165/165**. E2E: decline + objection part of `owner-journey.spec.ts` ✓. Migration `ConcernsAndReferrals`.
 
-### Step 9: E2E, responsive QA, wrap-up ⬜
-- [ ] `web/e2e/owner-journey.spec.ts`: primary path, completion request, decline response, objection.
-- [ ] Adapt `web/e2e/lender-flow.spec.ts` to the lender-on-platform mode, or mark it secondary.
-- [ ] Check at 390, 768 and 1440; bidi, contrast and 200% text.
-- [ ] README demo script (individual → team → offer → response); update `docs/design-implementation-map.md`; tag `mvp-1`; push.
+### Step 9: E2E, responsive QA, wrap-up ✅ 2026-09-26
+- [x] `web/e2e/owner-journey.spec.ts`: primary path, completion request, offer (record → verify with step-up → accept with code → relay → close), decline response, objection. Shared steps in `web/e2e/journey.ts`.
+- [x] `web/e2e/lender-flow.spec.ts` marked **secondary** (lender-on-platform mode) and adapted: MFA locator, wizard wait, a case manager gets 403 on the approvals inbox. The maker-checker test is `fixme`: seeded RH-2026-004172 no longer has v2 awaiting review after the step-3 merges (seed fix in 1A-2 / 1B). The shared `completeStepUp` helper was fixed in step 7.
+- [x] Check at 390, 768 and 1440; bidi, contrast and 200% text: `web/e2e/responsive-qa.spec.ts` sweeps 13 individual and team screens at each width and at 200% zoom — no horizontal scroll, every visible text node ≥ 4.5:1 (3:1 large). Fixed: white-on-orange step badge on the landing (3.14:1 → ink on orange); the individual frame keeps its 18px gutter at every width; dates and references inside Arabic text are isolated (`<bdi>` / U+2068–2069). Screens reviewed in screenshots.
+- [x] README demo script (individual → team → offer → response → objection) and demo logins; `docs/design-implementation-map.md` (B13 + MVP successors, from `scripts/gen_impl_map.py`); tag `mvp-1`; push.
 
 ## Already verified (kept from earlier work)
 
@@ -293,6 +293,8 @@
 - **Step 8, design pending:** T08 and the P4 screens are built with the existing design system, «بانتظار اعتماد التصميم».
 - **Step 8, dev setting:** `Auth:RateLimitPerMinute` is 120 in `appsettings.Development.json` so the local E2E suite can sign several users in within a minute; the default elsewhere stays 20/min per IP.
 - **Step 8, V9 still open:** who the specialists are and how a referral is made; today it is a record only.
+- **Step 9, lender-mode wording:** owner-portal deadlines are shown as the lender's condition, not removed; the lender-on-platform mode needs its own direction pass (1B).
+- **Step 9, secondary E2E:** lender-flow maker-checker test is `fixme` (seed drift on RH-2026-004172).
 - **Tenancy change:** the MVP request isn't owned by a lender tenant. Covered by the ADR in step 2; today's lender-tenant case model is kept for later.
 - **Earlier design conflicts, still relevant:**
   - OR02 allows 5 OTP attempts; staff policy is 3.

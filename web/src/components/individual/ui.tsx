@@ -42,7 +42,7 @@ export function IndividualFrame({
         id="main"
         tabIndex={-1}
         className={cn(
-          "mx-auto flex w-full flex-1 flex-col gap-4 px-[18px] py-5 text-16 outline-none md:px-0",
+          "mx-auto flex w-full flex-1 flex-col gap-4 px-[18px] py-5 text-16 outline-none",
           width === "column" ? "max-w-[560px] md:max-w-[560px]" : "max-w-[560px] lg:max-w-[1040px] lg:py-8",
         )}
       >

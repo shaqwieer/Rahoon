@@ -46,7 +46,7 @@ public sealed class BreachMonitor(RahoonDbContext db, IClock clock, Notifier not
                 // Owner messaging starts with help, not consequences.
                 if (owner is { } ou)
                     notifier.Notify(ou, c.OrganizationId, "payment", "هل تحتاج مساعدة في الأقساط؟",
-                        $"لاحظنا تأخر قسطين. لديك حتى {review.CureDeadline:yyyy-MM-dd} للتصحيح، ويمكنك طلب مكالمة لنبحث معك عن حل.", "/owner/help", c.Id, "warn");
+                        $"لاحظنا تأخر قسطين. حددت جهتك تاريخ {review.CureDeadline:yyyy-MM-dd} لتصحيح التأخر، ويمكنك طلب مكالمة لنبحث معك عن حل.", "/owner/help", c.Id, "warn");
                 var mgr = c.AssignedManagerId is null ? null : await db.Memberships.Where(m => m.Id == c.AssignedManagerId).Select(m => (Guid?)m.UserId).FirstOrDefaultAsync(ct);
                 notifier.Task(c.OrganizationId, c.Id, "التواصل مع المالك قبل انتهاء مهلة التصحيح", mgr, review.CureDeadline, "breach", $"/cases/{c.Reference}/payments/breach", mgr ?? Guid.Empty);
                 await audit.RecordAsync(new AuditEntry("breach.opened", $"فتح مراجعة إخلال آلياً · إشعار المالك بمهلة {a.BreachCureDays} يوماً وخيار المساعدة", c.Id, c.Reference,

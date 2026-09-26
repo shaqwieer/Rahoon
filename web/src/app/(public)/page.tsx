@@ -62,7 +62,7 @@ export default async function LandingPage() {
           <ol className="m-0 grid list-none grid-cols-1 gap-3 p-0 md:grid-cols-2 xl:grid-cols-4">
             {L.how.map((h, i) => (
               <li key={h.title} className={cn("flex gap-3 rounded-lg border bg-white p-4 md:flex-col md:p-5", i === 3 ? "border-orange" : "border-line")}>
-                <span className={cn("flex size-8 flex-none items-center justify-center rounded-full text-15 font-bold text-white", i === 3 ? "bg-orange" : "bg-charcoal")}>
+                <span className={cn("flex size-8 flex-none items-center justify-center rounded-full text-15 font-bold", i === 3 ? "bg-orange text-ink" : "bg-charcoal text-white")}>
                   {i + 1}
                 </span>
                 <span className="flex flex-col gap-1">

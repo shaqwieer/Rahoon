@@ -22,7 +22,7 @@ const ar = {
   home: {
     title: "الرئيسية",
     nextStepEyebrow: "خطوتك التالية",
-    until: "لديك حتى",
+    until: "المهلة التي حددتها جهتك:",
     today: "(اليوم)",
     passed: "انتهت المهلة — تواصل مع مسؤول حالتك وسنساعدك",
     nothingTitle: "لا شيء مطلوب منك الآن",
@@ -92,7 +92,7 @@ const ar = {
 
   offer: {
     title: "العرض المقدم لك",
-    validUntil: "صالح حتى",
+    validUntil: "بحسب جهتك، العرض صالح حتى",
     heroInstallment: "قسطك الجديد",
     heroPayoff: "المبلغ المطلوب",
     heroSub: (day: number, months: number) => `يوم ${day} من كل شهر · ${months} شهراً`,
@@ -350,7 +350,7 @@ const en: OwnerCopy = {
   home: {
     title: "Home",
     nextStepEyebrow: "Your next step",
-    until: "You have until",
+    until: "Deadline set by your lender:",
     today: "(today)",
     passed: "The deadline has passed — message your case manager and we'll help",
     nothingTitle: "Nothing is needed from you right now",
@@ -419,7 +419,7 @@ const en: OwnerCopy = {
 
   offer: {
     title: "Your offer",
-    validUntil: "Valid until",
+    validUntil: "Per your lender, valid until",
     heroInstallment: "Your new installment",
     heroPayoff: "Amount to pay",
     heroSub: (day: number, months: number) => `Day ${day} of each month · ${months} months`,
