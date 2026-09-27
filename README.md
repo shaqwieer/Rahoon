@@ -138,7 +138,7 @@ Two browser windows: a phone-sized one (390 px) for the individual, a desktop on
 7. **Coordinator:** upload the lender's letter («رفع مستند…», type «خطاب الجهة الممولة») → «تسجيل عرض الجهة…» → «إرسال للتحقق».
 8. **Verifier (عبير):** `/team/verify` → open → tick the four checks → «اعتماد ونشر للعميل» → SMS step-up.
 9. **Individual:** «مراجعة العرض» → terms, «أثره عليك», validity «بحسب خطاب الجهة», «ليس نهائياً حتى توافق عليه» → «أوافق» with the code (or «لا يناسبني», or a question).
-10. **Coordinator:** «تسجيل نقل الرد للجهة…» → «إغلاق الطلب…» with the outcome. The individual sees «قبلت العرض» and «نقلنا ردك…».
+10. **Coordinator:** «تسجيل نقل الرد للجهة…». The individual sees «نقلنا ردك…». **Since Phase 1A-2 step 1** an accepted P1/P2 offer is tracked, not closed: «إغلاق الطلب…» with «قبل العميل العرض» is refused with the reason, and «بدء متابعة التنفيذ» gets its button in 1A-2 step 2 (a declined offer or a P3 sale still closes as before). To see tracking now, use REQ-2026-00309 and REQ-2026-00310 below.
 11. **Obstacles:** from the tracker the individual can object («اعتراض على بيانات أو مبالغ أو قرار») or complain; the team lead (لمى) answers from `/team/objections`.
 
 ## Tests

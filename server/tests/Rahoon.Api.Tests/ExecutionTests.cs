@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Headers;
 using Microsoft.EntityFrameworkCore;
+using Rahoon.Api.Modules.Audit;
+using Rahoon.Api.Modules.Identity;
 using Rahoon.Api.Modules.Requests;
 using Rahoon.Api.Tests.Infrastructure;
 
@@ -213,6 +215,43 @@ public sealed class ExecutionTests(ApiFixture api)
         Assert.Equal(HttpStatusCode.Forbidden, s);
         Assert.Contains("سجّلته بنفسك", TestClient.Raw(body));
         Assert.True(await api.WithDbAsync(db => db.AuditEvents.AnyAsync(e => e.SubjectReference == reference && e.Type == "request.execution_verify_blocked")));
+    }
+
+    [Fact]
+    public async Task Record_and_verify_replay_idempotently_and_the_audit_chain_still_verifies()
+    {
+        var (_, nayef, reference) = await TrackingAsync(api);
+        var letter = await OfferTests.UploadLetterAsync(nayef, reference);
+        var key = Guid.NewGuid().ToString();
+        var (s1, r1) = await nayef.PostAsync($"/api/team/requests/{reference}/execution/records", Agreement(letter), key);
+        var (s2, r2) = await nayef.PostAsync($"/api/team/requests/{reference}/execution/records", Agreement(letter), key);
+        Assert.Equal(HttpStatusCode.OK, s1);
+        Assert.Equal(HttpStatusCode.OK, s2);
+        Assert.Equal(TestClient.Raw(r1), TestClient.Raw(r2));
+        var id = TestClient.Str(r1, "id");
+
+        var abeer = await api.LoginAsync(TeamRequestTests.Abeer);
+        await abeer.StepUpAsync();
+        var vkey = Guid.NewGuid().ToString();
+        var body = new { decision = "publish", checklist = Checklist };
+        var (v1, b1) = await abeer.PostAsync($"/api/team/requests/{reference}/execution/records/{id}/verify", body, vkey);
+        var (v2, b2) = await abeer.PostAsync($"/api/team/requests/{reference}/execution/records/{id}/verify", body, vkey);
+        Assert.Equal(HttpStatusCode.OK, v1);
+        Assert.Equal(TestClient.Raw(b1), TestClient.Raw(b2));
+
+        // A blocked verify (the lead on their own record) is audited in its own transaction; the chain still verifies.
+        var lead = await api.LoginAsync(TeamRequestTests.Lead);
+        var own = await RecordAsync(lead, reference, Agreement(await OfferTests.UploadLetterAsync(lead, reference)));
+        await lead.StepUpAsync();
+        Assert.Equal(HttpStatusCode.Forbidden, (await lead.PostAsync($"/api/team/requests/{reference}/execution/records/{own}/verify", body)).Status);
+        await api.WithDbAsync(async db =>
+        {
+            var req = await db.Requests.SingleAsync(x => x.Reference == reference);
+            Assert.Equal(1, await db.RequestExecutionRecords.CountAsync(x => x.RequestId == req.Id && x.Status == RequestExecutionRecordStatus.Published));
+            var operatorOrg = await db.Organizations.SingleAsync(o => o.Kind == OrganizationKind.Operator);
+            Assert.Null(await AuditLog.VerifyChainAsync(db, operatorOrg.Id));
+            return 0;
+        });
     }
 
     [Fact]
