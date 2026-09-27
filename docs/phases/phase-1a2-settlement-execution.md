@@ -21,13 +21,13 @@ The lender executes all of this; Rahoon tracks and explains.
 - **Q1/Q8 decided:** in the MVP the lender isn't on the platform, and the Rahoon team coordinates over a documented manual channel. This phase therefore has two modes:
   1. **Manual-coordination mode (first, steps 1–4).** The Rahoon team records the lender's agreement, installment schedule, payment confirmations, notices and closure letters **as evidence from the lender** (source document + date), and a second member verifies each record. The individual can also report a payment with proof. Rahoon only tracks and explains; it never marks money as received on its own authority.
   2. **Lender-on-platform mode (later, steps 5–8).** The existing L19–L21 and L26 screens and backend (maker-checker payments, reconciliation, closure) are used when a lender works inside Rahoon.
-- **Open questions (added 2026-09-27, `product-direction.md` §6), none blocking; each has an interim rule in ADR 0002 §7:**
+- **Product questions (added 2026-09-27, answered the same day; `product-direction.md` §6, ADR 0002 §7):**
 
   | Open item | Affects | Interim rule |
   |---|---|---|
-  | **Q16** tracking horizon | Steps 1–3 | The team records what the lender sends and what the individual reports; no obligation to record every installment. Outcome `tracking_ended` ends tracking with a summary |
-  | **Q17** after a breach | Steps 1–2 | Continue coordinating on the same request, with a reason shown to the individual |
-  | **Q18** closure documents per path | Steps 1–3 | Four document kinds; `executed_closed` needs at least one verified closure document |
+  | **Q16** tracking horizon: **decided 2026-09-27** | Steps 1–3 | Track the agreement, the lender schedule, payments actually reported or confirmed, and closure. No duty to monitor every installment. Outcome `tracking_ended` ends tracking with a summary |
+  | **Q17** after a breach: **decided 2026-09-27** | Steps 1–2 | The breach stays on the same request, with the reason recorded; coordination continues there |
+  | **Q18** closure documents: **rule decided 2026-09-27**; exact P1/P2 list open (**V13**) | Steps 1–3 | Completion needs a verified closure document relevant to the path. Interim mapping: P1 → rescheduling/agreement confirmation letter; P2 → clearance or mortgage release; «أخرى» never completes |
   | V4 wording | Steps 2–3 | Withdrawal during tracking, «لم تتخذ رهون أي إجراء», payment-report confirmation: proposed text, labelled |
   | P3 sale execution | Step 1 | Out of this phase (Phase 2). An accepted P3 offer is closed with `offer_accepted` as today |
 

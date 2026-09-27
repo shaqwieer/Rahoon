@@ -1,6 +1,6 @@
 # ADR 0002 — Tracking the execution of an accepted offer (manual-coordination mode)
 
-- **Status:** Accepted for implementation in Phase 1A-2 (steps 1–4). Items marked *interim* follow an open product question (Q16–Q18) and are reversible.
+- **Status:** Accepted for implementation in Phase 1A-2 (steps 1–4). Q16 and Q17 were answered by the product owner on 2026-09-27; Q18 is answered as a rule, with the exact document list per path still to verify (V13). Items marked *interim* are reversible.
 - **Date:** 2026-09-27
 - **Decided by:** engineering, within the product decisions in `docs/product/product-direction.md` (Q1, Q6, Q8, Q12, Q13) and ADR 0001. Product questions aren't decided here.
 - **Extends:** [ADR 0001](0001-request-ownership.md) §4.4–§4.5 (amendment row added there).
@@ -36,15 +36,15 @@
 |---|---|---|---|
 | `start_execution_tracking` | response_recorded → **execution_tracking** | coordinator (`request.execution_record`) | the latest response is an **accept** on the published offer; the response is relayed (`response_relayed`); consent active. The offer path is P1 or P2 (P3 sale execution is Phase 2; until then an accepted P3 offer is closed with `offer_accepted` as today) |
 | `close` (extended) | + execution_tracking → closed | coordinator (`request.close`) | new outcome codes below; reason/summary required as today. **Tracking is mandatory for an accepted P1/P2 offer:** from `response_recorded`, outcome `offer_accepted` is refused when the latest response accepts a P1/P2 offer (guard `execution_tracking_required`; the reason points to «بدء متابعة التنفيذ»). Other outcomes stay available (e.g. the lender withdrew its offer). `tracking_ended` is the way to stop tracking early |
-| `continue_coordination` (extended, **interim Q17**) | + execution_tracking → lender_coordination | coordinator | reason required and shown to the individual; for a new arrangement with the lender after a breach or a change the lender reports. The execution records stay on the request |
+| `continue_coordination` (extended, **Q17**) | + execution_tracking → lender_coordination | coordinator | reason required and shown to the individual; for a new arrangement with the lender after a breach or a change the lender reports. The execution records stay on the request |
 | `withdraw` | unchanged (any non-terminal) | applicant | withdrawal during tracking only stops Rahoon's tracking and sharing. The confirmation must say that the agreement with the lender isn't affected by the withdrawal (proposed text, V4) |
 
 - **Consent withdrawn during tracking (interim, as ADR 0001 step-5 amendment):** the request moves to `info_requested` (flag `InfoRequestIsConsent`) and `StatusBeforeInfoRequest = execution_tracking`. Sharing with the lender stops. The team may still **record and publish** what the lender sends on its own initiative (it's information *about* the individual reaching Rahoon, not data Rahoon shares), but can't contact the lender for the request. A new consent resumes tracking. The legal effect is V4.
 - **Status label** (proposed, D-8): «قيد متابعة التنفيذ».
 - **«ننتظر»** during tracking is set by the team on each update: `lender` (default: waiting for the lender's confirmation or documents) or `applicant` (for example, a proof they offered to send). It never says the individual is awaited for a payment. Paying is between the individual and the lender, and Rahoon doesn't chase it.
 - **New close outcome codes:**
-  - `executed_closed`: the lender confirmed completion. Guard: at least one **verified closure document** (§4.2).
-  - `tracking_ended`: Rahoon stops tracking while the agreement continues with the lender (interim Q16).
+  - `executed_closed`: the lender confirmed completion. Guard: at least one **published (verified) closure document relevant to the offer's path** (§4.2, Q18).
+  - `tracking_ended`: Rahoon stops tracking while the agreement continues with the lender (Q16: no monitoring of every installment).
   - `agreement_ended_by_lender`: the lender reports that the agreement ended without completion. Summary required. No action follows from Rahoon.
   - Existing codes stay.
 
@@ -58,7 +58,7 @@
 | — `payment_confirmation` extras | The lender confirms a payment it received | amount, date received per the lender, optional schedule item no; optional link to the individual's report it answers |
 | `RequestPaymentReport` | The individual reports a payment they made to the lender, with proof | amount, transfer date, bank reference (optional), proof document (required); `Status`: `reported` → `confirmed_by_lender` (linked to a published `payment_confirmation`) / `not_confirmed_yet` (the team's plain note; never «rejected»). **Never becomes confirmed without a published lender record** |
 | — `lender_notice` extras | A breach or change reported by the lender | category (missed installment · agreement change · other); the individual sees the lender's statement, the explanation and «لم تتخذ رهون أي إجراء» wording (proposed, V4) |
-| — `closure_document` extras | A closure letter from the lender | document kind (interim Q18): «مخالصة / إخلاء طرف», «خطاب فك الرهن», «خطاب إتمام الجدولة أو الاتفاق», «أخرى». Stays on the individual's account with no expiry (Q14; supersedes D14's 90-day window for this mode) |
+| — `closure_document` extras | A closure letter from the lender | document kind (Q18; **relevance mapping interim until V13**: P1 → `rescheduling_confirmation`; P2 → `clearance` or `mortgage_release`; `other` never completes): «مخالصة / إخلاء طرف», «خطاب فك الرهن», «خطاب إتمام الجدولة أو الاتفاق», «أخرى». Stays on the individual's account with no expiry (Q14; supersedes D14's 90-day window for this mode) |
 
 Idempotency on every POST as elsewhere. Execution records are append-only. A correction is a new record that supersedes the old one, with a reason.
 
@@ -116,8 +116,8 @@ Every record, verification, return, publication, payment report, transition and 
 
 | Item | Interim rule |
 |---|---|
-| Q16 tracking horizon | The team records what the lender provides and what the individual reports; no obligation to record every installment. `tracking_ended` closes tracking with a summary while the agreement continues |
-| Q17 after a breach | `continue_coordination` from `execution_tracking` on the same request, with a reason shown to the individual |
-| Q18 closure documents per path | The four document kinds in §4.2; `executed_closed` needs at least one |
+| Q16 tracking horizon (**decided**) | The team tracks the agreement, the lender's schedule, payments actually reported or confirmed, and closure. No reminders and no duty to record every installment. `tracking_ended` closes tracking with a summary while the agreement continues |
+| Q17 after a breach (**decided**) | `continue_coordination` from `execution_tracking` on the same request, with a required reason shown to the individual |
+| Q18 closure documents (**rule decided**; list per path V13) | `executed_closed` needs a published closure document of a kind relevant to the path (interim mapping in §4.2) |
 | V4 wording | Withdrawal-during-tracking text, «لم تتخذ رهون أي إجراء» on a lender notice, the payment-report confirmation: proposed text, labelled |
 | Reminders / SMS | None. Only in-app updates on the tracker, as in Phase 1A (step 6 finding) |
