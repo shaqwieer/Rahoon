@@ -133,9 +133,12 @@ export interface TeamRequestDetail {
     verify: boolean;
     relay: boolean;
     close: boolean;
+    recordExecution: boolean;
+    verifyExecution: boolean;
     refer: boolean;
     answerConcerns: boolean;
   };
+  execution: TeamExecution;
   concerns: Array<{ id: string; reference: string; kind: string; subject: string; text: string; status: "open" | "answered"; outcome: string | null; responseText: string | null; respondedByLabel: string | null; respondedAt: string | null; createdAt: string }>;
   referrals: Array<{ specialistType: string; specialistName: string; note: string | null; applicantText: string; recordedByLabel: string; at: string }>;
   offers: TeamOffer[];
@@ -169,6 +172,75 @@ export interface TeamOffer {
   verificationChecklist: string[];
   returnReason: string | null;
   publishedAt: string | null;
+}
+
+/** Phase 1A-2 (ADR 0002): what the lender sent, recorded by the team and verified by a second member. */
+export interface ExecutionRecord {
+  id: string;
+  kind: "agreement" | "payment_confirmation" | "lender_notice" | "closure_document";
+  status: "pending_verification" | "returned" | "published" | "superseded";
+  sourceDocumentId: string;
+  shareSourceWithApplicant: boolean;
+  lenderReference: string;
+  lenderDate: string;
+  summaryText: string;
+  explanationText: string;
+  offerId: string | null;
+  path: string | null;
+  activationDate: string | null;
+  newInstallment: number | null;
+  termMonths: number | null;
+  settlementAmount: number | null;
+  termsText: string | null;
+  amount: number | null;
+  receivedOn: string | null;
+  scheduleItemNo: number | null;
+  answersReportId: string | null;
+  noticeCategory: string | null;
+  documentKind: string | null;
+  supersedesRecordId: string | null;
+  correctionReason: string | null;
+  recordedByLabel: string;
+  recordedAt: string;
+  recordedByMe: boolean;
+  verifiedByLabel: string | null;
+  verifiedAt: string | null;
+  verificationChecklist: string[];
+  returnReason: string | null;
+  publishedAt: string | null;
+  schedule: Array<{ no: number; dueDate: string; amount: number }>;
+}
+
+export interface PaymentReport {
+  id: string;
+  reference: string;
+  amount: number;
+  transferDate: string;
+  bankReference: string | null;
+  scheduleItemNo: number | null;
+  proofDocumentId: string;
+  status: "reported" | "not_confirmed_yet" | "confirmed_by_lender";
+  teamNote: string | null;
+  confirmationRecordId: string | null;
+  at: string;
+  answeredAt: string | null;
+}
+
+export interface TeamExecution {
+  path: string | null;
+  relevantClosureKinds: string[];
+  records: ExecutionRecord[];
+  paymentReports: PaymentReport[];
+}
+
+export interface ExecutionVerifyItem {
+  reference: string;
+  institutionName: string;
+  recordId: string;
+  kind: ExecutionRecord["kind"];
+  recordedByLabel: string;
+  recordedAt: string;
+  recordedByMe: boolean;
 }
 
 export interface VerifyItem {

@@ -388,9 +388,11 @@ function RelayDrawer({ open, onClose, base }: { open: boolean; onClose: () => vo
   );
 }
 
-export function CloseDialog({ open, onClose, base }: { open: boolean; onClose: () => void; base: string }) {
+/** Outcomes follow the state: the tracking outcomes only from execution tracking (ADR 0002 §4.1); the API refuses mismatches. */
+export function CloseDialog({ open, onClose, base, tracking = false }: { open: boolean; onClose: () => void; base: string; tracking?: boolean }) {
   const c = useTeamCopy();
   const X = c.close;
+  const outcomes = tracking ? X.trackingOutcomes : X.outcomes;
   const [outcomeCode, setOutcomeCode] = useState("");
   const [summary, setSummary] = useState("");
   const act = useTeamAction();
@@ -411,7 +413,7 @@ export function CloseDialog({ open, onClose, base }: { open: boolean; onClose: (
       }
     >
       <div className="flex flex-col gap-3">
-        <Select label={X.outcome} placeholder="—" value={outcomeCode} onChange={(e) => setOutcomeCode(e.target.value)} options={Object.entries(X.outcomes).map(([value, label]) => ({ value, label }))} error={act.fieldErrors.outcomeCode} />
+        <Select label={X.outcome} placeholder="—" value={outcomeCode} onChange={(e) => setOutcomeCode(e.target.value)} options={Object.entries(outcomes).map(([value, label]) => ({ value, label }))} error={act.fieldErrors.outcomeCode} />
         <Textarea label={X.summary} help={X.summaryHelp} rows={4} maxLength={1500} value={summary} onChange={(e) => setSummary(e.target.value)} error={act.fieldErrors.summary} />
         {act.error && Object.keys(act.fieldErrors).length === 0 ? <Alert tone="err">{act.error}</Alert> : null}
       </div>

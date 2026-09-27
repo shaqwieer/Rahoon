@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Browser, type Page } from "@playwright/test";
 import { api, completeStepUp } from "./helpers";
 import { registerIndividual, sandboxCode, submitRequest, teamPage } from "./journey";
 
@@ -177,7 +177,7 @@ test("an offer recorded from the lender letter is verified by another member, th
   await shot(page, "17-response-recorded");
 
   // T07: relay. An accepted P1 offer is then tracked, not closed (Phase 1A-2, ADR 0002): closing it as «قبل العميل العرض»
-  // is refused with the reason. Starting tracking gets its button in 1A-2 step 2; this path is extended in step 4.
+  // is refused with the reason.
   const back = await teamPage(browser, "n.alyami@team.rahoon.example");
   await back.goto(base);
   await back.getByRole("button", { name: "تسجيل نقل الرد للجهة…" }).click();
@@ -194,13 +194,83 @@ test("an offer recorded from the lender letter is verified by another member, th
   await expect(close.getByText(/ابدأ «متابعة التنفيذ»/)).toBeVisible();
   await tshot(back, "08-close-refused-tracking-required");
   await close.getByRole("button", { name: "إلغاء" }).click();
+
+  // Phase 1A-2 (D-7): start tracking, then record the lender's agreement and schedule from its document.
+  await back.getByRole("button", { name: "بدء متابعة التنفيذ" }).click();
+  await expect(back.getByText("قيد متابعة التنفيذ").first()).toBeVisible();
+  await uploadLenderDocument(back, "agreement.pdf");
+  await back.getByRole("button", { name: "تسجيل الاتفاق والجدول…" }).click();
+  const agr = back.getByRole("dialog", { name: "تسجيل الاتفاق والجدول من مستند الجهة" });
+  await agr.getByLabel("مستند الجهة (إلزامي)").selectOption({ label: "خطاب الجهة الممولة · agreement.pdf" });
+  await agr.getByLabel("مرجع مستند الجهة").fill("AF-2026-8001");
+  await agr.getByLabel("تاريخ مستند الجهة").fill(isoDay(-1));
+  await agr.getByLabel(/جدول الأقساط/).fill(`1, ${isoDay(25)}, 3100\n2, ${isoDay(55)}, 3100`);
+  await agr.getByLabel("ما ذكرته الجهة", { exact: true }).fill("فعّلت الجهة ملحق إعادة الجدولة بقسط 3,100 ريال.");
+  await agr.getByLabel(/ماذا يعني لك/).fill("أصبح قسطك 3,100 ريال، وتدفعه لجهتك مباشرة بحسب جدولها.");
+  await tshot(back, "09-record-agreement");
+  await agr.getByRole("button", { name: "إرسال للتحقق" }).click();
+  await expect(back.getByText("بانتظار التحقق").first()).toBeVisible();
   await back.context().close();
+  await verifyExecution(browser, reference, "10-verify-agreement");
+
+  // A closure letter relevant to P1, verified, then «اكتمل التنفيذ».
+  const closer = await teamPage(browser, "n.alyami@team.rahoon.example");
+  await closer.goto(base);
+  await uploadLenderDocument(closer, "closure.pdf");
+  await closer.getByRole("button", { name: "مستند إغلاق…" }).click();
+  const doc = closer.getByRole("dialog", { name: "تسجيل مستند إغلاق من مستند الجهة" });
+  await doc.getByLabel("مستند الجهة (إلزامي)").selectOption({ label: "خطاب الجهة الممولة · closure.pdf" });
+  await expect(doc.getByLabel("نوع مستند الإغلاق")).toHaveValue("rescheduling_confirmation");
+  await doc.getByLabel("مرجع مستند الجهة").fill("AF-2026-8090");
+  await doc.getByLabel("تاريخ مستند الجهة").fill(isoDay(0));
+  await doc.getByLabel("ما ذكرته الجهة", { exact: true }).fill("تؤكد الجهة إتمام إعادة الجدولة.");
+  await doc.getByLabel(/ماذا يعني لك/).fill("أتمّت جهتك إعادة جدولة تمويلك. احتفظ بهذا الخطاب.");
+  await doc.getByRole("button", { name: "إرسال للتحقق" }).click();
+  await expect(closer.getByText("بانتظار التحقق").first()).toBeVisible();
+  await closer.context().close();
+  await verifyExecution(browser, reference, "11-verify-closure");
+
+  const done = await teamPage(browser, "n.alyami@team.rahoon.example");
+  await done.goto(base);
+  await done.getByRole("button", { name: "إغلاق الطلب…" }).click();
+  const fin = done.getByRole("dialog", { name: "إغلاق الطلب" });
+  await fin.getByLabel("النتيجة", { exact: true }).selectOption("executed_closed");
+  await fin.getByLabel(/ملخص النتيجة/).fill("اكتملت إعادة الجدولة بحسب ما أكدته جهتك، والمستندات محفوظة في صفحة طلبك.");
+  await fin.getByRole("button", { name: "إغلاق الطلب" }).click();
+  await expect(done.getByText("مغلق").first()).toBeVisible();
+  await tshot(done, "12-closed-executed");
+  await done.context().close();
 
   await page.reload();
-  await expect(page.getByText("سجّلنا ردك").first()).toBeVisible();
-  await expect(page.getByText("نقلنا ردك إلى جهتك الممولة").first()).toBeVisible();
-  await shot(page, "18-relayed");
+  await expect(page.getByText("اكتمل التنفيذ").first()).toBeVisible();
+  await shot(page, "18-executed-closed");
 });
+
+const isoDay = (offset: number) => new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
+
+async function uploadLenderDocument(team: Page, name: string) {
+  await team.getByRole("button", { name: "رفع مستند…" }).click();
+  const upload = team.getByRole("dialog", { name: "رفع مستند للطلب" });
+  await upload.locator("input[type=file]").setInputFiles({ name, mimeType: "application/pdf", buffer: Buffer.from(`%PDF-1.4\n% ${name}\n`) });
+  await upload.getByRole("button", { name: "حفظ" }).click();
+  await expect(upload).toBeHidden();
+}
+
+/** T06 for an execution record: another member (عبير), the checklist and an MFA step-up; back to the queue. */
+async function verifyExecution(browser: Browser, reference: string, name: string) {
+  const abeer = await teamPage(browser, "a.alqahtani@team.rahoon.example");
+  await abeer.goto("/team/verify");
+  await expect(abeer.getByText(reference)).toBeVisible();
+  await abeer.goto(`/team/requests/${reference}`);
+  for (const label of ["القيم مطابقة لمستند الجهة", "المرجع والتاريخ مطابقان", "نوع السجل صحيح", "«ماذا يعني لك» دقيق وغير مضلل"])
+    await abeer.getByRole("checkbox", { name: label }).check();
+  await tshot(abeer, name);
+  await abeer.getByRole("button", { name: "اعتماد ونشر للعميل" }).click();
+  await completeStepUp(abeer);
+  await abeer.waitForURL("**/team/verify");
+  await expect(abeer.getByText(reference)).toHaveCount(0);
+  await abeer.context().close();
+}
 
 test("the individual declines an offer with no action against them, objects to an amount and gets the team's answer", async ({ page, browser }) => {
   await registerIndividual(page);

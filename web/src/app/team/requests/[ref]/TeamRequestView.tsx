@@ -19,13 +19,14 @@ import { formatDate, formatDateTime, formatMoney } from "@/lib/format";
 import { useI18n } from "@/lib/i18n/client";
 import { TeamStatusTag, TimerTag } from "../../TeamQueueView";
 import { ConcernPanels, ReferralDialog, ReopenDialog } from "./ConcernPanels";
+import { ContinueFromTrackingDialog, ExecutionPanels } from "./ExecutionPanels";
 import { CloseDialog, OfferPanels } from "./OfferPanels";
 import { useTeamAction } from "./teamActions";
 
-type DialogKey = null | "assign" | "identity" | "info" | "coord" | "notEligible" | "update" | "upload" | "close" | "refer" | "reopen";
+type DialogKey = null | "assign" | "identity" | "info" | "coord" | "notEligible" | "update" | "upload" | "close" | "refer" | "reopen" | "continue";
 
 /** Workflow actions offered on this screen (publish_offer happens in the verification panel). */
-const HANDLED = new Set(["pick_up", "request_info", "start_coordination", "not_eligible", "continue_coordination", "close", "reopen"]);
+const HANDLED = new Set(["pick_up", "request_info", "start_coordination", "not_eligible", "continue_coordination", "close", "reopen", "start_execution_tracking"]);
 
 export function TeamRequestView({ detail }: { detail: TeamRequestDetail }) {
   const c = useTeamCopy();
@@ -47,7 +48,11 @@ export function TeamRequestView({ detail }: { detail: TeamRequestDetail }) {
     else if (key === "not_eligible") setDialog("notEligible");
     else if (key === "pick_up") void act.run("POST", `${base}/pick-up`, { nextStep: null });
     else if (key === "start_coordination") void act.run("POST", `${base}/start-coordination`, { nextStep: null });
-    else if (key === "continue_coordination") void act.run("POST", `${base}/continue`, { nextStep: null });
+    else if (key === "continue_coordination") {
+      // Q17: from execution tracking the reason is required and shown to the individual.
+      if (detail.status === "execution_tracking") setDialog("continue");
+      else void act.run("POST", `${base}/continue`, { nextStep: null });
+    } else if (key === "start_execution_tracking") void act.run("POST", `${base}/execution/start`, { nextStep: null });
     else if (key === "close") setDialog("close");
     else if (key === "reopen") setDialog("reopen");
   };
@@ -205,6 +210,7 @@ export function TeamRequestView({ detail }: { detail: TeamRequestDetail }) {
           )}
 
           <OfferPanels detail={detail} base={base} />
+          <ExecutionPanels detail={detail} base={base} />
           <ConcernPanels detail={detail} onRefer={() => setDialog("refer")} />
 
           <section className="flex flex-col gap-3 rounded-lg border border-line bg-white p-5">
@@ -325,9 +331,10 @@ export function TeamRequestView({ detail }: { detail: TeamRequestDetail }) {
       <InfoDrawer open={dialog === "info"} onClose={() => setDialog(null)} base={base} />
       <CoordinationDrawer open={dialog === "coord"} onClose={() => setDialog(null)} base={base} detail={detail} correcting={correcting} />
       <NotEligibleDialog open={dialog === "notEligible"} onClose={() => setDialog(null)} base={base} />
-      <UpdateDrawer open={dialog === "update"} onClose={() => setDialog(null)} base={base} />
+      <UpdateDrawer open={dialog === "update"} onClose={() => setDialog(null)} base={base} tracking={detail.status === "execution_tracking"} />
       <UploadDialog open={dialog === "upload"} onClose={() => setDialog(null)} base={base} />
-      <CloseDialog open={dialog === "close"} onClose={() => setDialog(null)} base={base} />
+      <CloseDialog open={dialog === "close"} onClose={() => setDialog(null)} base={base} tracking={detail.status === "execution_tracking"} />
+      <ContinueFromTrackingDialog open={dialog === "continue"} onClose={() => setDialog(null)} base={base} />
       <ReferralDialog open={dialog === "refer"} onClose={() => setDialog(null)} base={base} />
       <ReopenDialog open={dialog === "reopen"} onClose={() => setDialog(null)} base={base} />
     </div>
@@ -684,22 +691,34 @@ function NotEligibleDialog({ open, onClose, base }: { open: boolean; onClose: ()
   );
 }
 
-function UpdateDrawer({ open, onClose, base }: { open: boolean; onClose: () => void; base: string }) {
+function UpdateDrawer({ open, onClose, base, tracking }: { open: boolean; onClose: () => void; base: string; tracking: boolean }) {
   const c = useTeamCopy();
   const U = c.update;
+  const E = c.execution;
   const [text, setText] = useState("");
   const [next, setNext] = useState("");
+  const [waitingOn, setWaitingOn] = useState("");
   const act = useTeamAction();
   return (
     <Drawer
       open={open}
       onClose={onClose}
       title={U.title}
-      footer={<FormFooter onClose={onClose} busy={act.busy} label={U.submit} onSubmit={async () => (await act.run("POST", `${base}/updates`, { text, nextStep: next || null })) && onClose()} />}
+      footer={<FormFooter onClose={onClose} busy={act.busy} label={U.submit} onSubmit={async () => (await act.run("POST", `${base}/updates`, { text, nextStep: next || null, waitingOn: tracking && waitingOn ? waitingOn : null })) && onClose()} />}
     >
       <div className="flex flex-col gap-4 p-5">
         <Textarea label={U.text} rows={4} maxLength={1000} value={text} onChange={(e) => setText(e.target.value)} error={act.fieldErrors.text} />
         <Textarea label={U.nextStep} help={U.nextHelp} rows={2} maxLength={600} value={next} onChange={(e) => setNext(e.target.value)} />
+        {tracking ? (
+          <Select
+            label={E.waitingOn}
+            placeholder={E.waitingKeep}
+            value={waitingOn}
+            onChange={(e) => setWaitingOn(e.target.value)}
+            options={Object.entries(E.waitingOptions).map(([value, label]) => ({ value, label }))}
+            error={act.fieldErrors.waitingOn}
+          />
+        ) : null}
         {act.error && !act.fieldErrors.text ? <Alert tone="err">{act.error}</Alert> : null}
       </div>
     </Drawer>

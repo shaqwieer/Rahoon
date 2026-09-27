@@ -111,6 +111,8 @@ test("MVP screens reflow at 390/768/1440 and 200% zoom, with AA text contrast", 
     ["team-queue", "/team?tab=mine"],
     ["team-review", base],
     ["team-objections", "/team/objections"],
+    // Phase 1A-2: seeded request in execution tracking (agreement, schedule, reports, a record awaiting verification).
+    ["team-execution", "/team/requests/REQ-2026-00309"],
   ];
 
   for (const width of WIDTHS) {
