@@ -45,7 +45,7 @@ There's no live court API; the manual and unavailable states stay.
 | S01 | ~~Public landing~~ | — | **Moved to 1A** | Replaced by the B13 owner-first landing |
 | S02 | Demo request for institutions | ⬜ UI · 🟩 API | Secondary | Reached from «للجهات الممولة»; API `POST /api/public/demo-requests` (lookups at `/api/public/lookups/demo-request`; honeypot field `website`) |
 | S07 | Profile, security and sessions (revoke with step-up) | 🟧 WIP `…a1008744…` @ `05c715b` | OK | Needed by staff and individuals alike |
-| S08 | Notifications | 🟧 WIP (same) | OK | Moves to 1A-2 if finished there |
+| S08 | Notifications | 🟧 WIP (same) | OK | Not needed in 1A-2 (closed 2026-09-27 without it); stays here |
 | S09 | Tasks | 🟧 WIP (same) | OK (staff) | |
 | S10 | Global search + live command palette | 🟧 WIP (same) | OK (staff) | |
 | S11 | Help and support | ⬜ | Rework | Content must answer the individual's question first, then staff help |

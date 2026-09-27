@@ -1,4 +1,4 @@
-# Phase 1A-2: After the outcome (agreement → payments → closure) ▶ CURRENT (steps 0–7 done 2026-09-27: manual mode complete; lender mode L19–L21 and L26 verified)
+# Phase 1A-2: After the outcome (agreement → payments → closure) ✅ Done 2026-09-27
 
 **Start only after Phase 1A (MVP) is done.** **Q13 decided (2026-09-25):** this phase is **not** part of the first MVP.
 
@@ -46,9 +46,9 @@ The lender executes all of this; Rahoon tracks and explains.
 
 - [x] **Manual mode** (✓ 2026-09-27, step 4)**:** Playwright extends `owner-journey.spec.ts`: accept → relay → start tracking → agreement recorded and verified → schedule visible to the individual → the individual reports a payment → the lender confirmation is recorded, verified and linked → a lender notice is explained → a closure letter is verified → closed with `executed_closed` → the individual downloads the closure documents. (The notice is its own test on seeded REQ-2026-00308.)
 - [x] (✓ step 4) The individual sees every state change in plain language, with the source of each fact. They never see internal notes, unverified records or a Rahoon deadline.
-- [ ] **Lender mode:** L19–L21 re-verified; the B10 backend merged and migrated; L26 built; the lender-mode Playwright path (activation → matched payment in D10 → closure → D14) passes.
-- [ ] `dotnet test` is green.
-- [ ] Every row below is ✅, with *Direction review* OK or Secondary (lender mode). A row still awaiting design (D-7, D-8) counts when «بانتظار اعتماد التصميم» is recorded in *Findings*, as in Phase 1A.
+- [x] **Lender mode** (✓ steps 5–8): L19–L21 re-verified; the B10 backend merged and migrated; L26 built. The lender-mode Playwright path is covered on **two seeded cases**, not one: activation → matched payment → D10 on RH-2026-004090, and reconciliation → closure → D14 on RH-2026-003702 (`lender-execution.spec.ts`; the tests change seeded cases and need `E2E_RESET=1`).
+- [x] `dotnet test` is green (**193/193**, step 7; no backend change in step 8).
+- [x] Every row below is ✅, with *Direction review* OK or Secondary (lender mode). The rows awaiting design (D-7, D-8) have «بانتظار اعتماد التصميم» recorded in *Findings*, as in Phase 1A. S08/S09 were moved out of this phase's scope to Phase 1B (their row in `phase-1b-shared-and-lender-ops.md`).
 
 ## Demo cast
 
@@ -75,7 +75,7 @@ The lender executes all of this; Rahoon tracks and explains.
 
 | ID | Screen / capability | Mode | Tech status | Direction review | Notes |
 |---|---|---|---|---|---|
-| — | `execution_tracking` state, execution records, payment reports, new close outcomes (ADR 0002) | manual | 🟩 2026-09-27: API + seed + tests (`ExecutionTests` 12), migration applied on Postgres; seeded requests render on `/my` (Playwright at 390/1440) and the team detail (Chrome at 1440); 768 not checked | New | Step 1. No dedicated screens yet (steps 2–3) |
+| — | `execution_tracking` state, execution records, payment reports, new close outcomes (ADR 0002) | manual | ✅ 2026-09-27 (browser-verified through the step 2–4 journeys in both UIs): API + seed + tests (`ExecutionTests` 12), migration applied on Postgres; seeded requests render on `/my` (Playwright at 390/1440) and the team detail (Chrome at 1440); 768 not checked | New | Step 1. No dedicated screens yet (steps 2–3) |
 | T02 «التنفيذ», T09, T10, T11, T06 extension | Team execution screens | manual | ✅ 2026-09-27: Playwright (record agreement + schedule → verify with step-up → closure letter → verify → close «اكتمل التنفيذ») at 1440; QA sweep 390/768/1440 + 200% with 0 issues | New + **Needs design (D-7)** «بانتظار اعتماد التصميم» | Step 2 |
 | E01–E06 | The individual's execution view under `/my/requests/[ref]` (D10/D14 successors) | manual | ✅ 2026-09-27: Playwright at 390 (tracking panel → report with proof → confirmed → closure document download); QA sweep of the seeded REQ-2026-00309/00310 screens at 390/768/1440 with 0 issues | New + **Needs design (D-8)** «بانتظار اعتماد التصميم» | Step 3 |
 | L19 | Agreement (legal review → schedule → activate) | lender | ✅ 2026-09-27: Playwright (`lender-execution.spec.ts`): missing steps shown, early activation refused with the reason, legal review → schedule → activate | Secondary | Step 5 |
@@ -84,7 +84,6 @@ The lender executes all of this; Rahoon tracks and explains.
 | D10 | Owner payments and receipts | lender | ✅ 2026-09-27: Playwright at 390: unmatched payment not shown as received; «مستلم» after matching | Secondary | «رهون لا تستلم أي مبالغ». Content rules reused in E01/E02 (step 3 finding) |
 | L26 | Reconciliation + closure (settlement path) | lender | ✅ 2026-09-27: `/cases/[ref]/closure`; Playwright on seeded RH-2026-003702 (review → approve with step-up → owner summary → request → closure decision with step-up); `SettlementClosureTests` ✓ | Secondary | Step 7. Distribution (judicial path) not shown (Phase 3, V10) |
 | D14 | Owner closure documents | lender | ✅ 2026-09-27: Playwright at 390 after the L26 closure: clearance, release letter and final summary listed for download | Secondary | Owner access read-only for 90 days (assumption, case session only) |
-| S08, S09 | Notifications, tasks | both | 🟧 WIP `…a1008744…` @ `05c715b` | — | Stay in Phase 1B (not needed here) |
 
 ## Steps
 
@@ -137,7 +136,11 @@ The lender executes all of this; Rahoon tracks and explains.
    - [x] D14: the owner (`demo-RH-2026-003702`, `3702`) sees and can download the clearance, the release letter and the final summary.
    - [x] Seed alignment: AGR-2026-003702-01 now carries the L26 canon (TRX-88201744 300,000.00 and TRX-88355102 155,210.75, both matched; waiver 38,204.10), the same references as the B10 reconciliation seed.
    - [x] Checks: backend **193/193**; tsc, eslint, build ✓; E2E **12 passed** (the first full run after a dev-server restart timed out once on a cold route compile; the test passed alone and the rerun was clean).
-8. ⬜ **Lender mode: E2E + wrap-up** (was step 4). Lender-mode path in `lender-flow.spec.ts`, negative checks (other tenant → 404, forbidden transitions show reasons, double submit replays). Tick the Definition of done and move ▶ CURRENT to Phase 1B.
+8. ✅ **Lender mode: E2E + wrap-up** (2026-09-27, was step 4).
+   - [x] The lender-mode path lives in `lender-execution.spec.ts` (steps 5 and 7); `lender-flow.spec.ts` keeps the earlier lender tests, all enabled.
+   - [x] Negatives: another institution (مها, السنبلة) gets the **same refusal as a case that doesn't exist** on payments, closure and agreement. The case module answers 403 for both by design (`CaseAccess.GetAsync` «the same refusal whether it exists or not»), so the plan's "→ 404" is asserted as "indistinguishable from missing". Forbidden actions show their reasons (early activation, closure blockers, the recorder's own payment, the preparer's own reconciliation). A double submit with one Idempotency-Key returns the identical answer and stores one note.
+   - [x] README: lender-mode demo pointers (004090 activation and payments, 003870 breach, 003702 L26 closure, owner invitations).
+   - [x] Checks: tsc, eslint ✓; E2E **13 passed**; backend 193/193. Definition of done ticked; ▶ CURRENT moved to Phase 1B.
 
 ## Findings / open decisions
 
@@ -155,5 +158,7 @@ The lender executes all of this; Rahoon tracks and explains.
 - **Step 0, D14's 90-day window** came from the owner-case session. For the individual account (Q14) closure documents stay available; the lender-mode D14 keeps its assumption until step 7.
 - ~~The approvals inbox lists only solution approvals. Decide in step 7 whether closure approvals belong in the inbox or on a case-level screen.~~ **Decided in step 7:** closure and reconciliation decisions stay on the case screen (L26). The API already returns them as the case's `actions` with reasons, and the notifications link to `/cases/[ref]/closure`; the approvals inbox is not extended in this phase.
 - **Step 7, distribution:** the distribution part of the closure API belongs to the judicial path (Phase 3, on hold V10) and has no UI here.
+- **Step 8, S08/S09:** moved out of this phase (never needed here); they stay in Phase 1B with the WIP branch `…a1008744…` @ `05c715b`.
+- **Still open after this phase:** D-7/D-8 designs; V13 (closure documents per path); V4 wording (withdrawal during tracking, the lender-notice line, the payment-report confirmation); the Latin-only owner summary PDF; the owner read-only window (90 days, case session only).
 - **Step 7, E2E data:** the L26 test closes seeded RH-2026-003702 (closed cases are immutable); like the other lender tests it needs `E2E_RESET=1` to re-run.
 - The owner summary PDF generated at closure is Latin-only (no Arabic shaping); listed as outstanding.

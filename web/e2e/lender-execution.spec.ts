@@ -191,3 +191,36 @@ test("L26 settlement closure: preparer ≠ reviewer ≠ approver, step-up, closu
   await owner.screenshot({ path: "test-results/lender-d14-owner.png", fullPage: true });
   await owner.context().close();
 });
+
+test("lender-mode negatives: another institution gets the same refusal as a missing case; a double submit replays once", async ({ page }) => {
+  await page.goto("/login");
+  // مها is a case manager at another lender (السنبلة). CaseAccess answers the same refusal whether a case exists or not,
+  // so alufuq's cases are indistinguishable from a reference that doesn't exist.
+  await apiLogin(page, "m.alshahrani@sunbula.example", "شركة السنبلة للتمويل");
+  const missing = await api(page, "GET", "/cases/RH-2026-999999/payments");
+  expect(missing.status).toBe(403);
+  for (const ref of ["RH-2026-003870", "RH-2026-003702"]) {
+    for (const path of ["payments", "closure", "agreement"]) {
+      const res = await api(page, "GET", `/cases/${ref}/${path}`);
+      expect(res.status, `${ref} ${path}`).toBe(missing.status);
+      expect(JSON.stringify(res.json)).toBe(JSON.stringify(missing.json));
+    }
+  }
+
+  // The same Idempotency-Key replays the stored answer instead of acting twice.
+  await apiLogin(page, "s.alqahtani@alufuq.example");
+  const cookies = await page.context().cookies();
+  const headers = {
+    Origin: new URL(page.url()).origin,
+    "X-CSRF-Token": cookies.find((c) => c.name === "rahoon_csrf")?.value ?? "",
+    "Idempotency-Key": crypto.randomUUID(),
+  };
+  const body = `ملاحظة داخلية للتحقق من الإعادة ${Date.now()}`;
+  const send = () => page.request.post("/api/cases/RH-2026-003870/negotiation/notes", { headers, data: { body, internal: true } });
+  const [first, second] = [await send(), await send()];
+  expect(first.status()).toBe(200);
+  expect(second.status()).toBe(200);
+  expect(await second.text()).toBe(await first.text());
+  const negotiation = await api<unknown>(page, "GET", "/cases/RH-2026-003870/negotiation");
+  expect(JSON.stringify(negotiation.json).split(body).length - 1).toBe(1);
+});
