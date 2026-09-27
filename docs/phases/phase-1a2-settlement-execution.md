@@ -1,4 +1,4 @@
-# Phase 1A-2: After the outcome (agreement → payments → closure) ▶ CURRENT (step 0 done 2026-09-27)
+# Phase 1A-2: After the outcome (agreement → payments → closure) ▶ CURRENT (steps 0–1 done 2026-09-27)
 
 **Start only after Phase 1A (MVP) is done.** **Q13 decided (2026-09-25):** this phase is **not** part of the first MVP.
 
@@ -75,7 +75,7 @@ The lender executes all of this; Rahoon tracks and explains.
 
 | ID | Screen / capability | Mode | Tech status | Direction review | Notes |
 |---|---|---|---|---|---|
-| — | `execution_tracking` state, execution records, payment reports, new close outcomes (ADR 0002) | manual | ⬜ | New | Step 1 |
+| — | `execution_tracking` state, execution records, payment reports, new close outcomes (ADR 0002) | manual | 🟩 2026-09-27: API + seed + tests (`ExecutionTests` 11), migration applied on Postgres; seeded requests render on `/team` and `/my` (Playwright at 390/1440) | New | Step 1. No dedicated screens yet (steps 2–3) |
 | T02 «التنفيذ», T09, T10, T11, T06 extension | Team execution screens | manual | ⬜ | New + **Needs design (D-7)** | Step 2 |
 | E01–E06 | The individual's execution view under `/my/requests/[ref]` (D10/D14 successors) | manual | ⬜ | New + **Needs design (D-8)** | Step 3 |
 | L19 | Agreement (legal review → schedule → activate) | lender | 🟩 on `master` (`ca4aefb`, 1A step 3); browser smoke only | Secondary | Step 5 |
@@ -93,12 +93,12 @@ The lender executes all of this; Rahoon tracks and explains.
    - [x] [ADR 0002](../adr/0002-request-execution-tracking.md): `execution_tracking` state, lender-evidenced execution records with second-member verification, the individual's payment reports, new close outcomes. ADR 0001 amendment row.
    - [x] Design requests D-7 (team) and D-8 (individual): [`docs/design-requests/1a2-step0-design-requests.md`](../design-requests/1a2-step0-design-requests.md).
    - [x] Q16–Q18 recorded as OPEN in `product-direction.md` §6, with interim rules.
-1. ⬜ **Execution tracking backend (manual mode).**
-   - `RequestStatus.ExecutionTracking`, transition `start_execution_tracking`, extended `close` (outcomes `executed_closed`, `tracking_ended`, `agreement_ended_by_lender`) and `continue_coordination` (Q17 interim), `withdraw` wording.
-   - `RequestExecutionRecord` (agreement · payment_confirmation · lender_notice · closure_document), `RequestScheduleItem`, `RequestPaymentReport`; new document kinds; permissions `request.execution_record` / `request.execution_verify`; DB check verifier ≠ recorder.
-   - Team and individual endpoints; individual DTOs expose published records only.
-   - Seed: one request with an accepted, relayed P1 offer (ready to start tracking), one in tracking with a published agreement, schedule, a confirmed and a pending payment report, one closed `executed_closed` with documents. Re-check REQ-2026-00306 (closed `offer_accepted`, stays valid).
-   - Tests: ADR 0002 §6. Migration `RequestExecutionTracking`.
+1. ✅ **Execution tracking backend (manual mode)** (2026-09-27).
+   - [x] `RequestStatus.ExecutionTracking` («قيد متابعة التنفيذ», «ننتظر» = lender by default); transition `start_execution_tracking` (guards: consent, relayed, `accepted_trackable_offer`); `close` from tracking with `executed_closed` / `tracking_ended` / `agreement_ended_by_lender` / `other` only; `offer_accepted` refused whenever the latest response accepts a P1/P2 offer (audited guard failure); `continue_coordination` from tracking with a required reason shown to the individual (Q17); withdrawal wording during tracking.
+   - [x] `RequestExecutionRecord` (agreement · payment_confirmation · lender_notice · closure_document), `RequestScheduleItem`, `RequestPaymentReport`; applicant document kind `payment_proof`; permissions `request.execution_record` (coordinator, lead) / `request.execution_verify` (verifier, lead); DB check verifier ≠ recorder; every id in a body is checked against the same request.
+   - [x] Endpoints: `POST /api/team/requests/{ref}/execution/start`, `…/execution/records`, `…/execution/records/{id}/verify` (step-up on publish), `…/payment-reports/{id}/note`, `GET /api/team/verify/execution`; `POST /api/my/requests/{ref}/payment-reports`. Team update (`/updates`) takes an optional «ننتظر» (lender/applicant) during tracking. Team and individual detail DTOs gain `execution`; the individual's has published records only, the current agreement's schedule with a state only from a lender confirmation or their own report, no team identities and no date-derived overdue state.
+   - [x] Seed: REQ-2026-00308 (accepted, relayed P1; ready to start), REQ-2026-00309 (tracking: agreement + 12-row schedule, installment 1 confirmed, installment 2 reported with its confirmation awaiting عبير), REQ-2026-00310 (P2 closed `executed_closed` with clearance and release letters). REQ-2026-00306 stays `offer_accepted` (historical). The live demo continues from REQ-2026-00311. README logins updated.
+   - [x] Tests: `ExecutionTests` (11, ADR 0002 §6) and the step-7 accept test now expects tracking. Backend **176/176**. Migration `RequestExecutionTracking`. Web: `execution_tracking` added to the status maps (the individual chip indexed the map with no fallback and would have crashed) and three outcome labels; tsc, eslint, build ✓. E2E 7 passed, 1 skipped (known `fixme`); `owner-journey.spec.ts` now asserts that closing an accepted P1 offer is refused with the reason.
 2. ⬜ **Team execution screens (D-7).** T02 «التنفيذ» tab, T09, T10, T06 extension (verify queue lists execution records), T11; the close dialog gets the new outcomes. «بانتظار اعتماد التصميم» if D-7 isn't designed.
 3. ⬜ **The individual's execution view (D-8).** E01–E06 on the tracker, reusing the D10/D14 components; report a payment with proof; lender notice with messages/objection; closure documents with no expiry; withdrawal wording. «بانتظار اعتماد التصميم» if D-8 isn't designed.
 4. ⬜ **Manual-mode E2E + responsive QA.** Extend `owner-journey.spec.ts` (the DoD path above; the current accept → close test becomes accept → tracking → closure), add the execution screens to `responsive-qa.spec.ts`, negative checks (another individual → 404, verifier = recorder refused, close without closure document refused, double submit replays). README demo script and logins.
@@ -120,6 +120,13 @@ The lender executes all of this; Rahoon tracks and explains.
 
 - **Step 0 (2026-09-27), the close path changes:** today the team closes an accepted offer straight away (`offer_accepted`, E2E `owner-journey.spec.ts` «T07: relay, then close», seed REQ-2026-00306). From step 1, tracking is **mandatory** for an accepted P1/P2 offer: `close` with `offer_accepted` is refused for it (ADR 0002 §4.1), and `tracking_ended` ends tracking early. The E2E test is updated in step 4, and `offer_accepted` stays valid for existing closed requests and for P3.
 - **Step 0, dates vs Q6/Q12:** installment due dates are shown only as the lender's stated schedule with its source («بحسب جدول جهتك الممولة»), with no countdown, reminder or Rahoon-driven «متأخر». Precedent: 1A step 9 showed lender-mode deadlines as the lender's condition.
+- **Step 1 (2026-09-27), for step 2:**
+  - The team screen offers «متابعة التنسيق» from tracking (it is in `TeamRequestView`'s handled actions) but its dialog has no reason field; from tracking the API answers 400 until step 2 adds the field.
+  - The close dialog lists the pre-tracking outcomes for every state; step 2 shows the tracking outcomes only in `execution_tracking` (the API already refuses mismatches).
+  - The execution verify queue is a separate endpoint (`/api/team/verify/execution`) so the step-7 offer queue keeps its shape; step 2 merges both into «بحاجة إلى تحقق».
+  - «بدء متابعة التنفيذ» has no button yet; the E2E asserts the refusal of the old close instead and is extended in step 4.
+- **Step 1, scope kept to ADR 0002:** `request_info` is **not** available during tracking (not in the ADR table); the team uses messages or a team update with «ننتظر: العميل».
+- **Step 1, local dev:** the API and web dev servers from the previous session were stopped for the build and restarted (`dev-api.sh --reset`, `npm run dev`); `dev-api.sh` prints `pkill: command not found` on Windows (harmless).
 - **Step 0, D14's 90-day window** came from the owner-case session. For the individual account (Q14) closure documents stay available; the lender-mode D14 keeps its assumption until step 7.
 - The approvals inbox lists only solution approvals. Referral, reconciliation and closure approvals notify only. Decide in step 7 whether closure approvals belong in the inbox or on a case-level screen.
 - The owner summary PDF generated at closure is Latin-only (no Arabic shaping); listed as outstanding.

@@ -73,7 +73,7 @@ within platform minima). Enforcement is server-side on every endpoint (`RequireP
 
 | Permission | منسق حالات (team_coordinator) | مراجِع العروض (team_verifier) | قائد الفريق (team_lead) |
 |---|---|---|---|
-| request.view_assigned | ✓ (assigned to them, or unassigned) | ✓ (offers awaiting verification, step 7) | ✓ |
+| request.view_assigned | ✓ (assigned to them, or unassigned) | ✓ (offers awaiting verification, step 7; execution records, Phase 1A-2) | ✓ |
 | request.view_all | — | — | ✓ |
 | request.assign | — | — | ✓ |
 | request.review (pick up, identity check, internal notes, not eligible) | ✓ | — | ✓ |
@@ -85,6 +85,8 @@ within platform minima). Enforcement is server-side on every endpoint (`RequireP
 | request.response_relay | ✓ | — | ✓ |
 | request.close | ✓ | — | ✓ |
 | request.objection_handle | ✓ | — | ✓ |
+| request.execution_record (Phase 1A-2: start tracking, record lender evidence, note on a payment report) | ✓ | — | ✓ |
+| request.execution_verify (◐ verifier ≠ recorder, MFA; Phase 1A-2) | — | ◐ | ◐ |
 
 Data scope: operator membership (tenant filter) + assignment check (`RequestAccess`); drafts are never visible to the team; a
 refused open of a request assigned to someone else is audited. Lender staff, providers, agents and platform admins get 403 on

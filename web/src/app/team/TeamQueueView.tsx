@@ -19,6 +19,7 @@ export const TEAM_STATUS_TONE: Record<string, { tone: Tone; icon: string }> = {
   lender_coordination: { tone: "info", icon: "forum" },
   offer_available: { tone: "sel", icon: "local_offer" },
   response_recorded: { tone: "warn", icon: "task_alt" },
+  execution_tracking: { tone: "info", icon: "receipt_long" },
   closed: { tone: "neutral", icon: "lock" },
   not_eligible: { tone: "err", icon: "block" },
   withdrawn: { tone: "neutral", icon: "undo" },

@@ -14,6 +14,7 @@ export type RequestStatusKey =
   | "lender_coordination"
   | "offer_available"
   | "response_recorded"
+  | "execution_tracking"
   | "closed"
   | "not_eligible"
   | "withdrawn";
@@ -45,6 +46,7 @@ const ar = {
     lender_coordination: "قيد التنسيق مع جهتك الممولة",
     offer_available: "وصل عرض من جهتك الممولة",
     response_recorded: "سجّلنا ردك",
+    execution_tracking: "قيد متابعة التنفيذ",
     closed: "مغلق",
     not_eligible: "غير مناسب للخدمة حالياً",
     withdrawn: "مسحوب",
@@ -62,6 +64,7 @@ const ar = {
     lender_coordination: "يتواصل فريق رهون مع جهتك الممولة بشأن طلبك، ونبلغك بما يصلنا منها.",
     offer_available: "راجع العرض الذي وصل من جهتك الممولة. القرار لك.",
     response_recorded: "سينقل فريق رهون ردك إلى جهتك الممولة، ونبلغك بالخطوة التالية.",
+    execution_tracking: "تنفذ جهتك الممولة الاتفاق. نعرض هنا ما تؤكده من دفعات ومستندات، ويمكنك إبلاغنا بأي دفعة سددتها.",
     closed: "أُغلق هذا الطلب. يمكنك تقديم طلب جديد متى احتجت.",
     not_eligible: "اطّلع على السبب والخيارات المتاحة لك أدناه.",
     withdrawn: "سحبت هذا الطلب. يمكنك تقديم طلب جديد متى احتجت.",
@@ -76,6 +79,7 @@ const ar = {
     lender_coordination: "نشارك جهتك الممولة البيانات التي وافقت عليها فقط، وننسق معها بشأن طلبك.",
     offer_available: "سجّلنا عرض جهتك الممولة وتحقق منه عضو آخر من الفريق، وننتظر ردك.",
     response_recorded: "ننقل ردك إلى جهتك الممولة عبر قناة التواصل الموثقة.",
+    execution_tracking: "نسجّل ما يصلنا من جهتك الممولة بعد تحقق عضو آخر من الفريق. رهون لا تستلم أي مبالغ.",
     closed: "انتهى عملنا على هذا الطلب.",
     not_eligible: "لم يُتخذ أي إجراء بخصوص تمويلك بسبب هذا الطلب.",
     withdrawn: "توقفت أي مشاركة لبيانات هذا الطلب.",
@@ -341,6 +345,9 @@ const ar = {
     offer_accepted: "قبلت العرض",
     offer_declined: "لم يناسبك العرض",
     lender_no_offer: "ردّت جهتك الممولة",
+    executed_closed: "اكتمل التنفيذ",
+    tracking_ended: "انتهت متابعة رهون",
+    agreement_ended_by_lender: "أنهت جهتك الاتفاق",
     other: "انتهى الطلب",
   } as Record<string, string>,
   pathsPage: {
@@ -410,6 +417,7 @@ const en: RequestCopy = {
     lender_coordination: "Coordinating with your lender",
     offer_available: "An offer arrived from your lender",
     response_recorded: "We recorded your response",
+    execution_tracking: "Following the execution",
     closed: "Closed",
     not_eligible: "Not suitable for the service right now",
     withdrawn: "Withdrawn",
@@ -426,6 +434,7 @@ const en: RequestCopy = {
     lender_coordination: "The Rahoon team is in contact with your lender about your request and will tell you what we hear.",
     offer_available: "Review the offer from your lender. The decision is yours.",
     response_recorded: "The Rahoon team will pass your response to your lender and tell you the next step.",
+    execution_tracking: "Your lender carries out the agreement. We show what it confirms here, and you can tell us about any payment you made.",
     closed: "This request is closed. You can submit a new one whenever you need.",
     not_eligible: "See the reason and your options below.",
     withdrawn: "You withdrew this request. You can submit a new one whenever you need.",
@@ -439,6 +448,7 @@ const en: RequestCopy = {
     lender_coordination: "We share with your lender only the data you consented to, and coordinate with them about your request.",
     offer_available: "We recorded your lender's offer, another team member verified it, and we're waiting for your response.",
     response_recorded: "We're passing your response to your lender through the documented channel.",
+    execution_tracking: "We record what your lender sends once another team member has checked it. Rahoon never receives any money.",
     closed: "Our work on this request has ended.",
     not_eligible: "No action was taken on your finance because of this request.",
     withdrawn: "All sharing of this request's data has stopped.",

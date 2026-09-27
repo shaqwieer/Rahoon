@@ -37,6 +37,7 @@ public static class RequestStatusInfo
         RequestStatus.OfferAvailable => "offer_available",
         RequestStatus.ResponseRecorded => "response_recorded",
         RequestStatus.NotEligible => "not_eligible",
+        RequestStatus.ExecutionTracking => "execution_tracking",
         _ => s.ToString().ToLowerInvariant(),
     };
 
@@ -56,6 +57,7 @@ public static class RequestStatusInfo
         RequestStatus.Closed => "مغلق",
         RequestStatus.NotEligible => "غير مناسب للخدمة حالياً",
         RequestStatus.Withdrawn => "مسحوب",
+        RequestStatus.ExecutionTracking => "قيد متابعة التنفيذ",
         _ => s.ToString(),
     };
 
@@ -63,7 +65,8 @@ public static class RequestStatusInfo
     {
         RequestStatus.Draft or RequestStatus.InfoRequested or RequestStatus.OfferAvailable => RequestWaitingOn.Applicant,
         RequestStatus.Submitted or RequestStatus.TeamReview or RequestStatus.ResponseRecorded => RequestWaitingOn.Team,
-        RequestStatus.LenderCoordination => RequestWaitingOn.Lender,
+        // During tracking the default is the lender's confirmation or documents — never «you» for a payment (ADR 0002 §4.1).
+        RequestStatus.LenderCoordination or RequestStatus.ExecutionTracking => RequestWaitingOn.Lender,
         _ => RequestWaitingOn.None,
     };
 
@@ -91,9 +94,14 @@ public sealed class RequestWorkflow(RahoonDbContext db, RequestContext rc, ICloc
         new("publish_offer", [RequestStatus.LenderCoordination], RequestStatus.OfferAvailable, "نشر العرض للعميل", P.RequestOfferVerify,
             RequiresStepUp: true, Guards: ["consent_active"]),
         new("respond", [RequestStatus.OfferAvailable], RequestStatus.ResponseRecorded, "رد العميل على العرض", ""),
-        new("continue_coordination", [RequestStatus.ResponseRecorded], RequestStatus.LenderCoordination, "متابعة التنسيق", P.RequestResponseRelay,
+        // Q17: from execution tracking (e.g. after a lender-reported breach) coordination continues on the same request; the
+        // endpoint requires a reason there, shown to the individual.
+        new("continue_coordination", [RequestStatus.ResponseRecorded, RequestStatus.ExecutionTracking], RequestStatus.LenderCoordination, "متابعة التنسيق", P.RequestResponseRelay,
             Guards: ["consent_active", "response_relayed"]),
-        new("close", [RequestStatus.ResponseRecorded, RequestStatus.LenderCoordination], RequestStatus.Closed, "إغلاق الطلب", P.RequestClose,
+        // Phase 1A-2 (ADR 0002 §4.1): an accepted, relayed P1/P2 offer is tracked, not closed.
+        new("start_execution_tracking", [RequestStatus.ResponseRecorded], RequestStatus.ExecutionTracking, "بدء متابعة التنفيذ", P.RequestExecutionRecord,
+            Guards: ["consent_active", "response_relayed", "accepted_trackable_offer"]),
+        new("close", [RequestStatus.ResponseRecorded, RequestStatus.LenderCoordination, RequestStatus.ExecutionTracking], RequestStatus.Closed, "إغلاق الطلب", P.RequestClose,
             RequiresReason: true, Guards: ["response_relayed"]),
         new("not_eligible", [RequestStatus.TeamReview], RequestStatus.NotEligible, "غير مناسب للخدمة", P.RequestReview, RequiresReason: true),
         new("withdraw", RequestStatusInfo.NonTerminal, RequestStatus.Withdrawn, "سحب الطلب", ""),
@@ -220,6 +228,12 @@ public sealed class RequestWorkflow(RahoonDbContext db, RequestContext rc, ICloc
                 var last = await db.RequestResponses.Where(x => x.RequestId == r.Id).OrderByDescending(x => x.At).FirstOrDefaultAsync();
                 return last is null || last.RelayedAt is not null ? null : "لم يُسجَّل نقل رد العميل إلى الجهة بعد.";
             }
+            case "accepted_trackable_offer":
+            {
+                var last = await LatestResponseAsync(db, r);
+                if (last?.Response.Kind != "accept") return "آخر رد للعميل ليس قبولاً لعرض منشور.";
+                return last.Value.Offer.Path is "p1" or "p2" ? null : "تنفيذ البيع الرضائي (P3) يُتابَع في مرحلة لاحقة؛ أغلق الطلب بنتيجة «قبل العميل العرض».";
+            }
             default:
                 throw new InvalidOperationException($"Unknown guard {guard}");
         }
@@ -236,6 +250,14 @@ public sealed class RequestWorkflow(RahoonDbContext db, RequestContext rc, ICloc
         if (string.IsNullOrWhiteSpace(r.PropertyCity)) missing.Add("مدينة العقار");
         if (r.PathPreference is null) missing.Add("ما يناسبك");
         return missing;
+    }
+
+    /// <summary>The individual's latest response and the offer it answered (null before any response).</summary>
+    public static async Task<(RequestResponse Response, RequestOffer Offer)?> LatestResponseAsync(RahoonDbContext db, Request r)
+    {
+        var last = await db.RequestResponses.AsNoTracking().Where(x => x.RequestId == r.Id).OrderByDescending(x => x.At).FirstOrDefaultAsync();
+        if (last is null) return null;
+        return (last, await db.RequestOffers.AsNoTracking().FirstAsync(o => o.Id == last.OfferId));
     }
 
     /// <summary>The consent row that still names the request's current lender and has not been withdrawn.</summary>

@@ -25,6 +25,8 @@ public sealed class FinancingInstitution : Entity
 public enum RequestStatus
 {
     Draft, Submitted, TeamReview, InfoRequested, LenderCoordination, OfferAvailable, ResponseRecorded, Closed, NotEligible, Withdrawn,
+    /// <summary>Phase 1A-2 (ADR 0002): an accepted P1/P2 offer whose execution with the lender Rahoon tracks and explains.</summary>
+    ExecutionTracking,
 }
 
 /// <summary>Who the request is waiting on (Q6: shown instead of any deadline).</summary>
@@ -115,7 +117,7 @@ public sealed class RequestDocument : OrgEntity, IApplicantOwned
 {
     public Guid RequestId { get; set; }
     public Guid ApplicantUserId { get; set; }
-    /// <summary>salary_statement | bank_statement | title_deed | financing_contract | other | lender_letter</summary>
+    /// <summary>salary_statement | bank_statement | title_deed | financing_contract | other | payment_proof | lender_letter</summary>
     public required string Kind { get; set; }
     public required string Name { get; set; }
     /// <summary>applicant | team</summary>
@@ -316,4 +318,101 @@ public sealed class SpecialistReferral : OrgEntity, IApplicantOwned
     public Guid RecordedByUserId { get; set; }
     public required string RecordedByLabel { get; set; }
     public DateTimeOffset At { get; set; }
+}
+
+public enum RequestExecutionRecordStatus { PendingVerification, Returned, Published, Superseded }
+
+/// <summary>
+/// One execution fact from the lender (ADR 0002 §4.2), recorded by the Rahoon team from the lender's document and verified
+/// by a second member before the individual sees it (DB check verifier ≠ recorder). Rahoon never asserts a payment on its
+/// own authority. Append-only: a correction is a new record that supersedes the old one, with a reason.
+/// </summary>
+public sealed class RequestExecutionRecord : OrgEntity, IApplicantOwned
+{
+    public Guid RequestId { get; set; }
+    public Guid ApplicantUserId { get; set; }
+    /// <summary>agreement | payment_confirmation | lender_notice | closure_document</summary>
+    public required string Kind { get; set; }
+    public RequestExecutionRecordStatus Status { get; set; } = RequestExecutionRecordStatus.PendingVerification;
+
+    /// <summary>The lender's document (a request document of kind lender_letter). Required.</summary>
+    public Guid SourceDocumentId { get; set; }
+    public bool ShareSourceWithApplicant { get; set; } = true;
+    public required string LenderReference { get; set; }
+    public DateOnly LenderDate { get; set; }
+    /// <summary>What the lender stated, as recorded by the team.</summary>
+    public required string SummaryText { get; set; }
+    /// <summary>«ماذا يعني لك» — plain language for the individual.</summary>
+    public required string ExplanationText { get; set; }
+
+    // agreement — as the lender stated it (terms prefilled from the accepted offer, editable to the letter)
+    public Guid? OfferId { get; set; }
+    public string? Path { get; set; }
+    public DateOnly? ActivationDate { get; set; }
+    public decimal? NewInstallment { get; set; }
+    public int? TermMonths { get; set; }
+    public decimal? SettlementAmount { get; set; }
+    public string? TermsText { get; set; }
+
+    // payment_confirmation
+    public decimal? Amount { get; set; }
+    public DateOnly? ReceivedOn { get; set; }
+    public int? ScheduleItemNo { get; set; }
+    /// <summary>The individual's payment report this confirmation answers (linked on publication).</summary>
+    public Guid? AnswersReportId { get; set; }
+
+    /// <summary>lender_notice: missed_installment | agreement_change | other</summary>
+    public string? NoticeCategory { get; set; }
+    /// <summary>closure_document: rescheduling_confirmation | clearance | mortgage_release | other (Q18; list per path V13)</summary>
+    public string? DocumentKind { get; set; }
+
+    public Guid? SupersedesRecordId { get; set; }
+    public string? CorrectionReason { get; set; }
+
+    public Guid RecordedByUserId { get; set; }
+    public required string RecordedByLabel { get; set; }
+    public DateTimeOffset RecordedAt { get; set; }
+    public Guid? VerifiedByUserId { get; set; }
+    public string? VerifiedByLabel { get; set; }
+    public DateTimeOffset? VerifiedAt { get; set; }
+    public List<string> VerificationChecklist { get; set; } = [];
+    public string? ReturnReason { get; set; }
+    public DateTimeOffset? PublishedAt { get; set; }
+}
+
+/// <summary>
+/// The lender's stated installment schedule, a child of an agreement record. Shown only as «بحسب جدول جهتك الممولة» —
+/// never a Rahoon deadline, reminder or overdue flag (Q6/Q12, Q16).
+/// </summary>
+public sealed class RequestScheduleItem : OrgEntity, IApplicantOwned
+{
+    public Guid RequestId { get; set; }
+    public Guid ApplicantUserId { get; set; }
+    public Guid RecordId { get; set; }
+    public int No { get; set; }
+    public DateOnly DueDate { get; set; }
+    public decimal Amount { get; set; }
+}
+
+public enum RequestPaymentReportStatus { Reported, NotConfirmedYet, ConfirmedByLender }
+
+/// <summary>
+/// A payment the individual reports having made to their lender, with proof. It never becomes confirmed without a
+/// published lender <c>payment_confirmation</c> record (ADR 0002 §4.2); the team's note is «لم تؤكده جهتك بعد», never a rejection.
+/// </summary>
+public sealed class RequestPaymentReport : OrgEntity, IApplicantOwned
+{
+    public Guid RequestId { get; set; }
+    public Guid ApplicantUserId { get; set; }
+    public required string Reference { get; set; }
+    public decimal Amount { get; set; }
+    public DateOnly TransferDate { get; set; }
+    public string? BankReference { get; set; }
+    public int? ScheduleItemNo { get; set; }
+    public Guid ProofDocumentId { get; set; }
+    public RequestPaymentReportStatus Status { get; set; } = RequestPaymentReportStatus.Reported;
+    public string? TeamNote { get; set; }
+    public Guid? ConfirmationRecordId { get; set; }
+    public DateTimeOffset At { get; set; }
+    public DateTimeOffset? AnsweredAt { get; set; }
 }

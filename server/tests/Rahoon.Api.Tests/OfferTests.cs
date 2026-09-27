@@ -62,7 +62,7 @@ public sealed class OfferTests(ApiFixture api)
         return (individual, nayef, reference);
     }
 
-    private static object Relay() => new
+    internal static object Relay() => new
     {
         channel = "email", occurredAt = DateTimeOffset.UtcNow.AddMinutes(-5), counterpart = "إدارة التحصيل", summary = "أرسلنا رد العميل بالبريد الرسمي.",
         applicantText = (string?)null,
@@ -159,7 +159,7 @@ public sealed class OfferTests(ApiFixture api)
     }
 
     [Fact]
-    public async Task Accepting_needs_an_sms_code_is_idempotent_and_is_relayed_before_closing()
+    public async Task Accepting_needs_an_sms_code_is_idempotent_and_is_relayed_then_tracked_not_closed()
     {
         var (individual, nayef, reference) = await OfferAvailableAsync(api);
         var (sBad, _) = await individual.PostAsync($"/api/my/requests/{reference}/offer/respond", new { kind = "accept", code = "000000" });
@@ -180,17 +180,21 @@ public sealed class OfferTests(ApiFixture api)
         Assert.Equal("team", TestClient.Str(recorded, "waitingOn"));
         Assert.Contains("ليست توقيعاً ملزماً", TestClient.Raw(recorded!["responses"]));
 
-        // Closing before the response is relayed is refused; relay, then close with the outcome shown to the individual.
+        // Closing before the response is relayed is refused; after relaying, an accepted P1 offer is tracked (Phase 1A-2,
+        // ADR 0002): closing it as «قبل العميل العرض» is refused and audited, and execution tracking starts instead.
         var (sEarly, early) = await nayef.PostAsync($"/api/team/requests/{reference}/close", new { outcomeCode = "offer_accepted", summary = "قبلت العرض." });
         Assert.Equal(HttpStatusCode.UnprocessableEntity, sEarly);
         Assert.Contains("نقل رد العميل", TestClient.Raw(early));
         Assert.Equal(HttpStatusCode.OK, (await nayef.PostAsync($"/api/team/requests/{reference}/relay", Relay())).Status);
-        Assert.Equal(HttpStatusCode.OK, (await nayef.PostAsync($"/api/team/requests/{reference}/close",
-            new { outcomeCode = "offer_accepted", summary = "قبلت عرض جهتك ونقلنا موافقتك إليها. التنفيذ يتم مع جهتك الممولة." })).Status);
-        var (_, closed) = await individual.GetAsync($"/api/my/requests/{reference}");
-        Assert.Equal("closed", TestClient.Str(closed, "status"));
-        Assert.Contains("التنفيذ يتم مع جهتك", TestClient.Str(closed!["outcome"], "summary"));
-        Assert.Contains("نقلنا ردك", TestClient.Raw(closed["timeline"]));
+        var (sClose, refused) = await nayef.PostAsync($"/api/team/requests/{reference}/close",
+            new { outcomeCode = "offer_accepted", summary = "قبلت عرض جهتك ونقلنا موافقتك إليها." });
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, sClose);
+        Assert.Contains("متابعة التنفيذ", TestClient.Raw(refused));
+        Assert.Equal(HttpStatusCode.OK, (await nayef.PostAsync($"/api/team/requests/{reference}/execution/start", new { nextStep = (string?)null })).Status);
+        var (_, tracked) = await individual.GetAsync($"/api/my/requests/{reference}");
+        Assert.Equal("execution_tracking", TestClient.Str(tracked, "status"));
+        Assert.Equal("lender", TestClient.Str(tracked, "waitingOn"));
+        Assert.Contains("نقلنا ردك", TestClient.Raw(tracked!["timeline"]));
     }
 
     [Fact]

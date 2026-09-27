@@ -109,14 +109,15 @@ public static class SystemRoles
         new(TeamCoordinator, "منسق حالات", "Case coordinator", OrganizationKind.Operator,
         [
             P.RequestViewAssigned, P.RequestReview, P.RequestRequestInfo, P.RequestCoordinate, P.RequestMessage, P.RequestOfferRecord,
-            P.RequestResponseRelay, P.RequestClose, P.RequestObjectionHandle,
+            P.RequestResponseRelay, P.RequestClose, P.RequestObjectionHandle, P.RequestExecutionRecord,
         ]),
         new(TeamVerifier, "مراجِع العروض", "Offer verifier", OrganizationKind.Operator,
-            [P.RequestViewAssigned, P.RequestOfferVerify]),
+            [P.RequestViewAssigned, P.RequestOfferVerify, P.RequestExecutionVerify]),
         new(TeamLead, "قائد الفريق", "Team lead", OrganizationKind.Operator,
         [
             P.RequestViewAssigned, P.RequestViewAll, P.RequestAssign, P.RequestReview, P.RequestRequestInfo, P.RequestCoordinate, P.RequestMessage,
             P.RequestOfferRecord, P.RequestOfferVerify, P.RequestResponseRelay, P.RequestClose, P.RequestObjectionHandle,
+            P.RequestExecutionRecord, P.RequestExecutionVerify,
         ]),
 
         new(PlatformOps, "مسؤول عمليات", "Operations", OrganizationKind.Platform,

@@ -13,6 +13,7 @@ export type TeamStatusKey =
   | "lender_coordination"
   | "offer_available"
   | "response_recorded"
+  | "execution_tracking"
   | "closed"
   | "not_eligible"
   | "withdrawn";
@@ -40,6 +41,7 @@ const ar = {
     lender_coordination: "قيد التنسيق مع الجهة",
     offer_available: "عرض منشور للعميل",
     response_recorded: "رد العميل مسجل",
+    execution_tracking: "قيد متابعة التنفيذ",
     closed: "مغلق",
     not_eligible: "غير مناسب للخدمة",
     withdrawn: "مسحوب",
@@ -340,6 +342,7 @@ const en: TeamCopy = {
     lender_coordination: "Coordinating with the lender",
     offer_available: "Offer published to the individual",
     response_recorded: "Response recorded",
+    execution_tracking: "Tracking execution",
     closed: "Closed",
     not_eligible: "Not suitable",
     withdrawn: "Withdrawn",

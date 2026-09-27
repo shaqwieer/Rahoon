@@ -17,6 +17,7 @@ public sealed record RecordOfferBody(
 public sealed record VerifyOfferBody(string? Decision, string? Reason, List<string>? Checklist);
 public sealed record RelayBody(string? Channel, DateTimeOffset? OccurredAt, string? Counterpart, string? Summary, string? ApplicantText);
 public sealed record CloseBody(string? OutcomeCode, string? Summary);
+public sealed record ContinueBody(string? NextStep, string? Reason);
 public sealed record RespondBody(string? Kind, string? Text, string? Code);
 
 /// <summary>
@@ -31,6 +32,8 @@ public static class OfferEndpoints
     public static readonly string[] Paths = ["p1", "p2", "p3"];
     public static readonly string[] VerifyChecklist = ["amounts_match_letter", "terms_match_letter", "reference_and_date_match", "effect_text_accurate"];
     public static readonly string[] OutcomeCodes = ["offer_accepted", "offer_declined", "lender_no_offer", "other"];
+    /// <summary>Outcomes when closing from execution tracking (ADR 0002 §4.1). Accepted only from that state.</summary>
+    public static readonly string[] TrackingOutcomeCodes = ["executed_closed", "tracking_ended", "agreement_ended_by_lender", "other"];
     public const string AcceptTextVersion = "offer-acceptance-draft-2026-09";
 
     public static string AcceptText(string lender, string lenderReference) =>
@@ -224,32 +227,53 @@ public static class OfferEndpoints
         return Results.Ok(new { entry.Id });
     }
 
-    private static async Task<IResult> Continue(string reference, NextStepBody b, RequestAccess access, RahoonDbContext db, RequestContext rc,
+    /// <summary>
+    /// After a relayed question or counter; or (Q17) from execution tracking, e.g. after a lender-reported breach — on the same
+    /// request, with a reason the individual sees. Execution records stay on the request.
+    /// </summary>
+    private static async Task<IResult> Continue(string reference, ContinueBody b, RequestAccess access, RahoonDbContext db, RequestContext rc,
         RequestWorkflow workflow, RequestService svc)
     {
+        var reason = Clean(b.Reason, 1000);
         await using var tx = await db.Database.BeginTransactionAsync();
         var r = await access.ForTeamAsync(reference);
         if (r.AssignedCoordinatorId != rc.UserId && !rc.Has(P.RequestViewAll)) throw new ForbiddenException("هذا الطلب مسند لعضو آخر.");
-        await workflow.TransitionAsync(r, "continue_coordination", expected: RequestStatus.ResponseRecorded, nextStep: b.NextStep);
-        svc.AddUpdate(r, "status", "يتابع فريق رهون التنسيق مع جهتك الممولة", authorKind: "team", authorLabel: "فريق رهون", authorUserId: rc.UserId);
+        var fromTracking = r.Status == RequestStatus.ExecutionTracking;
+        if (fromTracking && reason is null) Validate.Throw("reason", "اكتب سبب العودة إلى التنسيق كما سيراه العميل.");
+        await workflow.TransitionAsync(r, "continue_coordination", reason, nextStep: b.NextStep);
+        svc.AddUpdate(r, "status", "يتابع فريق رهون التنسيق مع جهتك الممولة", fromTracking ? reason : null,
+            authorKind: "team", authorLabel: "فريق رهون", authorUserId: rc.UserId);
         await db.SaveChangesAsync();
         await tx.CommitAsync();
         return Results.Ok(new { status = RequestStatusInfo.Key(r.Status) });
     }
 
-    /// <summary>Outcome + summary shown to the individual. Execution of an accepted offer is tracked in Phase 1A-2.</summary>
+    /// <summary>
+    /// Outcome + summary shown to the individual. An accepted P1/P2 offer is tracked, never closed as «قبل العميل العرض»
+    /// (keyed on the latest response, whatever the state); «اكتمل التنفيذ» needs a verified closure document relevant to
+    /// the path (ADR 0002 §4.1, Q18). Both refusals are guard failures, so the attempt is audited.
+    /// </summary>
     private static async Task<IResult> Close(string reference, CloseBody b, RequestAccess access, RahoonDbContext db, RequestContext rc,
         RequestWorkflow workflow, RequestService svc, Notifier notifier)
     {
         var summary = Clean(b.Summary, 1500);
+        var code = b.OutcomeCode;
         new Validator()
-            .Require(b.OutcomeCode is not null && OutcomeCodes.Contains(b.OutcomeCode), "outcomeCode", "اختر نتيجة الطلب.")
+            .Require(code is not null && (OutcomeCodes.Contains(code) || TrackingOutcomeCodes.Contains(code)), "outcomeCode", "اختر نتيجة الطلب.")
             .Require(summary is not null, "summary", "اكتب ملخص النتيجة كما سيراه العميل.")
             .ThrowIfInvalid();
         await using var tx = await db.Database.BeginTransactionAsync();
         var r = await access.ForTeamAsync(reference);
         if (r.AssignedCoordinatorId != rc.UserId && !rc.Has(P.RequestViewAll)) throw new ForbiddenException("هذا الطلب مسند لعضو آخر.");
-        await workflow.TransitionAsync(r, "close", summary);
+        var allowed = r.Status == RequestStatus.ExecutionTracking ? TrackingOutcomeCodes : OutcomeCodes;
+        if (!allowed.Contains(code!)) Validate.Throw("outcomeCode", "هذه النتيجة غير متاحة في حالة الطلب الحالية.");
+
+        var failures = new List<string>();
+        if (code == "offer_accepted" && await RequestWorkflow.LatestResponseAsync(db, r) is { Response.Kind: "accept", Offer.Path: "p1" or "p2" })
+            failures.Add("قبول عرض الاحتفاظ بالعقار أو التسوية يُتابَع تنفيذه: ابدأ «متابعة التنفيذ»، ويمكن إنهاء المتابعة لاحقاً بنتيجة «انتهت متابعة رهون».");
+        if (code == "executed_closed" && !await ExecutionEndpoints.HasRelevantClosureDocumentAsync(db, r))
+            failures.Add("لا يوجد مستند إغلاق من الجهة ذو صلة بمسار العرض وتم التحقق منه ونشره.");
+        await workflow.TransitionAsync(r, "close", summary, extraGuardFailures: failures);
         r.OutcomeCode = b.OutcomeCode;
         r.OutcomeSummary = summary;
         svc.AddUpdate(r, "closed", "أُغلق طلبك", summary, authorKind: "team", authorLabel: "فريق رهون", authorUserId: rc.UserId);

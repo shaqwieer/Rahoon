@@ -176,7 +176,8 @@ test("an offer recorded from the lender letter is verified by another member, th
   await expect(page.getByText("وافقت على العرض")).toBeVisible();
   await shot(page, "17-response-recorded");
 
-  // T07: relay, then close with the outcome shown to the individual.
+  // T07: relay. An accepted P1 offer is then tracked, not closed (Phase 1A-2, ADR 0002): closing it as «قبل العميل العرض»
+  // is refused with the reason. Starting tracking gets its button in 1A-2 step 2; this path is extended in step 4.
   const back = await teamPage(browser, "n.alyami@team.rahoon.example");
   await back.goto(base);
   await back.getByRole("button", { name: "تسجيل نقل الرد للجهة…" }).click();
@@ -188,16 +189,17 @@ test("an offer recorded from the lender letter is verified by another member, th
   await back.getByRole("button", { name: "إغلاق الطلب…" }).click();
   const close = back.getByRole("dialog", { name: "إغلاق الطلب" });
   await close.getByLabel("النتيجة", { exact: true }).selectOption("offer_accepted");
-  await close.getByLabel(/ملخص النتيجة/).fill("قبلت عرض جهتك ونقلنا موافقتك إليها. تنفيذ الاتفاق يتم مع جهتك الممولة.");
+  await close.getByLabel(/ملخص النتيجة/).fill("قبلت عرض جهتك ونقلنا موافقتك إليها.");
   await close.getByRole("button", { name: "إغلاق الطلب" }).click();
-  await expect(back.getByText("مغلق").first()).toBeVisible();
-  await tshot(back, "08-closed");
+  await expect(close.getByText(/ابدأ «متابعة التنفيذ»/)).toBeVisible();
+  await tshot(back, "08-close-refused-tracking-required");
+  await close.getByRole("button", { name: "إلغاء" }).click();
   await back.context().close();
 
   await page.reload();
-  await expect(page.getByText("قبلت العرض").first()).toBeVisible();
+  await expect(page.getByText("سجّلنا ردك").first()).toBeVisible();
   await expect(page.getByText("نقلنا ردك إلى جهتك الممولة").first()).toBeVisible();
-  await shot(page, "18-closed");
+  await shot(page, "18-relayed");
 });
 
 test("the individual declines an offer with no action against them, objects to an amount and gets the team's answer", async ({ page, browser }) => {

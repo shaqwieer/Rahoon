@@ -44,16 +44,19 @@ public sealed class RequestAccess(RahoonDbContext db, RequestContext rc, AuditLo
         return r;
     }
 
-    /// <summary>Lead: all. Coordinator: assigned to them, or not yet assigned. Verifier: offers awaiting their verification (step 7).</summary>
+    /// <summary>
+    /// Lead: all. Coordinator: assigned to them, or not yet assigned. Verifier: offers (step 7) or execution records
+    /// (Phase 1A-2) awaiting verification.
+    /// </summary>
     public async Task<bool> CanSeeAsync(Request r)
     {
         if (rc.Has(P.RequestViewAll) || r.AssignedCoordinatorId == rc.UserId) return true;
         if (r.AssignedCoordinatorId is null && rc.Has(P.RequestReview)) return true;
-        return rc.Has(P.RequestOfferVerify) && await VerifierMaySeeAsync(r);
+        if (rc.Has(P.RequestOfferVerify) && await db.RequestOffers.AnyAsync(o => o.RequestId == r.Id && o.Status == RequestOfferStatus.PendingVerification))
+            return true;
+        return rc.Has(P.RequestExecutionVerify)
+               && await db.RequestExecutionRecords.AnyAsync(x => x.RequestId == r.Id && x.Status == RequestExecutionRecordStatus.PendingVerification);
     }
-
-    private Task<bool> VerifierMaySeeAsync(Request r) =>
-        db.RequestOffers.AnyAsync(o => o.RequestId == r.Id && o.Status == RequestOfferStatus.PendingVerification);
 
     /// <summary>An individual tried to change someone else's request: record it (own transaction), answer 404.</summary>
     private async Task AuditForeignWriteAsync(string reference)

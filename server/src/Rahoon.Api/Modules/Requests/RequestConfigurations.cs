@@ -153,6 +153,51 @@ internal sealed class RequestResponseConfig : IEntityTypeConfiguration<RequestRe
     }
 }
 
+internal sealed class RequestExecutionRecordConfig : IEntityTypeConfiguration<RequestExecutionRecord>
+{
+    public void Configure(EntityTypeBuilder<RequestExecutionRecord> b)
+    {
+        b.ToTable("request_execution_records", "requests", t =>
+            t.HasCheckConstraint("ck_request_execution_records_verifier_not_recorder", "verified_by_user_id IS NULL OR verified_by_user_id <> recorded_by_user_id"));
+        b.HasOne<Request>().WithMany().HasForeignKey(x => x.RequestId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<RequestDocument>().WithMany().HasForeignKey(x => x.SourceDocumentId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(x => new { x.RequestId, x.Kind, x.Status });
+        b.HasIndex(x => new { x.OrganizationId, x.Status });
+        b.Property(x => x.Kind).HasMaxLength(30);
+        b.Property(x => x.Path).HasMaxLength(4);
+        b.Property(x => x.LenderReference).HasMaxLength(100);
+        b.Property(x => x.NoticeCategory).HasMaxLength(30);
+        b.Property(x => x.DocumentKind).HasMaxLength(40);
+        b.Property(x => x.RecordedByLabel).HasMaxLength(200);
+        b.Property(x => x.VerifiedByLabel).HasMaxLength(200);
+    }
+}
+
+internal sealed class RequestScheduleItemConfig : IEntityTypeConfiguration<RequestScheduleItem>
+{
+    public void Configure(EntityTypeBuilder<RequestScheduleItem> b)
+    {
+        b.ToTable("request_schedule_items", "requests");
+        b.HasOne<RequestExecutionRecord>().WithMany().HasForeignKey(x => x.RecordId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(x => new { x.RecordId, x.No }).IsUnique();
+        b.HasIndex(x => x.RequestId);
+    }
+}
+
+internal sealed class RequestPaymentReportConfig : IEntityTypeConfiguration<RequestPaymentReport>
+{
+    public void Configure(EntityTypeBuilder<RequestPaymentReport> b)
+    {
+        b.ToTable("request_payment_reports", "requests");
+        b.HasOne<Request>().WithMany().HasForeignKey(x => x.RequestId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<RequestDocument>().WithMany().HasForeignKey(x => x.ProofDocumentId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(x => x.Reference).IsUnique();
+        b.HasIndex(x => x.RequestId);
+        b.Property(x => x.Reference).HasMaxLength(30);
+        b.Property(x => x.BankReference).HasMaxLength(100);
+    }
+}
+
 internal sealed class RequestConcernConfig : IEntityTypeConfiguration<RequestConcern>
 {
     public void Configure(EntityTypeBuilder<RequestConcern> b)

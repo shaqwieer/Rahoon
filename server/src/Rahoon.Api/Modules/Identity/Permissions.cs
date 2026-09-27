@@ -118,6 +118,9 @@ public static class P
     public const string RequestResponseRelay = "request.response_relay";
     public const string RequestClose = "request.close";
     public const string RequestObjectionHandle = "request.objection_handle";
+    // Phase 1A-2 (ADR 0002): execution tracking of an accepted offer, from the lender's evidence
+    public const string RequestExecutionRecord = "request.execution_record";
+    public const string RequestExecutionVerify = "request.execution_verify";
 
     public static readonly IReadOnlyList<PermissionDef> Catalog =
     [
@@ -199,6 +202,8 @@ public static class P
         new(RequestResponseRelay, "نقل رد العميل للجهة", "Relay response", "فريق رهون", Sensitivity.Medium, PermissionScope.Case),
         new(RequestClose, "إغلاق الطلب", "Close request", "فريق رهون", Sensitivity.Medium, PermissionScope.Case),
         new(RequestObjectionHandle, "معالجة الاعتراضات", "Handle objections", "فريق رهون", Sensitivity.Medium, PermissionScope.Case),
+        new(RequestExecutionRecord, "تسجيل متابعة التنفيذ من الجهة", "Record execution evidence", "فريق رهون", Sensitivity.High, PermissionScope.Case, "مع مستند الجهة"),
+        new(RequestExecutionVerify, "التحقق من سجلات التنفيذ ونشرها", "Verify execution records", "فريق رهون", Sensitivity.High, PermissionScope.Case, "ليس المسجِّل · MFA"),
 
         new(PlatformOps, "لوحة تشغيل المنصة", "Platform operations", "المنصة", Sensitivity.Medium, PermissionScope.Platform),
         new(PlatformInstitutions, "المنشآت والطلبات", "Institutions & applications", "المنصة", Sensitivity.High, PermissionScope.Platform),

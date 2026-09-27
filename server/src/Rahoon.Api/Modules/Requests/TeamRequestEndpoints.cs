@@ -19,7 +19,8 @@ public sealed record RequestInfoBody(List<string>? Items, string? Message);
 public sealed record CoordinationBody(
     string? Channel, DateTimeOffset? OccurredAt, string? Counterpart, string? Summary, List<Guid>? EvidenceDocumentIds,
     bool VisibleToApplicant, string? ApplicantText, Guid? CorrectsEntryId, string? Kind = null);
-public sealed record TeamUpdateBody(string? Text, string? NextStep);
+/// <summary><paramref name="WaitingOn"/> (lender | applicant) is set only during execution tracking (ADR 0002 §4.1).</summary>
+public sealed record TeamUpdateBody(string? Text, string? NextStep, string? WaitingOn = null);
 public sealed record MessageBody(string? Body);
 public sealed record NotEligibleBody(string? Reason);
 
@@ -226,6 +227,7 @@ public static class TeamRequestEndpoints
             responses,
             concerns,
             referrals,
+            execution = await ExecutionEndpoints.TeamExecutionAsync(db, r, rc.UserId),
             timer = Timer(r, clock.UtcNow),
             can = new
             {
@@ -238,7 +240,10 @@ public static class TeamRequestEndpoints
                 recordOffer = rc.Has(P.RequestOfferRecord) && r.Status == RequestStatus.LenderCoordination && active is not null,
                 verify = rc.Has(P.RequestOfferVerify) && offers.Any(o => o.Status == RequestOfferStatus.PendingVerification && o.RecordedByUserId != rc.UserId),
                 relay = rc.Has(P.RequestResponseRelay) && r.Status == RequestStatus.ResponseRecorded && responses.Count > 0 && responses[0].RelayedAt == null,
-                close = rc.Has(P.RequestClose) && r.Status is RequestStatus.ResponseRecorded or RequestStatus.LenderCoordination,
+                close = rc.Has(P.RequestClose) && r.Status is RequestStatus.ResponseRecorded or RequestStatus.LenderCoordination or RequestStatus.ExecutionTracking,
+                recordExecution = rc.Has(P.RequestExecutionRecord) && ExecutionEndpoints.InTracking(r),
+                verifyExecution = rc.Has(P.RequestExecutionVerify)
+                                  && await db.RequestExecutionRecords.AnyAsync(x => x.RequestId == r.Id && x.Status == RequestExecutionRecordStatus.PendingVerification && x.RecordedByUserId != rc.UserId),
                 refer = rc.Has(P.RequestReview) && (r.AssignedCoordinatorId == rc.UserId || rc.Has(P.RequestViewAll)),
                 answerConcerns = rc.Has(P.RequestObjectionHandle),
             },
@@ -246,7 +251,8 @@ public static class TeamRequestEndpoints
     }
 
     private static bool CoordinationOpen(Request r) =>
-        r.Status is RequestStatus.TeamReview or RequestStatus.LenderCoordination or RequestStatus.OfferAvailable or RequestStatus.ResponseRecorded;
+        r.Status is RequestStatus.TeamReview or RequestStatus.LenderCoordination or RequestStatus.OfferAvailable or RequestStatus.ResponseRecorded
+            or RequestStatus.ExecutionTracking;
 
     /// <summary>Coordinator actions require the request to be theirs (or unassigned, or the member views all).</summary>
     private static void EnsureWorker(Request r, RequestContext rc)
@@ -426,6 +432,12 @@ public static class TeamRequestEndpoints
         if (RequestStatusInfo.IsTerminal(r.Status)) throw new ConflictException("closed", "الطلب مغلق.");
         svc.AddUpdate(r, "team_update", "تحديث من فريق رهون", text, authorKind: "team", authorLabel: "فريق رهون", authorUserId: rc.UserId);
         if (Clean(body.NextStep, 600) is { } ns) r.NextStepText = ns;
+        if (body.WaitingOn is not null)
+        {
+            if (r.Status != RequestStatus.ExecutionTracking || body.WaitingOn is not ("lender" or "applicant"))
+                Validate.Throw("waitingOn", "يُحدَّد «ننتظر» في هذا التحديث أثناء متابعة التنفيذ فقط: الجهة الممولة أو العميل.");
+            r.WaitingOn = body.WaitingOn == "lender" ? RequestWaitingOn.Lender : RequestWaitingOn.Applicant;
+        }
         notifier.Notify(r.ApplicantUserId, null, "request", "تحديث على طلبك", text, $"/my/requests/{r.Reference}");
         await audit.RecordAsync(RequestWorkflow.Entry(r, "request.update_published", "نشر تحديث للعميل"));
         await db.SaveChangesAsync();

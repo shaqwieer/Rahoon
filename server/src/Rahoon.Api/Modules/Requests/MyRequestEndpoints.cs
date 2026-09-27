@@ -51,6 +51,7 @@ public static class MyRequestEndpoints
         ["bank_statement"] = "كشف حساب آخر 3 أشهر",
         ["title_deed"] = "صورة الصك",
         ["financing_contract"] = "عقد التمويل",
+        ["payment_proof"] = "إثبات سداد",
         ["other"] = "مستند آخر",
     };
 
@@ -211,6 +212,9 @@ public static class MyRequestEndpoints
             responses,
             concerns,
             referrals,
+            execution = await ExecutionEndpoints.ApplicantExecutionAsync(db, r),
+            canReportPayment = r.Status == RequestStatus.ExecutionTracking,
+            withdrawEffect = ExecutionEndpoints.InTracking(r) ? ExecutionEndpoints.WithdrawEffect : null,
             canRaiseConcern = r.Status != RequestStatus.Draft,
             canEdit = r.Status == RequestStatus.Draft,
             canAddInfo = r.Status is not RequestStatus.Draft && !RequestStatusInfo.IsTerminal(r.Status),
@@ -497,13 +501,14 @@ public static class MyRequestEndpoints
     {
         await using var tx = await db.Database.BeginTransactionAsync();
         var r = await access.ForApplicantAsync(reference, write: true);
+        var wasTracking = ExecutionEndpoints.InTracking(r);
         await workflow.TransitionAsync(r, "withdraw", Clean(body.Reason, 500));
         foreach (var c in await db.RequestConsents.Where(c => c.RequestId == r.Id && c.WithdrawnAt == null).ToListAsync())
         {
             c.WithdrawnAt = clock.UtcNow;
             c.WithdrawnReason = "request_withdrawn";
         }
-        svc.AddUpdate(r, "withdrawn", "سحبت طلبك، وتوقفت أي مشاركة لبياناته", authorKind: "applicant");
+        svc.AddUpdate(r, "withdrawn", "سحبت طلبك، وتوقفت أي مشاركة لبياناته", wasTracking ? ExecutionEndpoints.WithdrawEffect : null, authorKind: "applicant");
         await db.SaveChangesAsync();
         await tx.CommitAsync();
         return Results.Ok(new { status = RequestStatusInfo.Key(r.Status) });
