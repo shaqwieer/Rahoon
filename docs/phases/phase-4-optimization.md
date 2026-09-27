@@ -9,7 +9,7 @@
 - Predictive insights, each with its provenance, limitations and a human review.
 - Nothing binding is decided automatically, and no accuracy figures are fabricated.
 
-The backend is 🟨 on branch `worktree-agent-ae86d4e3d70e6413a` and is merged in Phase 1A-2 step 2.
+The backend is 🟩 on `master`: merged from `worktree-agent-ae86d4e3d70e6413a` in Phase 1A-2 step 6 (2026-09-27).
 
 ## Direction review (added 2026-09-25, `docs/product/product-direction.md`)
 

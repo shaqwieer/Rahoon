@@ -38,7 +38,7 @@ public static class OwnerEndpoints
 
     public static void Map(IEndpointRouteBuilder app)
     {
-        var g = app.MapGroup("/api/owner").RequireOwner();
+        var g = app.MapGroup("/api/owner").RequireOwner().AddEndpointFilter(OwnerReferralEndpoints.ClosedReadOnlyFilter);
         g.MapGet("/home", Home);
         g.MapGet("/journey", Journey);
         g.MapGet("/documents", Documents);

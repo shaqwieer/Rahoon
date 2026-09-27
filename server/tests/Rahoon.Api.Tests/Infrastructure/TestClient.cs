@@ -98,6 +98,18 @@ public sealed class TestClient(HttpClient http)
     public Task<(HttpStatusCode Status, JsonNode? Body)> GetAsync(string path) => SendAsync(HttpMethod.Get, path);
     public Task<(HttpStatusCode Status, JsonNode? Body)> PostAsync(string path, object? body = null, string? key = null) => SendAsync(HttpMethod.Post, path, body ?? new { }, key);
     public Task<(HttpStatusCode Status, JsonNode? Body)> PutAsync(string path, object body) => SendAsync(HttpMethod.Put, path, body);
+    public Task<(HttpStatusCode Status, JsonNode? Body)> DeleteAsync(string path) => SendAsync(HttpMethod.Delete, path);
+
+    /// <summary>Multipart upload of a small valid PDF as «file» (plus optional form fields).</summary>
+    public Task<(HttpStatusCode Status, JsonNode? Body)> UploadAsync(string path, string fileName, IDictionary<string, string>? fields = null)
+    {
+        var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent(System.Text.Encoding.ASCII.GetBytes("%PDF-1.4\n% test file\n1 0 obj << >> endobj\ntrailer << >>\n%%EOF\n" + Guid.NewGuid()));
+        file.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/pdf");
+        form.Add(file, "file", fileName);
+        foreach (var (k, v) in fields ?? new Dictionary<string, string>()) form.Add(new StringContent(v), k);
+        return PostMultipartAsync(path, form);
+    }
 
     public async Task LoginAsync(string email, string password, string? orgName = null)
     {

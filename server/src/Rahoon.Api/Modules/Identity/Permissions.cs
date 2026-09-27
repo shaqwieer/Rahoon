@@ -118,6 +118,8 @@ public static class P
     public const string RequestResponseRelay = "request.response_relay";
     public const string RequestClose = "request.close";
     public const string RequestObjectionHandle = "request.objection_handle";
+    // B11 (merged in Phase 1A-2 step 6): operational changes need a second approver
+    public const string OperationsApprove = "operations.approve";
     // Phase 1A-2 (ADR 0002): execution tracking of an accepted offer, from the lender's evidence
     public const string RequestExecutionRecord = "request.execution_record";
     public const string RequestExecutionVerify = "request.execution_verify";
@@ -202,6 +204,7 @@ public static class P
         new(RequestResponseRelay, "نقل رد العميل للجهة", "Relay response", "فريق رهون", Sensitivity.Medium, PermissionScope.Case),
         new(RequestClose, "إغلاق الطلب", "Close request", "فريق رهون", Sensitivity.Medium, PermissionScope.Case),
         new(RequestObjectionHandle, "معالجة الاعتراضات", "Handle objections", "فريق رهون", Sensitivity.Medium, PermissionScope.Case),
+        new(OperationsApprove, "اعتماد تعديلات العمليات", "Approve operational changes", "الإدارة", Sensitivity.High, PermissionScope.Institution, "ليس مقترح التعديل"),
         new(RequestExecutionRecord, "تسجيل متابعة التنفيذ من الجهة", "Record execution evidence", "فريق رهون", Sensitivity.High, PermissionScope.Case, "مع مستند الجهة"),
         new(RequestExecutionVerify, "التحقق من سجلات التنفيذ ونشرها", "Verify execution records", "فريق رهون", Sensitivity.High, PermissionScope.Case, "ليس المسجِّل · MFA"),
 

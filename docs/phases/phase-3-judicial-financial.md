@@ -9,7 +9,7 @@
 - Full reconciliation, distribution waterfall and closure with traceable sources.
 - A case never goes to referral automatically, and not every case ends in foreclosure.
 
-The backend is 🟨 on branch `worktree-agent-ae86d4e3d70e6413a`. It gets merged with a migration in Phase 1A-2 step 2, because the settlement-path closure needs it (see `docs/progress/backend-B10-B11.md` on that branch).
+The backend is 🟩 on `master`: merged from `worktree-agent-ae86d4e3d70e6413a` with the migration `ReferralClosureAnalytics` in Phase 1A-2 step 6 (2026-09-27), because the settlement-path closure needs it (see `docs/progress/backend-B10-B11.md`).
 
 ## Direction review (added 2026-09-25, `docs/product/product-direction.md`)
 

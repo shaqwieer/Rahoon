@@ -1,4 +1,4 @@
-# Phase 1A-2: After the outcome (agreement → payments → closure) ▶ CURRENT (steps 0–5 done 2026-09-27: manual mode complete; lender mode L19–L21 verified)
+# Phase 1A-2: After the outcome (agreement → payments → closure) ▶ CURRENT (steps 0–6 done 2026-09-27: manual mode complete; lender mode L19–L21 verified, B10 merged)
 
 **Start only after Phase 1A (MVP) is done.** **Q13 decided (2026-09-25):** this phase is **not** part of the first MVP.
 
@@ -82,7 +82,7 @@ The lender executes all of this; Rahoon tracks and explains.
 | L20 | Payment schedule, record (maker), match (checker) | lender | ✅ 2026-09-27: Playwright: ريم records, can't match her own («سجّلت هذه الدفعة؛ يطابقها موظف مالية آخر»), عبدالعزيز matches | Secondary | Step 5 |
 | L21 | Breach handling (no automatic referral) | lender | ✅ 2026-09-27: Playwright on seeded RH-2026-003870: breach review → «إعادة هيكلة» → «حل مقترح», never a referral | Secondary | Owner wording made descriptive (was «نتواصل معك أولاً», V4) |
 | D10 | Owner payments and receipts | lender | ✅ 2026-09-27: Playwright at 390: unmatched payment not shown as received; «مستلم» after matching | Secondary | «رهون لا تستلم أي مبالغ». Content rules reused in E01/E02 (step 3 finding) |
-| L26 | Reconciliation + closure (settlement path) | lender | ⬜ UI · 🟨 API on branch `…ae86d4e3…` | Secondary | Steps 6–7 |
+| L26 | Reconciliation + closure (settlement path) | lender | ⬜ UI · 🟩 API on `master` (merged step 6, `JudicialClosureTests` ✓) | Secondary | Step 7 |
 | D14 | Owner closure documents | lender | 🟩 on `master` (1A step 3) | Secondary | Owner access read-only for 90 days (assumption, case session only). Components reused in E05 |
 | S08, S09 | Notifications, tasks | both | 🟧 WIP `…a1008744…` @ `05c715b` | — | Stay in Phase 1B (not needed here) |
 
@@ -125,7 +125,12 @@ The lender executes all of this; Rahoon tracks and explains.
    - [x] `lender-flow.spec.ts` maker-checker test re-enabled: RH-2026-004172 v2 *is* awaiting review on a fresh seed (the step-9 failure came from a reused database). Fixed along the way: the approver's reason was filled before hydration (now retried until it sticks), the step-up is completed when asked, and the case status keys are snake_case (`awaiting_customer`; the other test's `not.toBe("Draft")` had been passing vacuously).
    - [x] Owner wording (L21/D07 «ماذا لو تأخرت عن قسط؟»): «نتواصل معك أولاً…» was a contact commitment (V4); it now describes the agreement's clause («بحسب شروط اتفاقك: … ولا تُتخذ أي خطوة أخرى تلقائياً»).
    - [x] Checks: backend 177/177; tsc, eslint, build ✓; E2E **11 passed, 0 skipped**.
-6. ⬜ **Lender mode: closure backend** (was step 2). Merge `worktree-agent-ae86d4e3d70e6413a` (B10/B11 API), add the migration `ReferralClosureAnalytics`, run `dotnet test` and `bash scripts/dev-api.sh --reset`.
+6. ✅ **Lender mode: closure backend** (2026-09-27, was step 2).
+   - [x] Merged `worktree-agent-ae86d4e3d70e6413a` (B10/B11: referral + agent portal, reconciliation/closure, integrations, analytics, decision support). The branch forked at `c053c32` (early Phase 0); the five conflicts were whole-file line-ending conflicts over small additive changes, re-applied on master's side: `operations.approve` (org admin, compliance), service and endpoint registrations, the three seed calls (after `SeedAgreementsAsync`), `TestClient.DeleteAsync`/`UploadAsync`.
+   - [x] Migration `ReferralClosureAnalytics` (16 new tables, nullable closure columns; additive only).
+   - [x] Merge fix: agent assignments took `ASG-{year}-{count + 419}`, which collided with master's seeded assignment references (409 «duplicate» in `JudicialClosureTests`); they now use the shared `assignment:YYYY` counter (`ProviderAssignmentService.NextReferenceAsync`).
+   - [x] Backend **192/192** (15 tests from the branch); `dev-api.sh --reset` ✓ on PostgreSQL; E2E 11 passed. Worktree and branch removed.
+   - Scope note: the merge brings code for later phases (judicial referral + agent portal, Phase 3 on hold V10; analytics and drafting, Phase 4). It is backend only and has no UI entry in the primary journey; those phases keep their own UI steps.
 7. ⬜ **Lender mode: L26 settlement-path UI** (was step 3).
    - Reconciliation: preparer, reviewer and approver are three different people; step-up.
    - Closure documents checklist; closure request → decision.

@@ -55,6 +55,10 @@ public sealed partial class DevSeeder(
         await SeedCanonicalCasesAsync();
         await SeedCaseTabsAsync();
         await SeedAgreementsAsync();
+        // B10/B11 (merged in Phase 1A-2 step 6)
+        await SeedReferralAsync();
+        await SeedClosureAsync();
+        await SeedAnalyticsAsync();
         if (config.GetValue("Seed:Bulk", true)) await SeedBulkCasesAsync();
         else await db.Database.ExecuteSqlRawAsync("INSERT INTO cases.reference_counters (key, value) VALUES ('case:2026', 5200) ON CONFLICT (key) DO NOTHING");
         await SeedOtherTenantAsync();
