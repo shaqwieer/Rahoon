@@ -15,6 +15,7 @@ import type { MyRequestDetail } from "@/lib/api/requests";
 import { cn } from "@/lib/cn";
 import { formatDate, formatDateTime, formatMoney } from "@/lib/format";
 import { useI18n } from "@/lib/i18n/client";
+import { ExecutionSummary } from "./ExecutionViews";
 
 
 /**
@@ -91,6 +92,9 @@ export function RequestTracker({ detail }: { detail: MyRequestDetail }) {
               {detail.outcome.summary}
             </Alert>
           ) : null}
+
+          {/* Phase 1A-2 (D-8): execution tracked from the lender's evidence. */}
+          <ExecutionSummary detail={detail} />
 
           {detail.responses.length > 0 ? (
             <Panel aria-labelledby="responses-h">

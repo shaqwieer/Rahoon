@@ -213,6 +213,45 @@ test("an offer recorded from the lender letter is verified by another member, th
   await back.context().close();
   await verifyExecution(browser, reference, "10-verify-agreement");
 
+  // D-8: the individual follows the agreement and the lender's schedule, and reports installment 1 with proof.
+  await page.goto(`/my/requests/${reference}`);
+  await expect(page.getByRole("heading", { name: "متابعة التنفيذ" })).toBeVisible();
+  await expect(page.getByText("رهون لا تستلم أي مبالغ").first()).toBeVisible();
+  await shot(page, "19-tracking");
+  await page.getByRole("link", { name: "أبلغنا عن سداد" }).first().click();
+  await page.waitForURL(/\/payment$/);
+  await page.getByLabel("المبلغ", { exact: true }).fill("3100");
+  await page.getByLabel("تاريخ التحويل").fill(isoDay(0));
+  await page.getByLabel("القسط الذي سددته").selectOption("1");
+  await page.locator("input[type=file]").setInputFiles({ name: "transfer.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4\n% transfer\n") });
+  await expect(page.getByText("تم الرفع")).toBeVisible();
+  await shot(page, "20-report-payment");
+  await page.getByRole("button", { name: "إرسال البلاغ" }).click();
+  await page.waitForURL(/\/execution\?reported=1$/);
+  await expect(page.getByText("سجّلنا بلاغك").first()).toBeVisible();
+  await expect(page.getByText("أبلغتَنا بسداده، بانتظار تأكيد جهتك")).toBeVisible();
+  await shot(page, "21-execution-reported");
+
+  // T11: the lender's confirmation answers the report; another member verifies it; the individual then sees it confirmed.
+  const conf = await teamPage(browser, "n.alyami@team.rahoon.example");
+  await conf.goto(base);
+  await uploadLenderDocument(conf, "confirmation.pdf");
+  await conf.getByRole("button", { name: "تسجيل تأكيد الجهة…" }).click();
+  const cd = conf.getByRole("dialog", { name: "تسجيل تأكيد سداد من مستند الجهة" });
+  await cd.getByLabel("مستند الجهة (إلزامي)").selectOption({ label: "خطاب الجهة الممولة · confirmation.pdf" });
+  await cd.getByLabel("مرجع مستند الجهة").fill("AF-2026-8050");
+  await cd.getByLabel("تاريخ مستند الجهة").fill(isoDay(0));
+  await cd.getByLabel("تاريخ الاستلام بحسب الجهة").fill(isoDay(0));
+  await cd.getByLabel("ما ذكرته الجهة", { exact: true }).fill("تؤكد الجهة استلام القسط الأول.");
+  await cd.getByLabel(/ماذا يعني لك/).fill("أكدت جهتك استلام قسطك الأول.");
+  await cd.getByRole("button", { name: "إرسال للتحقق" }).click();
+  await expect(conf.getByText("بانتظار التحقق").first()).toBeVisible();
+  await conf.context().close();
+  await verifyExecution(browser, reference, "13-verify-confirmation");
+  await page.reload();
+  await expect(page.getByText("أكدته جهتك").first()).toBeVisible();
+  await shot(page, "22-execution-confirmed");
+
   // A closure letter relevant to P1, verified, then «اكتمل التنفيذ».
   const closer = await teamPage(browser, "n.alyami@team.rahoon.example");
   await closer.goto(base);
@@ -241,9 +280,13 @@ test("an offer recorded from the lender letter is verified by another member, th
   await tshot(done, "12-closed-executed");
   await done.context().close();
 
-  await page.reload();
+  await page.goto(`/my/requests/${reference}`);
   await expect(page.getByText("اكتمل التنفيذ").first()).toBeVisible();
-  await shot(page, "18-executed-closed");
+  await expect(page.getByRole("heading", { name: "مستندات الإغلاق" })).toBeVisible();
+  const download = page.waitForEvent("download");
+  await page.getByRole("link", { name: "تنزيل" }).first().click();
+  expect((await download).suggestedFilename()).toBe("closure.pdf");
+  await shot(page, "23-executed-closed");
 });
 
 const isoDay = (offset: number) => new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);

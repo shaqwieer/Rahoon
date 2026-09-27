@@ -80,6 +80,36 @@ export interface MyRequestDetail {
   canRespond: boolean;
   offerAcceptText: { version: string; text: string } | null;
   responses: Array<{ reference: string; kind: "accept" | "decline" | "question" | "counter"; text: string | null; at: string; relayed: boolean; consentTextSnapshot: string | null }>;
+  /** Phase 1A-2 (ADR 0002): published lender records and the individual's own reports; null before tracking. */
+  execution: MyExecution | null;
+  canReportPayment: boolean;
+  withdrawEffect: string | null;
+}
+
+export type PaymentReportStatus = "reported" | "not_confirmed_yet" | "confirmed_by_lender";
+
+export interface MyExecution {
+  noFundsNote: string;
+  agreement: {
+    path: string | null;
+    lenderReference: string;
+    lenderDate: string;
+    activationDate: string | null;
+    newInstallment: number | null;
+    termMonths: number | null;
+    settlementAmount: number | null;
+    termsText: string | null;
+    summaryText: string;
+    explanationText: string;
+    publishedAt: string | null;
+    sourceVersionId: string | null;
+  } | null;
+  /** The lender's stated schedule; a row's state only comes from a lender confirmation or the individual's report. */
+  schedule: Array<{ no: number; dueDate: string; amount: number; state: "confirmed_by_lender" | "reported" | null; confirmedReceivedOn: string | null }>;
+  confirmations: Array<{ amount: number | null; receivedOn: string | null; scheduleItemNo: number | null; lenderReference: string; lenderDate: string; explanationText: string; publishedAt: string | null; sourceVersionId: string | null }>;
+  notices: Array<{ category: string | null; summaryText: string; explanationText: string; lenderReference: string; lenderDate: string; publishedAt: string | null; sourceVersionId: string | null; noActionNote: string }>;
+  closureDocuments: Array<{ documentKind: string | null; lenderReference: string; lenderDate: string; explanationText: string; publishedAt: string | null; sourceVersionId: string | null }>;
+  paymentReports: Array<{ reference: string; amount: number; transferDate: string; bankReference: string | null; scheduleItemNo: number | null; status: PaymentReportStatus; teamNote: string | null; at: string }>;
 }
 
 export interface MyOffer {

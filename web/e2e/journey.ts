@@ -24,6 +24,19 @@ export async function registerIndividual(page: Page) {
   await page.waitForURL("**/my");
 }
 
+/** Returning sign-in of a seeded individual (README «Demo logins»): ID + mobile + SMS code + terms. */
+export async function signInIndividual(page: Page, nationalId: string, mobile: string) {
+  await page.goto("/start?mode=signin");
+  await page.getByLabel(/رقم الهوية/).fill(nationalId);
+  await page.getByLabel(/رقم الجوال/).fill(mobile);
+  await page.getByRole("button", { name: "إرسال رمز التحقق" }).click();
+  const code = await sandboxCode(page);
+  await page.locator("input[autocomplete='one-time-code'], input[inputmode='numeric']").first().fill(code);
+  await page.getByRole("checkbox").first().check();
+  await page.getByRole("button", { name: "دخول", exact: true }).click();
+  await page.waitForURL("**/my");
+}
+
 /** OA01–OA05 with consent, then submit; returns the REQ reference. */
 export async function submitRequest(page: Page, screenshots = false): Promise<string> {
   await page.getByRole("button", { name: "ابدأ طلب معالجة جديد" }).click();

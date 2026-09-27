@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { api } from "./helpers";
-import { registerIndividual, submitRequest, teamPage } from "./journey";
+import { registerIndividual, signInIndividual, submitRequest, teamPage } from "./journey";
 
 /**
  * Phase 1A step 9 — responsive and accessibility sweep of the MVP screens (individual at 390/768/1440, team at
@@ -126,6 +126,25 @@ test("MVP screens reflow at 390/768/1440 and 200% zoom, with AA text contrast", 
       await team.goto(url);
       await audit(team, name, width, issues);
     }
+  }
+
+  // Phase 1A-2 (D-8): the individual's execution screens on seeded requests (README «Demo logins»).
+  const seeded: Array<[string, string, Array<[string, string]>]> = [
+    ["1010987654", "0551110008", [["exec-tracker", "/my/requests/REQ-2026-00309"], ["exec-detail", "/my/requests/REQ-2026-00309/execution"], ["exec-payment", "/my/requests/REQ-2026-00309/payment"]]],
+    ["2098765432", "0551110009", [["exec-closed", "/my/requests/REQ-2026-00310"], ["exec-closed-detail", "/my/requests/REQ-2026-00310/execution"]]],
+  ];
+  for (const [id, mobile, list] of seeded) {
+    const ctx = await browser.newContext({ locale: "ar-SA", timezoneId: "Asia/Riyadh" });
+    const p = await ctx.newPage();
+    await signInIndividual(p, id, mobile);
+    for (const width of WIDTHS) {
+      await p.setViewportSize({ width, height: 900 });
+      for (const [name, url] of list) {
+        await p.goto(url);
+        await audit(p, name, width, issues);
+      }
+    }
+    await ctx.close();
   }
 
   // 200% zoom (WCAG 1.4.4 / 1.4.10): a 768px window at 200% leaves a 384px layout.

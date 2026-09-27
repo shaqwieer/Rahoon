@@ -1,4 +1,4 @@
-# Phase 1A-2: After the outcome (agreement → payments → closure) ▶ CURRENT (steps 0–2 done 2026-09-27)
+# Phase 1A-2: After the outcome (agreement → payments → closure) ▶ CURRENT (steps 0–3 done 2026-09-27)
 
 **Start only after Phase 1A (MVP) is done.** **Q13 decided (2026-09-25):** this phase is **not** part of the first MVP.
 
@@ -77,7 +77,7 @@ The lender executes all of this; Rahoon tracks and explains.
 |---|---|---|---|---|---|
 | — | `execution_tracking` state, execution records, payment reports, new close outcomes (ADR 0002) | manual | 🟩 2026-09-27: API + seed + tests (`ExecutionTests` 12), migration applied on Postgres; seeded requests render on `/my` (Playwright at 390/1440) and the team detail (Chrome at 1440); 768 not checked | New | Step 1. No dedicated screens yet (steps 2–3) |
 | T02 «التنفيذ», T09, T10, T11, T06 extension | Team execution screens | manual | ✅ 2026-09-27: Playwright (record agreement + schedule → verify with step-up → closure letter → verify → close «اكتمل التنفيذ») at 1440; QA sweep 390/768/1440 + 200% with 0 issues | New + **Needs design (D-7)** «بانتظار اعتماد التصميم» | Step 2 |
-| E01–E06 | The individual's execution view under `/my/requests/[ref]` (D10/D14 successors) | manual | ⬜ | New + **Needs design (D-8)** | Step 3 |
+| E01–E06 | The individual's execution view under `/my/requests/[ref]` (D10/D14 successors) | manual | ✅ 2026-09-27: Playwright at 390 (tracking panel → report with proof → confirmed → closure document download); QA sweep of the seeded REQ-2026-00309/00310 screens at 390/768/1440 with 0 issues | New + **Needs design (D-8)** «بانتظار اعتماد التصميم» | Step 3 |
 | L19 | Agreement (legal review → schedule → activate) | lender | 🟩 on `master` (`ca4aefb`, 1A step 3); browser smoke only | Secondary | Step 5 |
 | L20 | Payment schedule, record (maker), match (checker) | lender | 🟩 same | Secondary | Step 5 |
 | L21 | Breach handling (no automatic referral) | lender | 🟩 same | Secondary | Check the owner-facing wording «نتواصل معك أولاً»: a commitment (V4); make it descriptive or mark it provisional |
@@ -106,7 +106,12 @@ The lender executes all of this; Rahoon tracks and explains.
    - [x] T11: the individual's payment reports with the proof link, «تسجيل تأكيد الجهة…» (opens the confirmation drawer linked to the report) and «ملاحظة للعميل…».
    - [x] «بدء متابعة التنفيذ» action; «متابعة التنسيق» from tracking opens a reason dialog (Q17); the close dialog shows the tracking outcomes only in tracking; the team update drawer sets «ننتظر» during tracking.
    - [x] Checks: tsc, eslint, build ✓; E2E 7 passed, 1 skipped (known `fixme`); the accept test now drives the whole team path through the UI (`owner-journey.spec.ts`), and `responsive-qa.spec.ts` sweeps REQ-2026-00309 on the team side (0 issues).
-3. ⬜ **The individual's execution view (D-8).** E01–E06 on the tracker, reusing the D10/D14 components; report a payment with proof; lender notice with messages/objection; closure documents with no expiry; withdrawal wording. «بانتظار اعتماد التصميم» if D-8 isn't designed.
+3. ✅ **The individual's execution view (D-8)** (2026-09-27), built with the individual design system (`Panel`, `IndividualFrame`), «بانتظار اعتماد التصميم».
+   - [x] E01 on the tracker (`ExecutionViews.tsx`): «متابعة التنفيذ» with the lead text, «رهون لا تستلم أي مبالغ…», the agreement in one line with its source, «آخر ما أكدته جهتك», «الاتفاق والجدول والتأكيدات» and «أبلغنا عن سداد».
+   - [x] E02 `/my/requests/[ref]/execution`: the agreement as the lender stated it with «ماذا يعني لك» and the source document, the lender's schedule («هذا جدول جهتك… ولا ترسل رهون تذكيرات»; a row's state only «أكدته جهتك» or «أبلغتَنا بسداده، بانتظار تأكيد جهتك», never overdue), what the lender confirmed, the individual's reports with the team's note.
+   - [x] E03 `/my/requests/[ref]/payment`: amount, transfer date, optional reference and installment, proof upload (`payment_proof`); confirmation «سجّلنا بلاغك…» on return.
+   - [x] E04 lender notices: the lender's statement explained, «لم تتخذ رهون أي إجراء…» (V4 proposed), links to messages and objection. E05 closure documents with download and «محفوظة في حسابك» (no expiry). E06: the withdraw screen shows the tracking effect (V4 proposed).
+   - [x] Checks: tsc, eslint, build ✓; E2E 7 passed, 1 skipped; the accept journey now runs the full manual-mode Definition-of-done path through both UIs; `responsive-qa.spec.ts` adds the seeded execution screens (0 issues).
 4. ⬜ **Manual-mode E2E + responsive QA.** Extend `owner-journey.spec.ts` (the DoD path above; the current accept → close test becomes accept → tracking → closure), add the execution screens to `responsive-qa.spec.ts`, negative checks (another individual → 404, verifier = recorder refused, close without closure document refused, double submit replays). README demo script and logins.
 5. ⬜ **Lender mode: agreement → payments** (was step 1).
    - ماجد: L19 legal review → schedule → activate; guard reasons are shown when blocked.
@@ -127,6 +132,8 @@ The lender executes all of this; Rahoon tracks and explains.
 - **Step 0 (2026-09-27), the close path changes:** today the team closes an accepted offer straight away (`offer_accepted`, E2E `owner-journey.spec.ts` «T07: relay, then close», seed REQ-2026-00306). From step 1, tracking is **mandatory** for an accepted P1/P2 offer: `close` with `offer_accepted` is refused for it (ADR 0002 §4.1), and `tracking_ended` ends tracking early. The E2E test is updated in step 4, and `offer_accepted` stays valid for existing closed requests and for P3.
 - **Step 0, dates vs Q6/Q12:** installment due dates are shown only as the lender's stated schedule with its source («بحسب جدول جهتك الممولة»), with no countdown, reminder or Rahoon-driven «متأخر». Precedent: 1A step 9 showed lender-mode deadlines as the lender's condition.
 - **Step 1 (2026-09-27) gaps, closed in step 2:** «متابعة التنسيق» from tracking now has its reason dialog; the close dialog shows state-specific outcomes; «بحاجة إلى تحقق» shows both queues (two endpoints, one page); «بدء متابعة التنفيذ» has its button.
+- **Step 3, D10/D14 reuse:** the owner-portal components (`InstallmentList`, the closure page) are typed on the owner-case DTOs and route helpers; adapting them cost more than building on the individual design system, so E01–E05 reuse their content and wording rules («رهون لا تستلم أي مبالغ», downloadable closure documents) rather than the components themselves. The owner-portal screens stay for the lender mode (steps 5–8).
+- **Step 3, design pending (D-8):** the individual execution screens use the existing design system; per the Phase 1A rule the label is recorded here, not on the individual's page.
 - **Step 2, design pending (D-7):** the team execution screens use the existing design system; the section carries «بانتظار اعتماد التصميم (D-7)».
 - **Step 2, dev note (again):** `next build` breaks a running `next dev` («Jest worker encountered 2 child process exceptions»); after each build the dev server is restarted with a clean `.next`.
 - **Step 1, document kinds vs ADR 0002 §4.6:** every lender document (agreement letter, confirmation, notice, closure letter) uses the existing team kind `lender_letter` («خطاب الجهة الممولة»); only the applicant kind `payment_proof` («إثبات سداد») is new. Step 2's upload UI follows this, not the §4.6 wording.
