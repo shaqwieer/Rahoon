@@ -1,6 +1,6 @@
 # منصة رهون — Product direction (source of truth)
 
-_Last updated: 2026-09-25 (second revision: product-owner answers to Q1–Q15) · Owner: product owner. Engineering records decisions here; it doesn't make them._
+_Last updated: 2026-09-27 (Q16–Q18 added by the Phase 1A-2 re-plan; second revision 2026-09-25: product-owner answers to Q1–Q15) · Owner: product owner. Engineering records decisions here; it doesn't make them._
 
 This file is the **product** source of truth for منصة رهون. The visual source of truth is the design project (mirrored in `design-source/`, specified in `docs/design-specs/`). If a design file, spec, phase file or code assumption disagrees with this file, **this file wins**, and the disagreement is listed in [§8](#8-superseded-assumptions).
 

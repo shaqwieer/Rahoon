@@ -2,7 +2,7 @@
 
 > **Product direction, confirmed 2026-09-25:** Rahoon primarily serves **individuals struggling to repay an existing mortgage**. **The individual starts the request**, and the financing institution joins later. Rahoon isn't a bank-facing product first and doesn't originate mortgages.
 > - The product source of truth is [`docs/product/product-direction.md`](../product/product-direction.md). Read it before any phase work.
-> - Its open decisions (Q1–Q15) gate several steps.
+> - Its open decisions (Q1–Q18) gate several steps.
 > - The design for the new primary journey is [`docs/design-specs/B13-owner-initiated-journey.md`](../design-specs/B13-owner-initiated-journey.md).
 
 **Working rule:** every session works on **one phase only**, the one marked **▶ CURRENT**.

@@ -48,7 +48,7 @@ The lender executes all of this; Rahoon tracks and explains.
 - [ ] The individual sees every state change in plain language, with the source of each fact. They never see internal notes, unverified records or a Rahoon deadline.
 - [ ] **Lender mode:** L19–L21 re-verified; the B10 backend merged and migrated; L26 built; the lender-mode Playwright path (activation → matched payment in D10 → closure → D14) passes.
 - [ ] `dotnet test` is green.
-- [ ] Every row below is ✅ with *Direction review* OK.
+- [ ] Every row below is ✅, with *Direction review* OK or Secondary (lender mode). A row still awaiting design (D-7, D-8) counts when «بانتظار اعتماد التصميم» is recorded in *Findings*, as in Phase 1A.
 
 ## Demo cast
 
@@ -118,7 +118,7 @@ The lender executes all of this; Rahoon tracks and explains.
 
 ## Findings / open decisions
 
-- **Step 0 (2026-09-27), the close path changes:** today the team closes an accepted offer straight away (`offer_accepted`, E2E `owner-journey.spec.ts` «T07: relay, then close», seed REQ-2026-00306). From step 1, an accepted P1/P2 offer goes to `execution_tracking` first. The E2E test is updated in step 4, and `offer_accepted` stays valid for existing closed requests and for P3.
+- **Step 0 (2026-09-27), the close path changes:** today the team closes an accepted offer straight away (`offer_accepted`, E2E `owner-journey.spec.ts` «T07: relay, then close», seed REQ-2026-00306). From step 1, tracking is **mandatory** for an accepted P1/P2 offer: `close` with `offer_accepted` is refused for it (ADR 0002 §4.1), and `tracking_ended` ends tracking early. The E2E test is updated in step 4, and `offer_accepted` stays valid for existing closed requests and for P3.
 - **Step 0, dates vs Q6/Q12:** installment due dates are shown only as the lender's stated schedule with its source («بحسب جدول جهتك الممولة»), with no countdown, reminder or Rahoon-driven «متأخر». Precedent: 1A step 9 showed lender-mode deadlines as the lender's condition.
 - **Step 0, D14's 90-day window** came from the owner-case session. For the individual account (Q14) closure documents stay available; the lender-mode D14 keeps its assumption until step 7.
 - The approvals inbox lists only solution approvals. Referral, reconciliation and closure approvals notify only. Decide in step 7 whether closure approvals belong in the inbox or on a case-level screen.

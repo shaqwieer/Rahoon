@@ -4,7 +4,7 @@ Copy this into a new session of the coding assistant, opened in the repo folder:
 
 ```text
 Continue منصة رهون phase by phase. First read docs/product/product-direction.md (product source of truth:
-decisions for Q1–Q15, still-open items and verifications V1–V10), then docs/phases/README.md and the phase
+decisions for Q1–Q18, still-open items and verifications V1–V12), then docs/phases/README.md and the phase
 file marked ▶ CURRENT. Work only on that phase, on its first unfinished step; don't touch other phases,
 don't start a new phase just because a session ends, and don't run parallel work (no background agents).
 Before starting, check git status and `git worktree list`, and tell me in 3–5 lines what the step will do

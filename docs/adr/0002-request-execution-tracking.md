@@ -35,10 +35,11 @@
 | Key | From → To | Actor | Guards / notes |
 |---|---|---|---|
 | `start_execution_tracking` | response_recorded → **execution_tracking** | coordinator (`request.execution_record`) | the latest response is an **accept** on the published offer; the response is relayed (`response_relayed`); consent active. The offer path is P1 or P2 (P3 sale execution is Phase 2; until then an accepted P3 offer is closed with `offer_accepted` as today) |
-| `close` (extended) | + execution_tracking → closed | coordinator (`request.close`) | new outcome codes below; reason/summary required as today |
+| `close` (extended) | + execution_tracking → closed | coordinator (`request.close`) | new outcome codes below; reason/summary required as today. **Tracking is mandatory for an accepted P1/P2 offer:** from `response_recorded`, outcome `offer_accepted` is refused when the latest response accepts a P1/P2 offer (guard `execution_tracking_required`; the reason points to «بدء متابعة التنفيذ»). Other outcomes stay available (e.g. the lender withdrew its offer). `tracking_ended` is the way to stop tracking early |
 | `continue_coordination` (extended, **interim Q17**) | + execution_tracking → lender_coordination | coordinator | reason required and shown to the individual; for a new arrangement with the lender after a breach or a change the lender reports. The execution records stay on the request |
 | `withdraw` | unchanged (any non-terminal) | applicant | withdrawal during tracking only stops Rahoon's tracking and sharing. The confirmation must say that the agreement with the lender isn't affected by the withdrawal (proposed text, V4) |
 
+- **Consent withdrawn during tracking (interim, as ADR 0001 step-5 amendment):** the request moves to `info_requested` (flag `InfoRequestIsConsent`) and `StatusBeforeInfoRequest = execution_tracking`. Sharing with the lender stops. The team may still **record and publish** what the lender sends on its own initiative (it's information *about* the individual reaching Rahoon, not data Rahoon shares), but can't contact the lender for the request. A new consent resumes tracking. The legal effect is V4.
 - **Status label** (proposed, D-8): «قيد متابعة التنفيذ».
 - **«ننتظر»** during tracking is set by the team on each update: `lender` (default: waiting for the lender's confirmation or documents) or `applicant` (for example, a proof they offered to send). It never says the individual is awaited for a payment. Paying is between the individual and the lender, and Rahoon doesn't chase it.
 - **New close outcome codes:**
@@ -102,7 +103,7 @@ Every record, verification, return, publication, payment report, transition and 
 
 ## 6. Tests required (Phase 1A-2 steps 1–4)
 
-1. `start_execution_tracking` is refused without an accepted, relayed response, or for a P3 offer.
+1. `start_execution_tracking` is refused without an accepted, relayed response, or for a P3 offer. `close` with `offer_accepted` is refused for an accepted P1/P2 offer. Consent withdrawn during tracking moves the request to `info_requested` and a new consent resumes `execution_tracking`.
 2. An execution record without a lender source document is refused. Verifier = recorder is refused (code and DB), and the refusal is audited.
 3. Individual DTOs contain only published records, their schedule and their own reports. Pending or returned records and internal notes never appear (assert on raw JSON, `TestClient.Raw`).
 4. A payment report never shows as confirmed until a published `payment_confirmation` links it.
