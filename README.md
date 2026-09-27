@@ -81,8 +81,8 @@ Each account has a request at a different stage, so every screen can be tried wi
 | فيصل ناصر الشمري | `1054321098` | `0551110004` | REQ-2026-00304 · coordinating with the lender; offer recorded, awaiting verification | Waiting-on-lender view; team: عبير verifies the offer in `/team/verify`, then فيصل sees it |
 | نوف خالد العتيبي | `2043210987` (iqama) | `0551110005` | REQ-2026-00305 · settlement offer published | «مراجعة العرض» → accept with a code, ask a question, or «لا يناسبني»; the lender letter link |
 | ماجد سليمان الزهراني | `1032109876` | `0551110006` | REQ-2026-00307 · «غير مناسب للخدمة حالياً» | Object to the decision; the team answers in `/team/objections` and can reopen the study |
-| هند محمد السبيعي | `1021098765` | `0551110007` | REQ-2026-00308 · P1 offer accepted and relayed (Phase 1A-2) | Team: closing as «قبل العميل العرض» is refused; start execution tracking (API now, button in 1A-2 step 2) |
-| عمر عبدالله الغامدي | `1010987654` | `0551110008` | REQ-2026-00309 · «قيد متابعة التنفيذ» (Phase 1A-2) | Agreement and schedule from the lender, installment 1 confirmed, installment 2 reported and its confirmation awaiting عبير (execution view in 1A-2 step 3) |
+| هند محمد السبيعي | `1021098765` | `0551110007` | REQ-2026-00308 · P1 offer accepted and relayed (Phase 1A-2) | Team: closing as «قبل العميل العرض» is refused; «بدء متابعة التنفيذ» (demo script step 11) |
+| عمر عبدالله الغامدي | `1010987654` | `0551110008` | REQ-2026-00309 · «قيد متابعة التنفيذ» (Phase 1A-2) | Agreement and schedule from the lender, installment 1 confirmed, installment 2 reported and its confirmation awaiting عبير; «متابعة التنفيذ» and «الاتفاق والجدول والتأكيدات» |
 | ريم سعود المطيري | `2098765432` (iqama) | `0551110009` | REQ-2026-00310 · closed «اكتمل التنفيذ» (Phase 1A-2) | P2 settlement confirmed by the lender; clearance and mortgage-release letters |
 
 ### «فريق رهون» (MVP) — sign in at **`/login`**, lands on `/team`
@@ -92,7 +92,7 @@ Each account has a request at a different stage, so every screen can be tried wi
 | لمى الحربي | `l.alharbi@team.rahoon.example` | Team lead | «الكل» tab, assign requests, answer objections and complaints, verify offers others recorded |
 | نايف اليامي | `n.alyami@team.rahoon.example` | Case coordinator | Owns 00302–00305 and 00308–00310: review, identity check, information requests, coordination log, record offers, relay responses, close |
 | تركي الشهري | `t.alshehri@team.rahoon.example` | Case coordinator | Take unassigned 00301; answer a complaint on نايف's requests (a coordinator can't answer complaints on their own) |
-| عبير القحطاني | `a.alqahtani@team.rahoon.example` | Offer verifier | `/team/verify` → REQ-2026-00304 → checklist → publish (SMS step-up) or return with a reason. Also verifies execution records (REQ-2026-00309; queue `GET /api/team/verify/execution` until the 1A-2 step 2 screen) |
+| عبير القحطاني | `a.alqahtani@team.rahoon.example` | Offer verifier | `/team/verify` → REQ-2026-00304 → checklist → publish (SMS step-up) or return with a reason. Also verifies execution records in the same queue (REQ-2026-00309) |
 
 ### Secondary modes (built in earlier phases, outside the MVP journey)
 
@@ -138,8 +138,15 @@ Two browser windows: a phone-sized one (390 px) for the individual, a desktop on
 7. **Coordinator:** upload the lender's letter («رفع مستند…», type «خطاب الجهة الممولة») → «تسجيل عرض الجهة…» → «إرسال للتحقق».
 8. **Verifier (عبير):** `/team/verify` → open → tick the four checks → «اعتماد ونشر للعميل» → SMS step-up.
 9. **Individual:** «مراجعة العرض» → terms, «أثره عليك», validity «بحسب خطاب الجهة», «ليس نهائياً حتى توافق عليه» → «أوافق» with the code (or «لا يناسبني», or a question).
-10. **Coordinator:** «تسجيل نقل الرد للجهة…». The individual sees «نقلنا ردك…». **Since Phase 1A-2 step 1** an accepted P1/P2 offer is tracked, not closed: «إغلاق الطلب…» with «قبل العميل العرض» is refused with the reason, and «بدء متابعة التنفيذ» gets its button in 1A-2 step 2 (a declined offer or a P3 sale still closes as before). To see tracking now, use REQ-2026-00309 and REQ-2026-00310 below.
-11. **Obstacles:** from the tracker the individual can object («اعتراض على بيانات أو مبالغ أو قرار») or complain; the team lead (لمى) answers from `/team/objections`.
+10. **Coordinator:** «تسجيل نقل الرد للجهة…». The individual sees «نقلنا ردك…». An accepted P1/P2 offer is tracked, not closed («قبل العميل العرض» is refused with the reason); a declined offer or a P3 sale still closes as before.
+11. **Execution tracking (Phase 1A-2), manual mode — the lender executes, Rahoon tracks and explains:**
+    1. **Coordinator:** «بدء متابعة التنفيذ». Upload the lender's letter («رفع مستند…», type «خطاب الجهة الممولة») → «التنفيذ» → «تسجيل الاتفاق والجدول…» (terms prefilled from the offer; schedule lines `1, 2026-11-01, 3100`) → «إرسال للتحقق».
+    2. **Verifier (عبير):** `/team/verify` → the execution record → the four checks → «اعتماد ونشر للعميل» (SMS step-up). The recorder never gets this panel.
+    3. **Individual:** the tracker shows «متابعة التنفيذ» and «رهون لا تستلم أي مبالغ» → «الاتفاق والجدول والتأكيدات» (the lender's schedule, no reminders) → «أبلغنا عن سداد» with proof → «بانتظار تأكيد جهتك».
+    4. **Coordinator:** on the report, «تسجيل تأكيد الجهة…» from the lender's confirmation letter; **عبير** verifies → the individual sees «أكدته جهتك». A lender notice («إشعار من الجهة…») reaches the individual with «لم تتخذ رهون أي إجراء…».
+    5. **Coordinator:** «مستند إغلاق…» (the kind relevant to the path is preselected; V13) → verified → «إغلاق الطلب…» → «اكتمل التنفيذ». The individual downloads the closure documents from the request page.
+    - Shortcuts: REQ-2026-00308 is ready for step 1, REQ-2026-00309 is mid-tracking (a confirmation awaits عبير), REQ-2026-00310 is completed with closure letters.
+12. **Obstacles:** from the tracker the individual can object («اعتراض على بيانات أو مبالغ أو قرار») or complain; the team lead (لمى) answers from `/team/objections`.
 
 ## Tests
 

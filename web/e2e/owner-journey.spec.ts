@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { api, completeStepUp } from "./helpers";
-import { registerIndividual, sandboxCode, submitRequest, teamPage } from "./journey";
+import { registerIndividual, sandboxCode, signInIndividual, submitRequest, teamPage } from "./journey";
 
 /**
  * Primary MVP journey (individual-first, Phase 1A): on a 390px phone the individual registers, fills the request
@@ -287,6 +287,57 @@ test("an offer recorded from the lender letter is verified by another member, th
   await page.getByRole("link", { name: "تنزيل" }).first().click();
   expect((await download).suggestedFilename()).toBe("closure.pdf");
   await shot(page, "23-executed-closed");
+});
+
+test("a lender notice is explained with no action; completion needs a closure document; others see nothing", async ({ page, browser }) => {
+  // Seeded REQ-2026-00308 (هند): a P1 offer accepted and relayed (README «Demo logins»). Re-runs find it already tracked.
+  const reference = "REQ-2026-00308";
+  const base = `/team/requests/${reference}`;
+  const nayef = await teamPage(browser, "n.alyami@team.rahoon.example");
+  await nayef.goto(base);
+  const start = nayef.getByRole("button", { name: "بدء متابعة التنفيذ" });
+  if (await start.isVisible()) await start.click();
+  await expect(nayef.getByText("قيد متابعة التنفيذ").first()).toBeVisible();
+
+  // Completion is refused without a verified closure document relevant to the path; the reason is shown.
+  await nayef.getByRole("button", { name: "إغلاق الطلب…" }).click();
+  const fin = nayef.getByRole("dialog", { name: "إغلاق الطلب" });
+  await fin.getByLabel("النتيجة", { exact: true }).selectOption("executed_closed");
+  await fin.getByLabel(/ملخص النتيجة/).fill("اكتمل التنفيذ.");
+  await fin.getByRole("button", { name: "إغلاق الطلب" }).click();
+  await expect(fin.getByText(/لا يوجد مستند إغلاق/)).toBeVisible();
+  await fin.getByRole("button", { name: "إلغاء" }).click();
+
+  // A notice from the lender, recorded from its document; the recorder gets no verify panel.
+  await uploadLenderDocument(nayef, "notice.pdf");
+  await nayef.getByRole("button", { name: "إشعار من الجهة…" }).click();
+  const nd = nayef.getByRole("dialog", { name: "تسجيل إشعار من الجهة من مستند الجهة" });
+  await nd.getByLabel("مستند الجهة (إلزامي)").selectOption({ label: "خطاب الجهة الممولة · notice.pdf" });
+  await nd.getByLabel("مرجع مستند الجهة").fill(`AF-2026-N${Date.now() % 100000}`);
+  await nd.getByLabel("تاريخ مستند الجهة").fill(isoDay(0));
+  await nd.getByLabel("ما ذكرته الجهة", { exact: true }).fill("تفيد الجهة بأن القسط الأول لم يصلها.");
+  await nd.getByLabel(/ماذا يعني لك/).fill("تقول جهتك إن قسطك الأول لم يصلها. إن كنت سددته فأبلغنا مع الإثبات.");
+  await nd.getByRole("button", { name: "إرسال للتحقق" }).click();
+  await expect(nayef.getByText("يتحقق من السجل عضو آخر من الفريق.").first()).toBeVisible();
+  await expect(nayef.getByRole("button", { name: "اعتماد ونشر للعميل" })).toHaveCount(0);
+  await nayef.context().close();
+  await verifyExecution(browser, reference, "14-verify-notice");
+
+  // E04: هند sees the notice explained, with no action from Rahoon and a way to answer.
+  await signInIndividual(page, "1021098765", "0551110007");
+  await page.goto(`/my/requests/${reference}`);
+  await expect(page.getByRole("heading", { name: "إشعارات من جهتك" })).toBeVisible();
+  await expect(page.getByText("لم تتخذ رهون أي إجراء بخصوص تمويلك بسبب هذا الإشعار.").first()).toBeVisible();
+  await expect(page.getByText("قيد متابعة التنفيذ").first()).toBeVisible();
+  await shot(page, "24-lender-notice");
+
+  // Another individual gets nothing: no execution page, no payment report.
+  const other = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
+  await registerIndividual(other);
+  const res = await other.goto(`/my/requests/${reference}/execution`);
+  expect(res?.status()).toBe(404);
+  expect((await api(other, "POST", `/my/requests/${reference}/payment-reports`, { amount: 100, transferDate: isoDay(0), proofDocumentId: crypto.randomUUID() })).status).toBe(404);
+  await other.context().close();
 });
 
 const isoDay = (offset: number) => new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);

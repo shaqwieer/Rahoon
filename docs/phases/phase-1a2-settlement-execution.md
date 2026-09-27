@@ -1,4 +1,4 @@
-# Phase 1A-2: After the outcome (agreement → payments → closure) ▶ CURRENT (steps 0–3 done 2026-09-27)
+# Phase 1A-2: After the outcome (agreement → payments → closure) ▶ CURRENT (steps 0–4 done 2026-09-27: manual mode complete)
 
 **Start only after Phase 1A (MVP) is done.** **Q13 decided (2026-09-25):** this phase is **not** part of the first MVP.
 
@@ -44,8 +44,8 @@ The lender executes all of this; Rahoon tracks and explains.
 
 ## Definition of done
 
-- [ ] **Manual mode:** Playwright extends `owner-journey.spec.ts`: accept → relay → start tracking → agreement recorded and verified → schedule visible to the individual → the individual reports a payment → the lender confirmation is recorded, verified and linked → a lender notice is explained → a closure letter is verified → closed with `executed_closed` → the individual downloads the closure documents.
-- [ ] The individual sees every state change in plain language, with the source of each fact. They never see internal notes, unverified records or a Rahoon deadline.
+- [x] **Manual mode** (✓ 2026-09-27, step 4)**:** Playwright extends `owner-journey.spec.ts`: accept → relay → start tracking → agreement recorded and verified → schedule visible to the individual → the individual reports a payment → the lender confirmation is recorded, verified and linked → a lender notice is explained → a closure letter is verified → closed with `executed_closed` → the individual downloads the closure documents. (The notice is its own test on seeded REQ-2026-00308.)
+- [x] (✓ step 4) The individual sees every state change in plain language, with the source of each fact. They never see internal notes, unverified records or a Rahoon deadline.
 - [ ] **Lender mode:** L19–L21 re-verified; the B10 backend merged and migrated; L26 built; the lender-mode Playwright path (activation → matched payment in D10 → closure → D14) passes.
 - [ ] `dotnet test` is green.
 - [ ] Every row below is ✅, with *Direction review* OK or Secondary (lender mode). A row still awaiting design (D-7, D-8) counts when «بانتظار اعتماد التصميم» is recorded in *Findings*, as in Phase 1A.
@@ -112,7 +112,12 @@ The lender executes all of this; Rahoon tracks and explains.
    - [x] E03 `/my/requests/[ref]/payment`: amount, transfer date, optional reference and installment, proof upload (`payment_proof`); confirmation «سجّلنا بلاغك…» on return.
    - [x] E04 lender notices: the lender's statement explained, «لم تتخذ رهون أي إجراء…» (V4 proposed), links to messages and objection. E05 closure documents with download and «محفوظة في حسابك» (no expiry). E06: the withdraw screen shows the tracking effect (V4 proposed).
    - [x] Checks: tsc, eslint, build ✓; E2E 7 passed, 1 skipped; the accept journey now runs the full manual-mode Definition-of-done path through both UIs; `responsive-qa.spec.ts` adds the seeded execution screens (0 issues).
-4. ⬜ **Manual-mode E2E + responsive QA.** Extend `owner-journey.spec.ts` (the DoD path above; the current accept → close test becomes accept → tracking → closure), add the execution screens to `responsive-qa.spec.ts`, negative checks (another individual → 404, verifier = recorder refused, close without closure document refused, double submit replays). README demo script and logins.
+4. ✅ **Manual-mode E2E + responsive QA** (2026-09-27).
+   - [x] `owner-journey.spec.ts`: the accept test runs the whole manual-mode path through both UIs (steps 2–3); a new test on seeded REQ-2026-00308 covers the lender notice (E04, «لم تتخذ رهون أي إجراء…»), completion refused without a closure document (reason shown in the dialog), the recorder getting no verify panel, and another individual getting 404 on the execution page and on a payment report. It is safe to re-run without a reseed.
+   - [x] `responsive-qa.spec.ts`: the team execution screen and the individual's seeded execution screens (tracker, detail, payment form, completed request) at 390/768/1440 (+200% on the existing set): 0 issues.
+   - [x] Replays and the DB-level checks (double submit, verifier = recorder at the database, audit chain) are asserted in `ExecutionTests` (API), not repeated in the browser.
+   - [x] README: demo script step 11 (execution tracking, manual mode) and the demo-login rows.
+   - [x] E2E **8 passed**, 1 skipped (the known lender-mode `fixme`, fixed in step 5).
 5. ⬜ **Lender mode: agreement → payments** (was step 1).
    - ماجد: L19 legal review → schedule → activate; guard reasons are shown when blocked.
    - ريم records installment 1 and عبدالعزيز matches it; the same user can't match their own payment.
