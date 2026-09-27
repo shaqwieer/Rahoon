@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
-import { api, apiLogin } from "./helpers";
+import { api, apiLogin, completeStepUp } from "./helpers";
 
 /**
  * Phase 1A-2 step 5 — lender-on-platform mode (secondary to the individual-first journey): after approval and the owner's
@@ -116,4 +116,78 @@ test("L21: a seeded breach review ends with a path decision, never an automatic 
   expect(ws.json.header.status).toBe("proposed_solution");
   expect(ws.json.header.status).not.toBe("judicial_referral");
   await page.screenshot({ path: "test-results/lender-l21-outcome.png", fullPage: true });
+});
+
+/** Clicks a confirm button that may ask for an MFA step-up first, then waits for the success text. */
+async function confirmWithStepUp(page: Page, confirm: () => Promise<void>, success: RegExp) {
+  await confirm();
+  const stepUp = page.getByRole("dialog", { name: "تأكيد برمز التحقق" });
+  const done = page.getByText(success).first();
+  await expect(done.or(stepUp)).toBeVisible();
+  if (await stepUp.isVisible()) await completeStepUp(page);
+  await expect(done).toBeVisible();
+}
+
+test("L26 settlement closure: preparer ≠ reviewer ≠ approver, step-up, closure documents reach the owner (D14)", async ({ page, browser }) => {
+  // Seeded RH-2026-003702: ريم prepared and submitted a zero-difference reconciliation (two matched transfers, approved waiver).
+  const ref = "RH-2026-003702";
+  const url = `/cases/${ref}/closure`;
+  await page.goto("/login");
+
+  // ريم (preparer) can't review her own reconciliation.
+  await apiLogin(page, "r.aldosari@alufuq.example");
+  await page.goto(url);
+  await expect(page.getByRole("heading", { name: "المطابقة المالية" })).toBeVisible();
+  await expect(page.getByText("الفرق 0.00").first()).toBeVisible();
+  await expect(page.getByText("أعددت هذه التسوية؛ يدققها موظف مالية آخر.")).toBeVisible();
+  await page.screenshot({ path: "test-results/lender-l26-submitted.png", fullPage: true });
+
+  // عبدالعزيز (reviewer).
+  await apiLogin(page, "a.alshammari@alufuq.example");
+  await page.goto(url);
+  await page.getByRole("button", { name: "تدقيق التسوية…" }).click();
+  const review = page.getByRole("dialog", { name: "تدقيق التسوية المالية" });
+  await review.getByLabel(/ملاحظة التدقيق/).fill("طابقت التحويلين مع كشف الحساب؛ الفرق صفر.");
+  await review.getByRole("button", { name: "تأكيد التدقيق" }).click();
+  await expect(page.getByText("اكتمل تدقيق التسوية · بانتظار الاعتماد.")).toBeVisible();
+
+  // نورة (approver) approves with a step-up.
+  await apiLogin(page, "n.alshehri@alufuq.example");
+  await page.goto(url);
+  await page.getByRole("button", { name: "اعتماد التسوية…" }).click();
+  const approve = page.getByRole("dialog", { name: "اعتماد التسوية المالية" });
+  await approve.getByLabel(/سبب القرار/).fill("المطابقة صفرية الفرق والمصادر قابلة للتتبع.");
+  await confirmWithStepUp(page, () => approve.getByRole("button", { name: "اعتماد" }).click(), /اعتُمدت التسوية المالية/);
+
+  // ريم: owner summary, then the closure request.
+  await apiLogin(page, "r.aldosari@alufuq.example");
+  await page.goto(url);
+  await page.getByRole("button", { name: "توليد ملخص المالك" }).click();
+  await page.getByRole("dialog", { name: "توليد ملخص الحالة النهائي للمالك" }).getByRole("button", { name: "توليد الملخص" }).click();
+  await expect(page.getByText("وُلّد ملخص الحالة النهائي للمالك.")).toBeVisible();
+  await page.getByRole("button", { name: "إرسال للتدقيق والاعتماد" }).click();
+  const req = page.getByRole("dialog", { name: "إرسال الإغلاق للاعتماد" });
+  await req.getByLabel(/ملاحظة الإغلاق/).fill("المطابقة صفرية الفرق. المستندات مكتملة.");
+  await req.getByRole("button", { name: "إرسال للاعتماد" }).click();
+  await expect(page.getByText("أُرسل الإغلاق للاعتماد.")).toBeVisible();
+
+  // نورة decides the closure: trace acknowledged, step-up.
+  await apiLogin(page, "n.alshehri@alufuq.example");
+  await page.goto(url);
+  await page.getByRole("button", { name: /اعتماد الإغلاق/ }).click();
+  const decide = page.getByRole("dialog", { name: "اعتماد الإغلاق" });
+  await decide.getByRole("checkbox", { name: "راجعت تتبع المصادر ولا يوجد رقم دون مصدر" }).check();
+  await decide.getByLabel(/سبب القرار/).fill("المصادر قابلة للتتبع والمستندات مكتملة.");
+  await confirmWithStepUp(page, () => decide.getByRole("button", { name: "اعتماد الإغلاق" }).click(), /أُغلقت الحالة ونُشرت مستنداتها للمالك/);
+  await page.reload();
+  await expect(page.getByText("أُغلقت الحالة", { exact: true })).toBeVisible();
+  await page.screenshot({ path: "test-results/lender-l26-closed.png", fullPage: true });
+
+  // D14: the owner downloads the closure documents.
+  const owner = await ownerPage(browser, ref, "3702");
+  await owner.goto("/owner/documents/closure");
+  await expect(owner.getByText("خطاب المخالصة النهائية")).toBeVisible();
+  await expect(owner.getByText("خطاب فك الرهن")).toBeVisible();
+  await owner.screenshot({ path: "test-results/lender-d14-owner.png", fullPage: true });
+  await owner.context().close();
 });

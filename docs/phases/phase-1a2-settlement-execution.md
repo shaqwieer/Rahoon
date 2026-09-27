@@ -1,4 +1,4 @@
-# Phase 1A-2: After the outcome (agreement → payments → closure) ▶ CURRENT (steps 0–6 done 2026-09-27: manual mode complete; lender mode L19–L21 verified, B10 merged)
+# Phase 1A-2: After the outcome (agreement → payments → closure) ▶ CURRENT (steps 0–7 done 2026-09-27: manual mode complete; lender mode L19–L21 and L26 verified)
 
 **Start only after Phase 1A (MVP) is done.** **Q13 decided (2026-09-25):** this phase is **not** part of the first MVP.
 
@@ -82,8 +82,8 @@ The lender executes all of this; Rahoon tracks and explains.
 | L20 | Payment schedule, record (maker), match (checker) | lender | ✅ 2026-09-27: Playwright: ريم records, can't match her own («سجّلت هذه الدفعة؛ يطابقها موظف مالية آخر»), عبدالعزيز matches | Secondary | Step 5 |
 | L21 | Breach handling (no automatic referral) | lender | ✅ 2026-09-27: Playwright on seeded RH-2026-003870: breach review → «إعادة هيكلة» → «حل مقترح», never a referral | Secondary | Owner wording made descriptive (was «نتواصل معك أولاً», V4) |
 | D10 | Owner payments and receipts | lender | ✅ 2026-09-27: Playwright at 390: unmatched payment not shown as received; «مستلم» after matching | Secondary | «رهون لا تستلم أي مبالغ». Content rules reused in E01/E02 (step 3 finding) |
-| L26 | Reconciliation + closure (settlement path) | lender | ⬜ UI · 🟩 API on `master` (merged step 6, `JudicialClosureTests` ✓) | Secondary | Step 7 |
-| D14 | Owner closure documents | lender | 🟩 on `master` (1A step 3) | Secondary | Owner access read-only for 90 days (assumption, case session only). Components reused in E05 |
+| L26 | Reconciliation + closure (settlement path) | lender | ✅ 2026-09-27: `/cases/[ref]/closure`; Playwright on seeded RH-2026-003702 (review → approve with step-up → owner summary → request → closure decision with step-up); `SettlementClosureTests` ✓ | Secondary | Step 7. Distribution (judicial path) not shown (Phase 3, V10) |
+| D14 | Owner closure documents | lender | ✅ 2026-09-27: Playwright at 390 after the L26 closure: clearance, release letter and final summary listed for download | Secondary | Owner access read-only for 90 days (assumption, case session only) |
 | S08, S09 | Notifications, tasks | both | 🟧 WIP `…a1008744…` @ `05c715b` | — | Stay in Phase 1B (not needed here) |
 
 ## Steps
@@ -131,11 +131,12 @@ The lender executes all of this; Rahoon tracks and explains.
    - [x] Merge fix: agent assignments took `ASG-{year}-{count + 419}`, which collided with master's seeded assignment references (409 «duplicate» in `JudicialClosureTests`); they now use the shared `assignment:YYYY` counter (`ProviderAssignmentService.NextReferenceAsync`).
    - [x] Backend **192/192** (15 tests from the branch); `dev-api.sh --reset` ✓ on PostgreSQL; E2E 11 passed. Worktree and branch removed.
    - Scope note: the merge brings code for later phases (judicial referral + agent portal, Phase 3 on hold V10; analytics and drafting, Phase 4). It is backend only and has no UI entry in the primary journey; those phases keep their own UI steps.
-7. ⬜ **Lender mode: L26 settlement-path UI** (was step 3).
-   - Reconciliation: preparer, reviewer and approver are three different people; step-up.
-   - Closure documents checklist; closure request → decision.
-   - D14 for the owner.
-   - Fast demo: seeded RH-2026-003702.
+7. ✅ **Lender mode: L26 settlement-path UI** (2026-09-27, was step 3).
+   - [x] `/cases/[ref]/closure` (`ClosureView.tsx`, B5 L26 layout): «المطابقة المالية» (every amount with its source; received total; the difference with its tone and formula; the approved waiver as information), «مستندات الإغلاق» (ready/pending, blocks closure or not, «يُنشر للمالك عند الإغلاق»; generate the owner summary), «تتبع المصادر», and the aside «مراجعة قبل الإغلاق» (what happens, the approval chain, then review / approve / request / decide with the server's reasons; step-up through the existing dialogs). A closed case is read-only. The «الإغلاق» tab shows when the case awaits reconciliation or is closed (existing rule).
+   - [x] Preparer ≠ reviewer ≠ approver: ريم (prepared, seed) sees «أعددت هذه التسوية؛ يدققها موظف مالية آخر»; عبدالعزيز reviews; نورة approves with step-up; ريم requests the closure; نورة decides it with the trace acknowledged and step-up. `SettlementClosureTests` (API) proves the refusals: preparer reviewing, approval without step-up, closure request while the owner summary is missing, requester and reviewer deciding; the audit chain verifies.
+   - [x] D14: the owner (`demo-RH-2026-003702`, `3702`) sees and can download the clearance, the release letter and the final summary.
+   - [x] Seed alignment: AGR-2026-003702-01 now carries the L26 canon (TRX-88201744 300,000.00 and TRX-88355102 155,210.75, both matched; waiver 38,204.10), the same references as the B10 reconciliation seed.
+   - [x] Checks: backend **193/193**; tsc, eslint, build ✓; E2E **12 passed** (the first full run after a dev-server restart timed out once on a cold route compile; the test passed alone and the rerun was clean).
 8. ⬜ **Lender mode: E2E + wrap-up** (was step 4). Lender-mode path in `lender-flow.spec.ts`, negative checks (other tenant → 404, forbidden transitions show reasons, double submit replays). Tick the Definition of done and move ▶ CURRENT to Phase 1B.
 
 ## Findings / open decisions
@@ -152,5 +153,7 @@ The lender executes all of this; Rahoon tracks and explains.
 - **Step 1, scope kept to ADR 0002:** `request_info` is **not** available during tracking (not in the ADR table); the team uses messages or a team update with «ننتظر: العميل».
 - **Step 1, local dev:** the API and web dev servers from the previous session were stopped for the build and restarted (`dev-api.sh --reset`, `npm run dev`); `dev-api.sh` prints `pkill: command not found` on Windows (harmless).
 - **Step 0, D14's 90-day window** came from the owner-case session. For the individual account (Q14) closure documents stay available; the lender-mode D14 keeps its assumption until step 7.
-- The approvals inbox lists only solution approvals. Referral, reconciliation and closure approvals notify only. Decide in step 7 whether closure approvals belong in the inbox or on a case-level screen.
+- ~~The approvals inbox lists only solution approvals. Decide in step 7 whether closure approvals belong in the inbox or on a case-level screen.~~ **Decided in step 7:** closure and reconciliation decisions stay on the case screen (L26). The API already returns them as the case's `actions` with reasons, and the notifications link to `/cases/[ref]/closure`; the approvals inbox is not extended in this phase.
+- **Step 7, distribution:** the distribution part of the closure API belongs to the judicial path (Phase 3, on hold V10) and has no UI here.
+- **Step 7, E2E data:** the L26 test closes seeded RH-2026-003702 (closed cases are immutable); like the other lender tests it needs `E2E_RESET=1` to re-run.
 - The owner summary PDF generated at closure is Latin-only (no Arabic shaping); listed as outstanding.

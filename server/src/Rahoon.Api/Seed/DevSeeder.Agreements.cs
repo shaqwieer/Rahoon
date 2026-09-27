@@ -8,7 +8,7 @@ namespace Rahoon.Api.Seed;
 /// Phase 1A-2 step 5 (lender-on-platform mode): agreements behind the seeded post-acceptance cases, which had a status but
 /// no agreement or schedule. RH-2026-003870 is «تسوية معتمدة / نشطة» with installments 1–2 matched (recorded by ريم,
 /// matched by عبدالعزيز) and 3–4 missed, so a breach review is open (L21 — never an automatic referral).
-/// RH-2026-003702 is «بانتظار التسوية المالية»: a cash settlement AGR-2026-003702-01, paid and matched, for L26.
+/// RH-2026-003702 is «بانتظار التسوية المالية»: the cash settlement AGR-2026-003702-01 (two matched transfers, approved waiver) for L26.
 /// All data is fictional.
 /// </summary>
 public sealed partial class DevSeeder
@@ -32,12 +32,14 @@ public sealed partial class DevSeeder
         Audit(c1.OrganizationId, c1, "breach.opened", "فتح مراجعة إخلال آلياً · إشعار المالك بمهلة 15 يوماً وخيار المساعدة", At("2026-09-08T06:00:00"), null,
             detail: "الأقساط 3 و4");
 
-        // RH-2026-003702 — cash settlement paid in one installment and matched; awaiting reconciliation (L26).
+        // RH-2026-003702 — discounted cash settlement in two transfers, both matched, with the approved waiver; awaiting
+        // reconciliation (L26). Same references and amounts as the B10 reconciliation seed (DevSeeder.Closure.cs, L26 canon).
         var c2 = _cases["RH-2026-003702"];
-        var a2 = await AgreementChainAsync(c2, "AGR-2026-003702-01", SolutionKind.ReducedPayoff, rescheduled: 455_210.75m, waiver: 0m,
-            count: 1, amount: 455_210.75m, start: D("2026-09-10"), activatedAt: At("2026-08-28T10:00:00"));
-        var single = Schedule(a2, 1)[0];
-        Pay(a2, single, D("2026-09-12"), "TRX-3702-001", matched: true);
+        var a2 = await AgreementChainAsync(c2, "AGR-2026-003702-01", SolutionKind.ReducedPayoff, rescheduled: 455_210.75m, waiver: 38_204.10m,
+            count: 2, amount: 300_000.00m, start: D("2026-09-10"), activatedAt: At("2026-08-28T10:00:00"));
+        var parts = Schedule(a2, 2);
+        Pay(a2, parts[0], D("2026-09-10"), "TRX-88201744", matched: true);
+        Pay(a2, parts[1], D("2026-09-18"), "TRX-88355102", matched: true);
         a2.Status = AgreementStatus.Completed;
         await db.SaveChangesAsync();
     }
