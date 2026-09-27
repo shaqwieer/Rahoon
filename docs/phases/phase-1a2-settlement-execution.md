@@ -1,4 +1,4 @@
-# Phase 1A-2: After the outcome (agreement → payments → closure) ▶ CURRENT (steps 0–4 done 2026-09-27: manual mode complete)
+# Phase 1A-2: After the outcome (agreement → payments → closure) ▶ CURRENT (steps 0–5 done 2026-09-27: manual mode complete; lender mode L19–L21 verified)
 
 **Start only after Phase 1A (MVP) is done.** **Q13 decided (2026-09-25):** this phase is **not** part of the first MVP.
 
@@ -78,10 +78,10 @@ The lender executes all of this; Rahoon tracks and explains.
 | — | `execution_tracking` state, execution records, payment reports, new close outcomes (ADR 0002) | manual | 🟩 2026-09-27: API + seed + tests (`ExecutionTests` 12), migration applied on Postgres; seeded requests render on `/my` (Playwright at 390/1440) and the team detail (Chrome at 1440); 768 not checked | New | Step 1. No dedicated screens yet (steps 2–3) |
 | T02 «التنفيذ», T09, T10, T11, T06 extension | Team execution screens | manual | ✅ 2026-09-27: Playwright (record agreement + schedule → verify with step-up → closure letter → verify → close «اكتمل التنفيذ») at 1440; QA sweep 390/768/1440 + 200% with 0 issues | New + **Needs design (D-7)** «بانتظار اعتماد التصميم» | Step 2 |
 | E01–E06 | The individual's execution view under `/my/requests/[ref]` (D10/D14 successors) | manual | ✅ 2026-09-27: Playwright at 390 (tracking panel → report with proof → confirmed → closure document download); QA sweep of the seeded REQ-2026-00309/00310 screens at 390/768/1440 with 0 issues | New + **Needs design (D-8)** «بانتظار اعتماد التصميم» | Step 3 |
-| L19 | Agreement (legal review → schedule → activate) | lender | 🟩 on `master` (`ca4aefb`, 1A step 3); browser smoke only | Secondary | Step 5 |
-| L20 | Payment schedule, record (maker), match (checker) | lender | 🟩 same | Secondary | Step 5 |
-| L21 | Breach handling (no automatic referral) | lender | 🟩 same | Secondary | Check the owner-facing wording «نتواصل معك أولاً»: a commitment (V4); make it descriptive or mark it provisional |
-| D10 | Owner payments and receipts | lender | 🟩 on `master` (1A step 3) | Secondary | «رهون لا تستلم أي مبالغ». Components reused in E01/E02 |
+| L19 | Agreement (legal review → schedule → activate) | lender | ✅ 2026-09-27: Playwright (`lender-execution.spec.ts`): missing steps shown, early activation refused with the reason, legal review → schedule → activate | Secondary | Step 5 |
+| L20 | Payment schedule, record (maker), match (checker) | lender | ✅ 2026-09-27: Playwright: ريم records, can't match her own («سجّلت هذه الدفعة؛ يطابقها موظف مالية آخر»), عبدالعزيز matches | Secondary | Step 5 |
+| L21 | Breach handling (no automatic referral) | lender | ✅ 2026-09-27: Playwright on seeded RH-2026-003870: breach review → «إعادة هيكلة» → «حل مقترح», never a referral | Secondary | Owner wording made descriptive (was «نتواصل معك أولاً», V4) |
+| D10 | Owner payments and receipts | lender | ✅ 2026-09-27: Playwright at 390: unmatched payment not shown as received; «مستلم» after matching | Secondary | «رهون لا تستلم أي مبالغ». Content rules reused in E01/E02 (step 3 finding) |
 | L26 | Reconciliation + closure (settlement path) | lender | ⬜ UI · 🟨 API on branch `…ae86d4e3…` | Secondary | Steps 6–7 |
 | D14 | Owner closure documents | lender | 🟩 on `master` (1A step 3) | Secondary | Owner access read-only for 90 days (assumption, case session only). Components reused in E05 |
 | S08, S09 | Notifications, tasks | both | 🟧 WIP `…a1008744…` @ `05c715b` | — | Stay in Phase 1B (not needed here) |
@@ -118,12 +118,13 @@ The lender executes all of this; Rahoon tracks and explains.
    - [x] Replays and the DB-level checks (double submit, verifier = recorder at the database, audit chain) are asserted in `ExecutionTests` (API), not repeated in the browser.
    - [x] README: demo script step 11 (execution tracking, manual mode) and the demo-login rows.
    - [x] E2E **8 passed**, 1 skipped (the known lender-mode `fixme`, fixed in step 5).
-5. ⬜ **Lender mode: agreement → payments** (was step 1).
-   - ماجد: L19 legal review → schedule → activate; guard reasons are shown when blocked.
-   - ريم records installment 1 and عبدالعزيز matches it; the same user can't match their own payment.
-   - The owner sees it in D10.
-   - Breach: seeded overdue case → L21 outcome.
-   - Seed fixes: RH-2026-003870 («تسوية معتمدة / نشطة» with no agreement or schedule); RH-2026-004172 v2 awaiting review, so the `fixme` maker-checker test in `lender-flow.spec.ts` runs again.
+5. ✅ **Lender mode: agreement → payments** (2026-09-27, was step 1).
+   - [x] `web/e2e/lender-execution.spec.ts` (new): RH-2026-004090 approved and accepted (API setup), then ماجد: L19 shows the missing steps, the server refuses early activation with «مراجعة القانونية», legal review → schedule → activate; ريم records installment 1 and can't match it; the owner doesn't see it as received; عبدالعزيز matches it; the owner sees «مستلم» in D10.
+   - [x] Breach: seeded RH-2026-003870 → L21 «إعادة هيكلة» → «حل مقترح», never a referral.
+   - [x] Seed fix (`DevSeeder.Agreements.cs`): no case had an agreement. RH-2026-003870 now has AGR-2026-003870-01 (installments 1–2 matched by عبدالعزيز after ريم recorded them, 3–4 missed, an open breach review with a cure period); RH-2026-003702 has the completed cash settlement AGR-2026-003702-01 that the B10 reconciliation seed names (step 6). Each has its accepted solution, offer and consent record.
+   - [x] `lender-flow.spec.ts` maker-checker test re-enabled: RH-2026-004172 v2 *is* awaiting review on a fresh seed (the step-9 failure came from a reused database). Fixed along the way: the approver's reason was filled before hydration (now retried until it sticks), the step-up is completed when asked, and the case status keys are snake_case (`awaiting_customer`; the other test's `not.toBe("Draft")` had been passing vacuously).
+   - [x] Owner wording (L21/D07 «ماذا لو تأخرت عن قسط؟»): «نتواصل معك أولاً…» was a contact commitment (V4); it now describes the agreement's clause («بحسب شروط اتفاقك: … ولا تُتخذ أي خطوة أخرى تلقائياً»).
+   - [x] Checks: backend 177/177; tsc, eslint, build ✓; E2E **11 passed, 0 skipped**.
 6. ⬜ **Lender mode: closure backend** (was step 2). Merge `worktree-agent-ae86d4e3d70e6413a` (B10/B11 API), add the migration `ReferralClosureAnalytics`, run `dotnet test` and `bash scripts/dev-api.sh --reset`.
 7. ⬜ **Lender mode: L26 settlement-path UI** (was step 3).
    - Reconciliation: preparer, reviewer and approver are three different people; step-up.

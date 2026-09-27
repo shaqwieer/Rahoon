@@ -62,12 +62,12 @@ test.describe("lender", () => {
     // The server — not the browser — owns the status and the audit trail.
     const ws = await api<{ header: { status: string } }>(page, "GET", `/cases/${reference}`);
     expect(ws.status).toBe(200);
-    expect(ws.json.header.status).not.toBe("Draft");
+    expect(ws.json.header.status).not.toBe("draft");
   });
 
-  // FIXME (Phase 1A step 9): the seeded RH-2026-004172 no longer has v2 awaiting review after the step-3 merges
-  // (the page shows «الإصدار v2 ليس بانتظار المراجعة»). Needs a seed fix in the lender-on-platform mode (Phase 1A-2 / 1B).
-  test.fixme("maker-checker: reviewer submits v2, approver decides with step-up", async ({ page }) => {
+  // Re-enabled in Phase 1A-2 step 5: on a fresh seed (E2E_RESET=1) v2 of RH-2026-004172 is awaiting review. The earlier
+  // «ليس بانتظار المراجعة» came from a reused database; the test changes the seeded case, so it needs a reseed to re-run.
+  test("maker-checker: reviewer submits v2, approver decides with step-up", async ({ page }) => {
     const ref = "RH-2026-004172";
     await apiLogin(page, USERS.sara);
     await page.goto(`/cases/${ref}/solutions/2/submit`);
@@ -83,12 +83,24 @@ test.describe("lender", () => {
     await apiLogin(page, USERS.noura);
     await page.goto("/approvals");
     await page.getByRole("link", { name: new RegExp(ref) }).click();
-    await page.getByLabel("سبب القرار").fill("الحل قابل للسداد وضمن حدودي، والتنازل عن الغرامات مبرر بظرف موثق.");
+    // Fill after hydration (a fill before it is reset by React): retry until the value sticks and the button enables.
+    await page.waitForLoadState("networkidle");
+    const why = page.getByLabel("سبب القرار");
+    const text = "الحل قابل للسداد وضمن حدودي، والتنازل عن الغرامات مبرر بظرف موثق.";
+    await expect(async () => {
+      await why.fill(text);
+      await expect(why).toHaveValue(text, { timeout: 1000 });
+      await expect(page.getByRole("button", { name: "تأكيد الاعتماد" })).toBeEnabled({ timeout: 1000 });
+    }).toPass();
     await page.getByRole("button", { name: "تأكيد الاعتماد" }).click();
-    await completeStepUp(page);
-    await expect(page.getByText("اعتُمد الحل وأُرسل العرض للمالك.")).toBeVisible();
+    // A sign-in that just completed MFA already counts as a fresh step-up; otherwise the step-up dialog asks for a code.
+    const stepUp = page.getByRole("dialog", { name: "تأكيد برمز التحقق" });
+    const done = page.getByText("اعتُمد الحل وأُرسل العرض للمالك.");
+    await expect(done.or(stepUp)).toBeVisible();
+    if (await stepUp.isVisible()) await completeStepUp(page);
+    await expect(done).toBeVisible();
 
     const ws = await api<{ header: { status: string } }>(page, "GET", `/cases/${ref}`);
-    expect(ws.json.header.status).toBe("AwaitingCustomer");
+    expect(ws.json.header.status).toBe("awaiting_customer");
   });
 });

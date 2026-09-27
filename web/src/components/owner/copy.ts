@@ -105,7 +105,8 @@ const ar = {
     homeStays: "يبقى ملكك",
     whatIfLate: "ماذا لو تأخرت عن قسط؟",
     lateBody: (missed: string, cure: string) =>
-      `نتواصل معك أولاً. إذا تأخر ${missed} نمنحك ${cure} للتصحيح ونبحث معك عن حل، قبل أي خطوة أخرى.`,
+      // V4: describes the agreement's breach clause, not a contact commitment (Phase 1A-2 step 5).
+      `بحسب شروط اتفاقك: إذا تأخر ${missed} تُفتح مراجعة، وتُمنح ${cure} للتصحيح ويُبحث معك عن حل، ولا تُتخذ أي خطوة أخرى تلقائياً.`,
     missedTwo: "قسطان متتاليان",
     missedN: (n: number) => `${n} أقساط متتالية`,
     missedOne: "قسط واحد",
@@ -432,7 +433,7 @@ const en: OwnerCopy = {
     homeStays: "Stays yours",
     whatIfLate: "What if I miss an installment?",
     lateBody: (missed: string, cure: string) =>
-      `We contact you first. If ${missed} are missed, we give you ${cure} to catch up and look for a solution with you before any other step.`,
+      `Under your agreement's terms: if ${missed} are missed, a review opens, you get ${cure} to catch up and a solution is looked for with you; no other step is taken automatically.`,
     missedTwo: "two installments in a row",
     missedN: (n: number) => `${n} installments in a row`,
     missedOne: "one installment",
