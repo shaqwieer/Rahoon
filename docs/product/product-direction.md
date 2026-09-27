@@ -99,7 +99,7 @@ After the MVP (Phase 1A-2), the outcome's execution is **tracked**: agreement, i
 
 ## 6. Q1–Q15: original text, decision, status, impact
 
-Q1–Q12 are quoted **verbatim** from the design (B13 «نقاط تحتاج تأكيداً من صاحب المشروع»). Q13–Q15 are quoted verbatim from the engineering re-plan of 2026-09-25. Status is **محسوم** (decided) or **يحتاج تحققًا/قرارًا** (needs verification or a decision).
+Q1–Q12 are quoted **verbatim** from the design (B13 «نقاط تحتاج تأكيداً من صاحب المشروع»). Q13–Q15 are quoted verbatim from the engineering re-plan of 2026-09-25, and Q16–Q18 from the Phase 1A-2 re-plan of 2026-09-27. Status is **محسوم** (decided) or **يحتاج تحققًا/قرارًا** (needs verification or a decision).
 
 | # | النص الأصلي | الإجابة / القرار | الحالة | الأثر على المراحل |
 |---|---|---|---|---|
@@ -118,6 +118,9 @@ Q1–Q12 are quoted **verbatim** from the design (B13 «نقاط تحتاج تأ
 | Q13 | «Does the MVP still include agreement activation, the payment schedule and closure, or does it end once the outcome is recorded?» | يبقى تفعيل الاتفاق وتنفيذ المدفوعات والإغلاق المالي في `phase-1a2-settlement-execution.md`. الـMVP يركز على بدء الطلب، ومراجعته، وتنسيق الوصول إلى عرض معتمد عند توفره، وتوثيق رد الفرد. لا افتراض بأن رهون تحتفظ بأموال أو تنفذ دفعات. | **محسوم** | 1A ينتهي بتوثيق الرد؛ 1A-2 للتنفيذ والإغلاق (تتبع فقط) |
 | Q14 | «Can the individual have several requests or cases at once, and do they share one account?» | حساب مستقل للفرد، أكثر من طلب، لكل طلب مرجعه وحالته ومستنداته وصلاحياته؛ الجلسة غير مربوطة بحالة واحدة. | **محسوم** | 1A الخطوة 4: نموذج الحساب يحل محل «owner = exactly one case» |
 | Q15 | «Does a returning individual sign in with ID + OTP (no password) as today's owners do, or with a password + OTP like staff?» | لم يُحدَّد. | **يحتاج قرارًا** | 1A الخطوة 4: يُبنى الدخول بالهوية + رمز الجوال افتراضًا ظاهرًا حتى القرار |
+| Q16 | «How far does Rahoon track the execution of an accepted offer? Does the team record every installment until final closure (possibly monthly for years), only the agreement and closure, or only the payments the lender or the individual reports?» | لم يُحدَّد. | **يحتاج قرارًا** | 1A-2 (ADR 0002): **افتراض مؤقت** — يسجل الفريق ما ترسله الجهة وما يبلغ عنه الفرد، دون التزام بتسجيل كل قسط؛ نتيجة إغلاق `tracking_ended` تُنهي المتابعة مع ملخص بينما يستمر الاتفاق مع الجهة |
+| Q17 | «After the lender reports a breach of the agreement, does the Rahoon team continue coordinating on the same request, or does the individual start a new request?» | لم يُحدَّد. | **يحتاج قرارًا** | 1A-2: **افتراض مؤقت** — متابعة التنسيق على الطلب نفسه (`continue_coordination` من `execution_tracking`) مع سبب يظهر للفرد؛ لا إجراء تلقائي تجاه الفرد في أي حال |
+| Q18 | «Which closure documents close each path: for keeping the property (P1, rescheduling) and for debt settlement (P2)? For example a clearance letter, a mortgage release letter, or a letter confirming the new schedule.» | لم يُحدَّد. | **يحتاج قرارًا** | 1A-2: **افتراض مؤقت** — أربعة أنواع (مخالصة/إخلاء طرف، خطاب فك الرهن، خطاب إتمام الجدولة أو الاتفاق، أخرى)؛ الإغلاق بنتيجة «اكتمل التنفيذ» يتطلب مستندًا واحدًا على الأقل من الجهة بعد التحقق |
 
 ## 7. Verifications required before activation
 
@@ -165,3 +168,4 @@ Everything already built stays in the repository with its verified status. It's 
 |---|---|---|
 | 2026-09-25 | Individual-first direction confirmed. The design adds B13 and updates B6, Brief, Flows (PROTO-00), Handoff and LenderSidebar. Plan corrected. | Product owner; recorded by engineering |
 | 2026-09-25 | Product definition refined (SaaS in Saudi Arabia, help beyond a request form); four confirmed service paths (Q11); Rahoon team leads and coordinates manually with lenders (Q1, Q8); no deadlines or promises in the UI (Q6, Q12); several requests per account (Q7, Q14); settlement execution stays in 1A-2 (Q13). Q2 and Q3 resolved by derivation from Q1. Q4, Q5, Q9, Q10 and Q15 still open; verifications V1–V10 recorded. | Product owner; recorded by engineering |
+| 2026-09-27 | Phase 1A-2 re-plan: execution of an accepted offer is tracked on the same request with lender-evidenced records (ADR 0002). New open questions Q16 (tracking horizon), Q17 (after a breach) and Q18 (closure documents per path), each with an interim rule. | Engineering (questions for the product owner) |

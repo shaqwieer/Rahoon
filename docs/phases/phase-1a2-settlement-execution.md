@@ -1,8 +1,10 @@
-# Phase 1A-2: After the outcome (agreement → payments → closure) ⬜ ▶ CURRENT
+# Phase 1A-2: After the outcome (agreement → payments → closure) ▶ CURRENT (step 0 done 2026-09-27)
 
 **Start only after Phase 1A (MVP) is done.** **Q13 decided (2026-09-25):** this phase is **not** part of the first MVP.
 
-> **Origin:** this was steps 3–4 of the MVP before the 2026-09-25 re-plan, when the MVP was the lender's settlement path. The work and its branches are unchanged; only the order moved. Rahoon doesn't collect money. Payments stay recorded manually with maker-checker (A-04), and signing stays «غير مفعّل» (A-05).
+> **Origin:** this was steps 3–4 of the MVP before the 2026-09-25 re-plan, when the MVP was the lender's settlement path. Rahoon doesn't collect money. Payments happen outside the platform (A-04), and in-platform acceptance is a consent record, not a signature (A-05).
+>
+> **Re-planned 2026-09-27 (step 0).** The earlier steps 1–4 were all lender-on-platform work (L19–L21, the B10 merge, L26), which contradicted this file's own direction review (manual-coordination mode first). The manual-mode steps now come first ([ADR 0002](../adr/0002-request-execution-tracking.md)). The lender-mode steps follow, unchanged in content.
 
 **Goal:** once the individual has accepted an approved offer, the outcome is **tracked** and documented for them:
 - the agreement
@@ -11,29 +13,55 @@
 - breach handled without any automatic action against them
 - closure, with closure documents available to them
 
-The lender executes all of this; Rahoon tracks and explains. See the two modes below.
+The lender executes all of this; Rahoon tracks and explains.
 
-## Direction review (after the product-owner answers, 2026-09-25)
+## Direction review
 
 - **Q13 decided:** agreement activation, payments and financial closure stay in this phase, not in the MVP. Rahoon **doesn't hold customer funds or execute payments**.
 - **Q1/Q8 decided:** in the MVP the lender isn't on the platform, and the Rahoon team coordinates over a documented manual channel. This phase therefore has two modes:
-  1. **Manual-coordination mode (first).** The Rahoon team records the lender's agreement, installment schedule, payment confirmations and closure/release letters **as evidence from the lender** (source document + date). The individual can also report a payment with proof. Rahoon only tracks and explains; it never marks money as received on its own authority.
-  2. **Lender-on-platform mode (later).** The existing L19–L21 and L26 screens and backend (maker-checker payments, reconciliation, closure) are used when a lender works inside Rahoon.
-- **Re-review of existing work.** L19–L21, L26 and D10/D14 were built for mode 2. Before building mode 1, decide in this phase's first session which parts are reused (the D10/D14 owner views most likely) and which are mode-2 only.
-- **Needs design.** Team screens for recording the lender's agreement, schedule and payment evidence (mode 1).
+  1. **Manual-coordination mode (first, steps 1–4).** The Rahoon team records the lender's agreement, installment schedule, payment confirmations, notices and closure letters **as evidence from the lender** (source document + date), and a second member verifies each record. The individual can also report a payment with proof. Rahoon only tracks and explains; it never marks money as received on its own authority.
+  2. **Lender-on-platform mode (later, steps 5–8).** The existing L19–L21 and L26 screens and backend (maker-checker payments, reconciliation, closure) are used when a lender works inside Rahoon.
+- **Open questions (added 2026-09-27, `product-direction.md` §6), none blocking; each has an interim rule in ADR 0002 §7:**
+
+  | Open item | Affects | Interim rule |
+  |---|---|---|
+  | **Q16** tracking horizon | Steps 1–3 | The team records what the lender sends and what the individual reports; no obligation to record every installment. Outcome `tracking_ended` ends tracking with a summary |
+  | **Q17** after a breach | Steps 1–2 | Continue coordinating on the same request, with a reason shown to the individual |
+  | **Q18** closure documents per path | Steps 1–3 | Four document kinds; `executed_closed` needs at least one verified closure document |
+  | V4 wording | Steps 2–3 | Withdrawal during tracking, «لم تتخذ رهون أي إجراء», payment-report confirmation: proposed text, labelled |
+  | P3 sale execution | Step 1 | Out of this phase (Phase 2). An accepted P3 offer is closed with `offer_accepted` as today |
+
+### Reuse decisions (step 0)
+
+| Existing piece | Built for | Manual mode | Lender mode |
+|---|---|---|---|
+| Offer record/verify pattern (T05/T06, `/team/verify`, step-up, verifier ≠ recorder) | 1A manual | **Reuse** the pattern and the verify screen for execution records | — |
+| D10 owner payments (`/owner/payments`) | owner-case session (X4) | **Components only** (`InstallmentList`, «رهون لا تستلم أي مبالغ», the payment-notice form) behind a request adapter | Route kept as is |
+| D14 owner closure documents (`/owner/documents/closure`) | owner-case session | **Components only**. The «read-only for 90 days» assumption doesn't apply to the individual account (Q14); documents stay | Route kept |
+| L19 agreement, L20 payments (maker-checker), L21 breach | lender tenant | Not reused (they model the lender's internal work) | Steps 5 and 8 |
+| L26 reconciliation + closure, B10 closure API | lender tenant | Not reused | Steps 6–7 |
+| S08 notifications, S09 tasks (WIP `05c715b`) | both | Not needed | Stay with Phase 1B |
 
 ## Definition of done
 
+- [ ] **Manual mode:** Playwright extends `owner-journey.spec.ts`: accept → relay → start tracking → agreement recorded and verified → schedule visible to the individual → the individual reports a payment → the lender confirmation is recorded, verified and linked → a lender notice is explained → a closure letter is verified → closed with `executed_closed` → the individual downloads the closure documents.
+- [ ] The individual sees every state change in plain language, with the source of each fact. They never see internal notes, unverified records or a Rahoon deadline.
+- [ ] **Lender mode:** L19–L21 re-verified; the B10 backend merged and migrated; L26 built; the lender-mode Playwright path (activation → matched payment in D10 → closure → D14) passes.
+- [ ] `dotnet test` is green.
 - [ ] Every row below is ✅ with *Direction review* OK.
-- [ ] Playwright extends the owner journey: accept → activation → a matched payment visible to the individual (D10) → closure → closure documents (D14).
-- [ ] The individual sees every state change in plain language and never sees internal notes.
-- [ ] `dotnet test` is green, with the B10 backend merged and migrated.
 
 ## Demo cast
 
-**Mode 1, manual coordination (first):** the Rahoon team coordinator records the lender's agreement, schedule, payment confirmations and closure letters as evidence. The individual follows along (D10, D14) and can report a payment with proof.
+**Mode 1, manual coordination (steps 1–4):**
 
-**Mode 2, lender on platform (later), existing cast:**
+| Who | Login | Does |
+|---|---|---|
+| Rahoon coordinator | `n.alyami@team.rahoon.example` (or `t.alshehri`) | starts tracking, records the lender's agreement, schedule, confirmations, notices and closure letters; answers payment reports; closes |
+| Rahoon verifier | `a.alqahtani@team.rahoon.example` | verifies each execution record (≠ recorder, step-up) |
+| Rahoon lead | `l.alharbi@team.rahoon.example` | sees every request; holds both permissions but still can't verify their own record |
+| The individual | seeded in step 1 (an accepted, relayed P1 offer), or the live demo request | follows the agreement and schedule, reports a payment with proof, receives the closure documents |
+
+**Mode 2, lender on platform (steps 5–8), existing cast:**
 
 | Who | Login | Does |
 |---|---|---|
@@ -41,36 +69,57 @@ The lender executes all of this; Rahoon tracks and explains. See the two modes b
 | ريم الدوسري (finance, maker) | r.aldosari@alufuq.example | records payments |
 | عبدالعزيز الشمري (finance, checker) | a.alshammari@alufuq.example | matches payments (≠ recorder) |
 | نورة الشهري (approver) | n.alshehri@alufuq.example | reconciliation or closure approval (step-up) |
-| The individual from Phase 1A | their own sign-in | follows payments (D10) and receives closure documents (D14) |
+| The invited owner | owner sign-in | follows payments (D10) and receives closure documents (D14) |
 
 ## Scope and status
 
-| ID | Screen | Tech status | Direction review | Where |
-|---|---|---|---|---|
-| L19 | Agreement (legal review → schedule → activate) | 🟨 branch `…a1008744…` @ `36d316a` (merged in 1A step 3) | OK | |
-| L20 | Payment schedule, record (maker), match (checker) | 🟨 same | OK | |
-| L21 | Breach handling (no automatic referral) | 🟨 same | OK | Check the owner-facing wording: «نتواصل معك أولاً» |
-| D10 | Owner payments and receipts | 🟨 branch `…a1bd0510…` | OK | «رهون لا تستلم أي مبالغ» |
-| L26 | Reconciliation + closure (settlement path) | ⬜ UI · 🟨 API on branch `…ae86d4e3…` | OK | |
-| D14 | Owner closure documents | 🟨 branch `…a1bd0510…` | OK | Owner access stays read-only for 90 days (assumption) |
-| S08, S09 | Notifications, tasks | 🟧 WIP `…a1008744…` @ `05c715b` | OK | May move to 1B |
+| ID | Screen / capability | Mode | Tech status | Direction review | Notes |
+|---|---|---|---|---|---|
+| — | `execution_tracking` state, execution records, payment reports, new close outcomes (ADR 0002) | manual | ⬜ | New | Step 1 |
+| T02 «التنفيذ», T09, T10, T11, T06 extension | Team execution screens | manual | ⬜ | New + **Needs design (D-7)** | Step 2 |
+| E01–E06 | The individual's execution view under `/my/requests/[ref]` (D10/D14 successors) | manual | ⬜ | New + **Needs design (D-8)** | Step 3 |
+| L19 | Agreement (legal review → schedule → activate) | lender | 🟩 on `master` (`ca4aefb`, 1A step 3); browser smoke only | Secondary | Step 5 |
+| L20 | Payment schedule, record (maker), match (checker) | lender | 🟩 same | Secondary | Step 5 |
+| L21 | Breach handling (no automatic referral) | lender | 🟩 same | Secondary | Check the owner-facing wording «نتواصل معك أولاً»: a commitment (V4); make it descriptive or mark it provisional |
+| D10 | Owner payments and receipts | lender | 🟩 on `master` (1A step 3) | Secondary | «رهون لا تستلم أي مبالغ». Components reused in E01/E02 |
+| L26 | Reconciliation + closure (settlement path) | lender | ⬜ UI · 🟨 API on branch `…ae86d4e3…` | Secondary | Steps 6–7 |
+| D14 | Owner closure documents | lender | 🟩 on `master` (1A step 3) | Secondary | Owner access read-only for 90 days (assumption, case session only). Components reused in E05 |
+| S08, S09 | Notifications, tasks | both | 🟧 WIP `…a1008744…` @ `05c715b` | — | Stay in Phase 1B (not needed here) |
 
 ## Steps
 
-1. ⬜ **Agreement → payments.**
+0. ✅ **Re-plan for manual-coordination mode first** (2026-09-27, docs only).
+   - [x] Reuse decisions (table above): D10/D14 are bound to the owner-case session, so only their components carry over.
+   - [x] [ADR 0002](../adr/0002-request-execution-tracking.md): `execution_tracking` state, lender-evidenced execution records with second-member verification, the individual's payment reports, new close outcomes. ADR 0001 amendment row.
+   - [x] Design requests D-7 (team) and D-8 (individual): [`docs/design-requests/1a2-step0-design-requests.md`](../design-requests/1a2-step0-design-requests.md).
+   - [x] Q16–Q18 recorded as OPEN in `product-direction.md` §6, with interim rules.
+1. ⬜ **Execution tracking backend (manual mode).**
+   - `RequestStatus.ExecutionTracking`, transition `start_execution_tracking`, extended `close` (outcomes `executed_closed`, `tracking_ended`, `agreement_ended_by_lender`) and `continue_coordination` (Q17 interim), `withdraw` wording.
+   - `RequestExecutionRecord` (agreement · payment_confirmation · lender_notice · closure_document), `RequestScheduleItem`, `RequestPaymentReport`; new document kinds; permissions `request.execution_record` / `request.execution_verify`; DB check verifier ≠ recorder.
+   - Team and individual endpoints; individual DTOs expose published records only.
+   - Seed: one request with an accepted, relayed P1 offer (ready to start tracking), one in tracking with a published agreement, schedule, a confirmed and a pending payment report, one closed `executed_closed` with documents. Re-check REQ-2026-00306 (closed `offer_accepted`, stays valid).
+   - Tests: ADR 0002 §6. Migration `RequestExecutionTracking`.
+2. ⬜ **Team execution screens (D-7).** T02 «التنفيذ» tab, T09, T10, T06 extension (verify queue lists execution records), T11; the close dialog gets the new outcomes. «بانتظار اعتماد التصميم» if D-7 isn't designed.
+3. ⬜ **The individual's execution view (D-8).** E01–E06 on the tracker, reusing the D10/D14 components; report a payment with proof; lender notice with messages/objection; closure documents with no expiry; withdrawal wording. «بانتظار اعتماد التصميم» if D-8 isn't designed.
+4. ⬜ **Manual-mode E2E + responsive QA.** Extend `owner-journey.spec.ts` (the DoD path above; the current accept → close test becomes accept → tracking → closure), add the execution screens to `responsive-qa.spec.ts`, negative checks (another individual → 404, verifier = recorder refused, close without closure document refused, double submit replays). README demo script and logins.
+5. ⬜ **Lender mode: agreement → payments** (was step 1).
    - ماجد: L19 legal review → schedule → activate; guard reasons are shown when blocked.
    - ريم records installment 1 and عبدالعزيز matches it; the same user can't match their own payment.
-   - The individual sees it in D10.
+   - The owner sees it in D10.
    - Breach: seeded overdue case → L21 outcome.
-2. ⬜ **Closure backend.** Merge `worktree-agent-ae86d4e3d70e6413a` (B10/B11 API), add the migration `ReferralClosureAnalytics`, run `dotnet test` and `bash scripts/dev-api.sh --reset`.
-3. ⬜ **L26 settlement-path UI.**
+   - Seed fixes: RH-2026-003870 («تسوية معتمدة / نشطة» with no agreement or schedule); RH-2026-004172 v2 awaiting review, so the `fixme` maker-checker test in `lender-flow.spec.ts` runs again.
+6. ⬜ **Lender mode: closure backend** (was step 2). Merge `worktree-agent-ae86d4e3d70e6413a` (B10/B11 API), add the migration `ReferralClosureAnalytics`, run `dotnet test` and `bash scripts/dev-api.sh --reset`.
+7. ⬜ **Lender mode: L26 settlement-path UI** (was step 3).
    - Reconciliation: preparer, reviewer and approver are three different people; step-up.
    - Closure documents checklist; closure request → decision.
-   - D14 for the individual.
+   - D14 for the owner.
    - Fast demo: seeded RH-2026-003702.
-4. ⬜ **E2E + responsive QA.** Extend `web/e2e/owner-journey.spec.ts`, then the negative checks: other tenant → 404, forbidden transitions show reasons, double submit replays.
+8. ⬜ **Lender mode: E2E + wrap-up** (was step 4). Lender-mode path in `lender-flow.spec.ts`, negative checks (other tenant → 404, forbidden transitions show reasons, double submit replays). Tick the Definition of done and move ▶ CURRENT to Phase 1B.
 
 ## Findings / open decisions
 
-- The approvals inbox lists only solution approvals. Referral, reconciliation and closure approvals notify only. Decide in step 3 whether closure approvals belong in the inbox or on a case-level screen.
+- **Step 0 (2026-09-27), the close path changes:** today the team closes an accepted offer straight away (`offer_accepted`, E2E `owner-journey.spec.ts` «T07: relay, then close», seed REQ-2026-00306). From step 1, an accepted P1/P2 offer goes to `execution_tracking` first. The E2E test is updated in step 4, and `offer_accepted` stays valid for existing closed requests and for P3.
+- **Step 0, dates vs Q6/Q12:** installment due dates are shown only as the lender's stated schedule with its source («بحسب جدول جهتك الممولة»), with no countdown, reminder or Rahoon-driven «متأخر». Precedent: 1A step 9 showed lender-mode deadlines as the lender's condition.
+- **Step 0, D14's 90-day window** came from the owner-case session. For the individual account (Q14) closure documents stay available; the lender-mode D14 keeps its assumption until step 7.
+- The approvals inbox lists only solution approvals. Referral, reconciliation and closure approvals notify only. Decide in step 7 whether closure approvals belong in the inbox or on a case-level screen.
 - The owner summary PDF generated at closure is Latin-only (no Arabic shaping); listed as outstanding.
