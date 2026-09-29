@@ -63,7 +63,7 @@ public static class OwnerSaleEndpoints
         var party = await db.Parties.AsNoTracking().FirstAsync(p => p.Id == rc.OwnerPartyId);
         if (party.PhoneEnc is null) throw new DomainException("no_phone", "لا يوجد رقم جوال مسجل لإرسال الرمز. تواصل مع مسؤول حالتك.");
         var issued = await otp.IssueAsync(OtpPurpose.Consent, pii.Unprotect(party.PhoneEnc), rc.UserId, rc.SessionId, context: context, orgId: c.OrganizationId, caseId: c.Id);
-        return Results.Ok(new { destination = issued.DestinationMasked, issued.ResendInSeconds, sandboxCode = issued.SandboxCode });
+        return Results.Ok(new { destination = issued.DestinationMasked, issued.ResendInSeconds, sandboxCode = issued.SandboxCode, otpRequired = issued.Required });
     }
 
     private static async Task VerifyOtpAsync(OtpService otp, RequestContext rc, string code, string context)

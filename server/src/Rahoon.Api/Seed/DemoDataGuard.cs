@@ -7,12 +7,13 @@ namespace Rahoon.Api.Seed;
 /// </summary>
 public static class DemoDataGuard
 {
-    public static bool IsAllowed(IHostEnvironment env) => env.IsDevelopment() || env.IsEnvironment("Testing");
+    /// <summary>Staging is the client demo server (deploy/README.md): fictional data only, so it may be seeded and reset.</summary>
+    public static bool IsAllowed(IHostEnvironment env) => env.IsDevelopment() || env.IsStaging() || env.IsEnvironment("Testing");
 
     public static void EnsureAllowed(IHostEnvironment env, string operation)
     {
         if (!IsAllowed(env))
             throw new InvalidOperationException(
-                $"'{operation}' is only allowed in Development/Testing (current environment: {env.EnvironmentName}). No data was changed.");
+                $"'{operation}' is only allowed in Development/Staging/Testing (current environment: {env.EnvironmentName}). No data was changed.");
     }
 }

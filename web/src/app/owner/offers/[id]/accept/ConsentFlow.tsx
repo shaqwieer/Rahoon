@@ -10,10 +10,12 @@ import { ServerText, useOwnerCopy } from "@/components/owner/values";
 import { OwnerShell } from "@/components/shell/OwnerShell";
 import { Alert, Button, Checkbox, DateText, Dialog, Icon, OtpInput, SandboxCodeBox } from "@/components/ui";
 import { apiSend, isApiError } from "@/lib/api/client";
+import { autoOtpCode } from "@/lib/api/otp";
 import { cn } from "@/lib/cn";
 import { formatCountdown } from "@/lib/format";
 import { useNow } from "@/lib/hooks";
 import { useI18n } from "@/lib/i18n/client";
+import { useSmsConfirmation } from "@/lib/sms-confirmation";
 import { lateText, OfferHero, OfferTerms } from "../terms";
 
 const ACKS = ["terms_read", "voluntary"] as const;
@@ -27,11 +29,13 @@ interface OtpState {
 /**
  * D09 — informed consent: summary, two required acknowledgements, SMS code, then «أوافق على العرض».
  * The result is a consent record confirmed by OTP — explicitly not a licensed electronic signature.
+ * With SMS confirmation off there is no code step: «أوافق على العرض» issues the code and confirms it in one go.
  */
 export function ConsentFlow({ offer, shell }: { offer: OwnerOffer; shell: OwnerShellData }) {
   const c = useOwnerCopy();
   const K = c.consent;
   const { t, locale, numerals } = useI18n();
+  const sms = useSmsConfirmation();
   const offerHref = `/owner/offers/${offer.id}`;
   const [acks, setAcks] = useState({ terms_read: false, voluntary: false });
   const [ackError, setAckError] = useState(false);
@@ -48,11 +52,12 @@ export function ConsentFlow({ offer, shell }: { offer: OwnerOffer; shell: OwnerS
   const now = useNow();
   const secondsLeft = useMemo(() => (otp && now ? Math.ceil((otp.resendAt - now) / 1000) : null), [otp, now]);
   const bothAcks = acks.terms_read && acks.voluntary;
-  const canAgree = bothAcks && otp !== null && code.length === 6;
+  const canAgree = bothAcks && (sms ? otp !== null && code.length === 6 : true);
 
   const offerClosed = (e: unknown) => isApiError(e) && (e.code === "offer_closed" || e.code === "offer_expired");
 
-  const sendCode = async () => {
+  /** Issues a code; returns it when SMS confirmation is off, otherwise shows the code step and returns null. */
+  const sendCode = async (): Promise<string | null> => {
     setCodeError(null);
     const res = await send.run(
       (k) => apiSend<ConsentOtpIssued>("POST", `/owner/offers/${offer.id}/consent/otp`, undefined, { idempotencyKey: k }),
@@ -64,11 +69,13 @@ export function ConsentFlow({ offer, shell }: { offer: OwnerOffer; shell: OwnerS
         return undefined;
       },
     );
-    if (res.ok) {
-      setCode("");
-      setOtp({ destination: res.data.destination, resendAt: Date.now() + (res.data.resendInSeconds ?? 60) * 1000, sandboxCode: res.data.sandboxCode ?? null });
-      requestAnimationFrame(() => otpRef.current?.focus());
-    }
+    if (!res.ok) return null;
+    const auto = autoOtpCode(res.data);
+    if (auto) return auto;
+    setCode("");
+    setOtp({ destination: res.data.destination, resendAt: Date.now() + (res.data.resendInSeconds ?? 60) * 1000, sandboxCode: res.data.sandboxCode ?? null });
+    requestAnimationFrame(() => otpRef.current?.focus());
+    return null;
   };
 
   const submit = async (e: FormEvent) => {
@@ -77,14 +84,19 @@ export function ConsentFlow({ offer, shell }: { offer: OwnerOffer; shell: OwnerS
       setAckError(true);
       return;
     }
-    if (code.length !== 6) {
+    let value = code;
+    if (!otp && !sms) {
+      const auto = await sendCode();
+      if (!auto) return;
+      value = auto;
+    } else if (code.length !== 6) {
       setCodeError(K.codeRequired);
       otpRef.current?.focus();
       return;
     }
     setCodeError(null);
     const res = await agree.run(
-      (k) => apiSend<ConsentResult>("POST", `/owner/offers/${offer.id}/consent`, { acknowledgements: [...ACKS], code }, { idempotencyKey: k }),
+      (k) => apiSend<ConsentResult>("POST", `/owner/offers/${offer.id}/consent`, { acknowledgements: [...ACKS], code: value }, { idempotencyKey: k }),
       (err) => {
         if (!isApiError(err)) return undefined;
         // Both OTP failures are 401: branch on the code first.
@@ -270,8 +282,8 @@ export function ConsentFlow({ offer, shell }: { offer: OwnerOffer; shell: OwnerS
           {K.notSignature}
         </p>
 
-        {otp ? (
-          <Button type="submit" size="xl" fullWidth softDisabled={!canAgree || Boolean(closed)} loading={agree.busy} loadingLabel={K.recording} className="text-17">
+        {otp || !sms ? (
+          <Button type="submit" size="xl" fullWidth softDisabled={!canAgree || Boolean(closed)} loading={agree.busy || send.busy} loadingLabel={K.recording} className="text-17">
             {K.agree}
           </Button>
         ) : (

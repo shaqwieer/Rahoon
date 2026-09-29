@@ -1,4 +1,5 @@
 import { requireOwnerPortal } from "@/lib/api/guards";
+import { SmsConfirmationProvider } from "@/lib/sms-confirmation";
 
 /**
  * Owner (debtor) portal — scoped to one case; session comes from the invitation + ID + SMS flow.
@@ -6,6 +7,6 @@ import { requireOwnerPortal } from "@/lib/api/guards";
  * differ per screen (B6); the layout only guards the portal.
  */
 export default async function OwnerLayout({ children }: LayoutProps<"/owner">) {
-  await requireOwnerPortal();
-  return children;
+  const me = await requireOwnerPortal();
+  return <SmsConfirmationProvider enabled={me.smsConfirmation !== false}>{children}</SmsConfirmationProvider>;
 }

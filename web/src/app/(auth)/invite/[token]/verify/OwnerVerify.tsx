@@ -10,17 +10,12 @@ import { OtpInput } from "@/components/ui/OtpInput";
 import { IntegrationStateTag, type IntegrationState } from "@/components/ui/Status";
 import { SkipLink } from "@/components/ui/SkipLink";
 import { apiSend, isApiError, useIdempotencyKey } from "@/lib/api/client";
+import { autoOtpCode, type OtpIssued } from "@/lib/api/otp";
 import { cn } from "@/lib/cn";
 import { formatCountdown } from "@/lib/format";
 import { useNow } from "@/lib/hooks";
 import { useI18n } from "@/lib/i18n/client";
 import { hardNavigate } from "@/lib/navigation";
-
-interface OtpIssued {
-  destination: string;
-  resendInSeconds: number;
-  sandboxCode?: string | null;
-}
 
 type Step =
   | { kind: "id" }
@@ -31,6 +26,7 @@ type Step =
 /**
  * Owner sign-in: step 1 verifies the last 4 digits of the national ID and sends an SMS code to the phone
  * registered by the lender (the owner cannot change it here); step 2 verifies the code and opens /owner.
+ * With SMS confirmation off the code is confirmed right after step 1, and step 2 appears only if that fails.
  */
 export function OwnerVerify({ token, phoneMasked, nationalIdState }: { token: string; phoneMasked: string; nationalIdState: IntegrationState }) {
   const { t } = useI18n();
@@ -62,6 +58,14 @@ export function OwnerVerify({ token, phoneMasked, nationalIdState }: { token: st
     try {
       const res = await apiSend<OtpIssued>("POST", "/auth/owner/verify-id", { token, idLast4: digits }, { idempotencyKey: sendKey.get() });
       sendKey.reset();
+      const auto = autoOtpCode(res);
+      if (auto) {
+        const verified = await apiSend<{ next: string }>("POST", "/auth/owner/verify-otp", { token, code: auto }).catch(() => null);
+        if (verified) {
+          hardNavigate(verified.next, "/owner");
+          return;
+        }
+      }
       setCode("");
       setStep({ kind: "otp", destination: res.destination || phoneMasked, resendAt: Date.now() + (res.resendInSeconds ?? 60) * 1000, sandboxCode: res.sandboxCode ?? null });
     } catch (err) {

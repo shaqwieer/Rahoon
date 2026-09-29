@@ -14,16 +14,9 @@ import { formatCountdown } from "@/lib/format";
 import { parseJson, useNow, useSessionValue, writeSessionValue } from "@/lib/hooks";
 import { useI18n } from "@/lib/i18n/client";
 import { hardNavigate } from "@/lib/navigation";
-import { MFA_STORAGE_KEY, type MfaHandoff } from "../../mfa-handoff";
+import { destinationAfterMfa, MFA_STORAGE_KEY, type MfaHandoff } from "../../mfa-handoff";
 
 type Phase = "enter" | "locked" | "session-expired";
-
-/** Where to go after a successful second factor: keep the deep link unless the user must pick a workspace. */
-function destinationAfterMfa(serverNext: string, next: string) {
-  if (serverNext === "/select-context") return next ? `/select-context?next=${encodeURIComponent(next)}` : serverNext;
-  if (serverNext === "/access-denied" || !next) return serverNext;
-  return next;
-}
 
 export function MfaForm({ next }: { next: string }) {
   const { t } = useI18n();

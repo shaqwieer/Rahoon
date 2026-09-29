@@ -27,12 +27,14 @@ export interface MeAuthenticated {
   individual?: { idMasked: string; phoneMasked: string; identityAssurance: string } | null;
   memberships: MeMembership[];
   stepUpActive: boolean;
+  /** Auth:SmsConfirmation on the API. When false, one-time codes are confirmed automatically and no code step is shown. */
+  smsConfirmation?: boolean;
   unreadNotifications: number;
   /** Server-computed landing route for the current context (e.g. /portfolio, /provider, /owner, /select-context). */
   home: string;
 }
 
-export type Me = MeAuthenticated | { authenticated: false };
+export type Me = MeAuthenticated | { authenticated: false; smsConfirmation?: boolean };
 
 /** RFC 7807 problem body as produced by ProblemExceptionHandler + auth endpoints. */
 export interface ProblemBody {

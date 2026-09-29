@@ -72,6 +72,18 @@ export const getMe = cache(async (): Promise<Me> => {
 });
 
 /**
+ * Auth:SmsConfirmation on the API, also for signed-out pages (where getMe makes no call). Defaults to true
+ * (code screens) if the API can't be reached; the flows still follow each response's `otpRequired`.
+ */
+export const getSmsConfirmation = cache(async (): Promise<boolean> => {
+  const me = await getMe().catch(() => null);
+  if (me?.smsConfirmation !== undefined) return me.smsConfirmation;
+  const res = await apiFetch("/auth/me").catch(() => null);
+  if (!res?.ok) return true;
+  return ((await res.json()) as { smsConfirmation?: boolean }).smsConfirmation !== false;
+});
+
+/**
  * For portal layouts: guarantees an active, fully signed-in session or redirects to the right step
  * (login → MFA → workspace selection). Authorization itself is enforced by the API.
  */

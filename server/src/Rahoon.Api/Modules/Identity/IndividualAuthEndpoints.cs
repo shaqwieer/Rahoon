@@ -93,7 +93,7 @@ public static class IndividualAuthEndpoints
             await db.SaveChangesAsync();
         }
         // Same shape in every branch; the destination is always the number the person typed.
-        return Results.Ok(new { destination = Mask.Phone(phone!), issued.ResendInSeconds, sandboxCode = issued.SandboxCode });
+        return Results.Ok(new { destination = Mask.Phone(phone!), issued.ResendInSeconds, sandboxCode = issued.SandboxCode, otpRequired = issued.Required });
     }
 
     private static async Task<IResult> Resend(HttpContext http, RahoonDbContext db, RequestContext rc, SessionService sessions, OtpService otp, PiiProtector pii)
@@ -107,7 +107,7 @@ public static class IndividualAuthEndpoints
         // so neither the response nor the stored challenge ever carries the registered number.
         var phone = decoy ? latest!.Destination ?? "" : pii.Unprotect(profile.PhoneEnc);
         var issued = await otp.IssueAsync(OtpPurpose.IndividualAccess, phone, session.UserId, session.Id, context: decoy ? Decoy : null, send: !decoy);
-        return Results.Ok(new { destination = Mask.Phone(phone), issued.ResendInSeconds, sandboxCode = issued.SandboxCode });
+        return Results.Ok(new { destination = Mask.Phone(phone), issued.ResendInSeconds, sandboxCode = issued.SandboxCode, otpRequired = issued.Required });
     }
 
     private static async Task<IResult> Verify(IndividualVerifyRequest req, HttpContext http, RahoonDbContext db, RequestContext rc,

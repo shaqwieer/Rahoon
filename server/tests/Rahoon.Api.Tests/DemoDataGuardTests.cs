@@ -6,7 +6,7 @@ using Rahoon.Api.Seed;
 namespace Rahoon.Api.Tests;
 
 /// <summary>
-/// Demo-data commands must be refused outside Development/Testing before any database access
+/// Demo-data commands must be refused outside Development/Staging/Testing before any database access
 /// (a `reset-demo` used to drop the database before the seeder's environment check).
 /// </summary>
 public sealed class DemoDataGuardTests
@@ -23,8 +23,8 @@ public sealed class DemoDataGuardTests
     [InlineData("Development", true)]
     [InlineData("Testing", true)]
     [InlineData("Production", false)]
-    [InlineData("Staging", false)]
-    public void Demo_data_is_allowed_only_in_development_and_testing(string environment, bool allowed)
+    [InlineData("Staging", true)]
+    public void Demo_data_is_allowed_only_in_development_staging_and_testing(string environment, bool allowed)
     {
         Assert.Equal(allowed, DemoDataGuard.IsAllowed(new Env(environment)));
         if (allowed) DemoDataGuard.EnsureAllowed(new Env(environment), "seed");

@@ -14,10 +14,12 @@ import { KeyValueList } from "@/components/ui/KeyValueList";
 import { OtpInput } from "@/components/ui/OtpInput";
 import { Tag } from "@/components/ui/Status";
 import { apiSend, apiUpload, isApiError } from "@/lib/api/client";
+import { autoOtpCode, type OtpIssued } from "@/lib/api/otp";
 import type { Institution, MyRequestDetail } from "@/lib/api/requests";
 import { cn } from "@/lib/cn";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useI18n } from "@/lib/i18n/client";
+import { useSmsConfirmation } from "@/lib/sms-confirmation";
 
 type StepKey = "lender" | "finance" | "situation";
 type SaveState = "idle" | "saving" | "saved" | "error";
@@ -456,6 +458,7 @@ export function ConsentBox({ detail, onRecorded }: { detail: MyRequestDetail; on
   const D = c.wizard.docs;
   const { numerals, t } = useI18n();
   const router = useRouter();
+  const sms = useSmsConfirmation();
   const [checked, setChecked] = useState(false);
   const [phase, setPhase] = useState<{ kind: "idle" } | { kind: "code"; destination: string; sandbox: string | null }>({ kind: "idle" });
   const [code, setCode] = useState("");
@@ -487,23 +490,26 @@ export function ConsentBox({ detail, onRecorded }: { detail: MyRequestDetail; on
       return;
     }
     const res = await send.run((key) =>
-      apiSend<{ destination: string; sandboxCode?: string | null }>("POST", `/my/requests/${encodeURIComponent(detail.reference)}/consent/otp`, undefined, { idempotencyKey: key }),
+      apiSend<OtpIssued>("POST", `/my/requests/${encodeURIComponent(detail.reference)}/consent/otp`, undefined, { idempotencyKey: key }),
     );
-    if (res.ok) {
-      setCode("");
-      setPhase({ kind: "code", destination: res.data.destination, sandbox: res.data.sandboxCode ?? null });
-    }
+    if (!res.ok) return;
+    // SMS confirmation off: record the consent straight away; the code step appears only if that fails.
+    const auto = autoOtpCode(res.data);
+    if (auto && (await confirmCode(auto))) return;
+    setCode("");
+    setPhase({ kind: "code", destination: res.data.destination, sandbox: res.data.sandboxCode ?? null });
   };
 
-  const confirmCode = async () => {
+  const confirmCode = async (value = code) => {
     const res = await confirm.run((key) =>
-      apiSend("POST", `/my/requests/${encodeURIComponent(detail.reference)}/consent`, { code, accept: true }, { idempotencyKey: key }),
+      apiSend("POST", `/my/requests/${encodeURIComponent(detail.reference)}/consent`, { code: value, accept: true }, { idempotencyKey: key }),
     );
     if (res.ok) {
       setPhase({ kind: "idle" });
       onRecorded?.();
       router.refresh();
     } else setCode("");
+    return res.ok;
   };
 
   return (
@@ -531,8 +537,8 @@ export function ConsentBox({ detail, onRecorded }: { detail: MyRequestDetail; on
       />
       {send.error ? <Alert tone="err">{send.error}</Alert> : null}
       {phase.kind === "idle" ? (
-        <Button variant="secondary" size="xl" fullWidth icon="sms" loading={send.busy} onClick={() => void requestCode()}>
-          {D.sendCode}
+        <Button variant="secondary" size="xl" fullWidth icon={sms ? "sms" : "check"} loading={send.busy || confirm.busy} onClick={() => void requestCode()}>
+          {sms ? D.sendCode : D.confirm}
         </Button>
       ) : (
         <div className="flex flex-col gap-3">

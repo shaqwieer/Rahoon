@@ -9,8 +9,10 @@ import { Checkbox } from "@/components/ui/Field";
 import { OtpInput } from "@/components/ui/OtpInput";
 import { Tag } from "@/components/ui/Status";
 import { apiSend } from "@/lib/api/client";
+import { autoOtpCode, type OtpIssued } from "@/lib/api/otp";
 import type { MyRequestDetail } from "@/lib/api/requests";
 import { useI18n } from "@/lib/i18n/client";
+import { useSmsConfirmation } from "@/lib/sms-confirmation";
 import { OfferTerms } from "../OfferView";
 
 export function AcceptOffer({ detail }: { detail: MyRequestDetail }) {
@@ -18,6 +20,7 @@ export function AcceptOffer({ detail }: { detail: MyRequestDetail }) {
   const A = c.accept;
   const { t } = useI18n();
   const router = useRouter();
+  const sms = useSmsConfirmation();
   const ref = encodeURIComponent(detail.reference);
   const [checked, setChecked] = useState(false);
   const [checkError, setCheckError] = useState<string | null>(null);
@@ -31,16 +34,21 @@ export function AcceptOffer({ detail }: { detail: MyRequestDetail }) {
       setCheckError(A.checkError);
       return;
     }
-    const res = await send.run((key) => apiSend<{ destination: string; sandboxCode?: string | null }>("POST", `/my/requests/${ref}/offer/accept/otp`, undefined, { idempotencyKey: key }));
-    if (res.ok) setSent({ destination: res.data.destination, sandbox: res.data.sandboxCode ?? null });
+    const res = await send.run((key) => apiSend<OtpIssued>("POST", `/my/requests/${ref}/offer/accept/otp`, undefined, { idempotencyKey: key }));
+    if (!res.ok) return;
+    // SMS confirmation off: record the acceptance straight away; the code step appears only if that fails.
+    const auto = autoOtpCode(res.data);
+    if (auto && (await accept(auto))) return;
+    setSent({ destination: res.data.destination, sandbox: res.data.sandboxCode ?? null });
   };
 
-  const accept = async () => {
-    const res = await confirm.run((key) => apiSend("POST", `/my/requests/${ref}/offer/respond`, { kind: "accept", code }, { idempotencyKey: key }));
+  const accept = async (value = code) => {
+    const res = await confirm.run((key) => apiSend("POST", `/my/requests/${ref}/offer/respond`, { kind: "accept", code: value }, { idempotencyKey: key }));
     if (res.ok) {
       router.push(`/my/requests/${ref}`);
       router.refresh();
     } else setCode("");
+    return res.ok;
   };
 
   return (
@@ -71,8 +79,8 @@ export function AcceptOffer({ detail }: { detail: MyRequestDetail }) {
       </Panel>
       {send.error ? <Alert tone="err">{send.error}</Alert> : null}
       {!sent ? (
-        <Button size="xl" fullWidth icon="sms" loading={send.busy} onClick={() => void requestCode()}>
-          {A.sendCode}
+        <Button size="xl" fullWidth icon={sms ? "sms" : "check"} loading={send.busy || confirm.busy} onClick={() => void requestCode()}>
+          {sms ? A.sendCode : A.confirm}
         </Button>
       ) : (
         <div className="flex flex-col gap-3">

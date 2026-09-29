@@ -12,6 +12,7 @@
 > - The lender has **no account** in the MVP; the lender workspace (L01–L26) and the invitation-based owner portal are kept for a later lender-on-platform mode.
 > - Designs D-1…D-6 and several product questions are still open; see `docs/phases/phase-1a-mvp-settlement.md` (Findings).
 
+- Staging for the client: **https://rahoon.talentfold.net** (Docker on the VPS; deploy and update steps in `deploy/README.md`).
 - `server/`: ASP.NET Core 10 API + EF Core, running on **http://localhost:5080**
 - `web/`: Next.js 16 app, running on **http://localhost:3000**. It forwards `/api/*` to the API, so always open the app through :3000.
 - PostgreSQL 16 in Docker, on **localhost:55432**
@@ -67,7 +68,12 @@ Stop: press Ctrl+C in the web and API terminals. Run `docker compose stop` to st
 
 ## Demo logins
 
-All data is fictional. Staff password for every seeded user: `Rahoon-Demo-2026!`. SMS codes are never sent (sandbox); the code is shown on screen. Reset to this state any time with `bash scripts/dev-api.sh --reset`.
+All data is fictional. Staff password for every seeded user: `Rahoon-Demo-2026!`. SMS codes are never sent (sandbox); the code is shown on screen.
+
+**SMS confirmation flag, `Auth:SmsConfirmation`** (env `Auth__SmsConfirmation`, default **false**):
+- **Off:** no SMS is sent, and every one-time code is confirmed automatically. The individual's sign-in, consent, offer acceptance, the staff second factor and the verifier's step-up each become one button, with no code step.
+- **Local development:** `appsettings.Development.json` turns it on, so the code screens, the sandbox code box and the E2E tests stay as they are.
+- **Staging** (https://rahoon.talentfold.net, see `deploy/README.md`) runs with it off. Reset to this state any time with `bash scripts/dev-api.sh --reset`.
 
 ### Individuals (MVP) — sign in at **`/start?mode=signin`** with the national ID + mobile, then the on-screen code
 

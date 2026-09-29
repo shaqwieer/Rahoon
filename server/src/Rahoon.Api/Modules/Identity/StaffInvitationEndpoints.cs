@@ -310,7 +310,7 @@ public static class StaffInvitationEndpoints
         // MFA step exactly as at login: pending session + SMS code, completed via /api/auth/mfa/verify.
         var session = await sessions.CreateAsync(http, user, SessionStage.MfaPending, SessionScope.None);
         var issued = await otp.IssueAsync(OtpPurpose.Login, user.Phone ?? phone!, user.Id, session.Id);
-        return Results.Ok(new { mfaRequired = true, factor = "sms", destination = issued.DestinationMasked, issued.ResendInSeconds, sandboxCode = issued.SandboxCode });
+        return Results.Ok(new { mfaRequired = true, factor = "sms", destination = issued.DestinationMasked, issued.ResendInSeconds, sandboxCode = issued.SandboxCode, otpRequired = issued.Required });
     }
 
     private static async Task<IResult> Report(string token, RahoonDbContext db, RequestContext rc, Notifier notifier, AuditLog audit, IClock clock)

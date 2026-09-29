@@ -79,10 +79,10 @@ var app = builder.Build();
 // ── CLI: `dotnet run -- migrate` / `seed` / `reset-demo` ──
 if (args.Length > 0 && args[0] is "migrate" or "seed" or "reset-demo")
 {
-    // Demo-data commands are refused outside Development/Testing *before* touching the database.
+    // Demo-data commands are refused outside Development/Staging/Testing *before* touching the database.
     if (args[0] is "seed" or "reset-demo" && !DemoDataGuard.IsAllowed(app.Environment))
     {
-        Console.Error.WriteLine($"{args[0]}: refused — only allowed in Development/Testing (current environment: {app.Environment.EnvironmentName}). No data was changed.");
+        Console.Error.WriteLine($"{args[0]}: refused — only allowed in Development/Staging/Testing (current environment: {app.Environment.EnvironmentName}). No data was changed.");
         Environment.ExitCode = 1;
         return;
     }
@@ -98,7 +98,7 @@ if (args.Length > 0 && args[0] is "migrate" or "seed" or "reset-demo")
     return;
 }
 
-if (app.Environment.IsDevelopment() && config.GetValue("Database:MigrateOnStartup", false))
+if ((app.Environment.IsDevelopment() || app.Environment.IsStaging()) && config.GetValue("Database:MigrateOnStartup", false))
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<RahoonDbContext>();

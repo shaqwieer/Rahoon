@@ -51,6 +51,7 @@ public sealed class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
             ["Web:AllowedOrigins:0"] = TestClient.Origin,
             ["Auth:SecureCookies"] = "false",
             ["Auth:ExposeSandboxOtp"] = "true",
+            ["Auth:SmsConfirmation"] = "true",
             ["Seed:DemoPassword"] = Password,
             ["Seed:Bulk"] = "false",
             ["Storage:Root"] = Path.Combine(_storage, "documents"),

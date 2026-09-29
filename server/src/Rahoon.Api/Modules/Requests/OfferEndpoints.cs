@@ -296,7 +296,7 @@ public static class OfferEndpoints
         var offer = await PublishedOfferAsync(db, r);
         var profile = await db.IndividualProfiles.AsNoTracking().FirstAsync(p => p.UserId == rc.UserId);
         var issued = await otp.IssueAsync(OtpPurpose.Consent, pii.Unprotect(profile.PhoneEnc), rc.UserId, rc.SessionId, context: $"offer-accept:{offer.Id}");
-        return Results.Ok(new { destination = issued.DestinationMasked, issued.ResendInSeconds, sandboxCode = issued.SandboxCode });
+        return Results.Ok(new { destination = issued.DestinationMasked, issued.ResendInSeconds, sandboxCode = issued.SandboxCode, otpRequired = issued.Required });
     }
 
     private static async Task<IResult> Respond(string reference, RespondBody b, RequestAccess access, RahoonDbContext db, RequestContext rc,

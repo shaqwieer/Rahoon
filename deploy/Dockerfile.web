@@ -1,0 +1,24 @@
+# Web image for the staging deployment (see deploy/README.md). Build context: the repository root.
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY web/package.json web/package-lock.json ./
+RUN npm ci
+COPY web/ ./
+# Rewrites (/api/* → the API) are fixed at build time, so the API address is a build argument too.
+ARG API_ORIGIN=http://api:8080
+ENV API_ORIGIN=$API_ORIGIN \
+    NEXT_TELEMETRY_DISABLED=1
+RUN npm run build
+
+FROM node:22-alpine
+WORKDIR /app
+ARG API_ORIGIN=http://api:8080
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    API_ORIGIN=$API_ORIGIN \
+    PORT=3000 \
+    HOSTNAME=0.0.0.0
+COPY --from=build /app ./
+USER node
+EXPOSE 3000
+CMD ["node_modules/.bin/next", "start", "-p", "3000"]

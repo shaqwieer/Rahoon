@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getMe } from "@/lib/api/server";
+import { getMe, getSmsConfirmation } from "@/lib/api/server";
 import { safeNext } from "@/lib/api/types";
 import { getServerDictionary } from "@/lib/i18n/server";
 import { StartFlow } from "./StartFlow";
@@ -19,5 +19,5 @@ export default async function StartPage({ searchParams }: PageProps<"/start">) {
   const next = safeNext(typeof sp.next === "string" ? sp.next : null, "");
   const me = await getMe().catch(() => null);
   if (me?.authenticated && me.stage === "active" && me.scope === "individual") redirect(next.startsWith("/my") ? next : me.home);
-  return <StartFlow mode={mode} next={next.startsWith("/my") ? next : ""} nationalIdState="unavailable" />;
+  return <StartFlow mode={mode} next={next.startsWith("/my") ? next : ""} nationalIdState="unavailable" smsConfirmation={await getSmsConfirmation()} />;
 }

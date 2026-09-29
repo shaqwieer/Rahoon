@@ -312,7 +312,7 @@ public static class MyRequestEndpoints
         if (string.IsNullOrWhiteSpace(r.InstitutionDisplayName)) Validate.Throw("institution", "اختر جهتك الممولة أولاً.");
         var profile = await db.IndividualProfiles.AsNoTracking().FirstAsync(p => p.UserId == rc.UserId);
         var issued = await otp.IssueAsync(OtpPurpose.Consent, pii.Unprotect(profile.PhoneEnc), rc.UserId, rc.SessionId, context: $"request-consent:{r.Id}");
-        return Results.Ok(new { destination = issued.DestinationMasked, issued.ResendInSeconds, sandboxCode = issued.SandboxCode });
+        return Results.Ok(new { destination = issued.DestinationMasked, issued.ResendInSeconds, sandboxCode = issued.SandboxCode, otpRequired = issued.Required });
     }
 
     private static async Task<IResult> Consent(string reference, ConsentConfirm body, RequestAccess access, RahoonDbContext db, RequestContext rc,

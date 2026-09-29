@@ -82,7 +82,7 @@ public static class AuthEndpoints
         user!.FailedLoginCount = 0;
         var session = await sessions.CreateAsync(http, user, SessionStage.MfaPending, SessionScope.None);
         var issued = await otp.IssueAsync(OtpPurpose.Login, user.Phone ?? "", user.Id, session.Id);
-        return Results.Ok(new { mfaRequired = true, factor = "sms", destination = issued.DestinationMasked, issued.ResendInSeconds, sandboxCode = issued.SandboxCode });
+        return Results.Ok(new { mfaRequired = true, factor = "sms", destination = issued.DestinationMasked, issued.ResendInSeconds, sandboxCode = issued.SandboxCode, otpRequired = issued.Required });
     }
 
     private static IResult Locked(DateTimeOffset until, DateTimeOffset now) =>
@@ -143,7 +143,7 @@ public static class AuthEndpoints
         using var _ = rc.BeginSystemScope();
         var user = await db.Users.FirstAsync(u => u.Id == session.UserId);
         var issued = await otp.IssueAsync(OtpPurpose.Login, user.Phone ?? "", user.Id, session.Id);
-        return Results.Ok(new { destination = issued.DestinationMasked, issued.ResendInSeconds, sandboxCode = issued.SandboxCode });
+        return Results.Ok(new { destination = issued.DestinationMasked, issued.ResendInSeconds, sandboxCode = issued.SandboxCode, otpRequired = issued.Required });
     }
 
     internal static async Task<List<Membership>> ActiveMembershipsAsync(RahoonDbContext db, Guid userId) =>
@@ -166,9 +166,9 @@ public static class AuthEndpoints
         };
     }
 
-    private static async Task<IResult> Me(RequestContext rc, RahoonDbContext db, IClock clock)
+    private static async Task<IResult> Me(RequestContext rc, RahoonDbContext db, IClock clock, AuthOptions options)
     {
-        if (!rc.IsAuthenticated) return Results.Ok(new { authenticated = false });
+        if (!rc.IsAuthenticated) return Results.Ok(new { authenticated = false, smsConfirmation = options.SmsConfirmation });
         using var _ = rc.BeginSystemScope();
         var user = await db.Users.AsNoTracking().FirstAsync(u => u.Id == rc.UserId);
         var memberships = rc.IsOwner || rc.IsIndividual ? [] : await ActiveMembershipsAsync(db, rc.UserId);
@@ -204,6 +204,7 @@ public static class AuthEndpoints
                 role = m.Roles.Select(r => r.Role!.NameAr).FirstOrDefault(), current = m.Id == rc.MembershipId,
             }),
             stepUpActive = rc.StepUpUntil > clock.UtcNow,
+            smsConfirmation = options.SmsConfirmation,
             unreadNotifications = unread,
             home = memberships.FirstOrDefault(m => m.Id == rc.MembershipId) is { } cur ? HomeFor(cur) : rc.IsOwner ? "/owner" : rc.IsIndividual ? "/my" : "/select-context",
         });
@@ -261,7 +262,7 @@ public static class AuthEndpoints
             phone = pii.Unprotect(profile.PhoneEnc);
         }
         var issued = await otp.IssueAsync(OtpPurpose.StepUp, phone ?? "", rc.UserId, rc.SessionId);
-        return Results.Ok(new { destination = issued.DestinationMasked, issued.ResendInSeconds, sandboxCode = issued.SandboxCode });
+        return Results.Ok(new { destination = issued.DestinationMasked, issued.ResendInSeconds, sandboxCode = issued.SandboxCode, otpRequired = issued.Required });
     }
 
     private static async Task<IResult> VerifyStepUp(CodeRequest req, RequestContext rc, RahoonDbContext db, OtpService otp, IClock clock, AuthOptions options)
@@ -364,7 +365,7 @@ public static class AuthEndpoints
         var session = await sessions.CreateAsync(http, user, SessionStage.MfaPending, SessionScope.None, ownerAccessId: access.Id);
         var phone = party.PhoneEnc is null ? "" : pii.Unprotect(party.PhoneEnc);
         var issued = await otp.IssueAsync(OtpPurpose.OwnerLogin, phone, user.Id, session.Id, orgId: access.OrganizationId, caseId: access.CaseId);
-        return Results.Ok(new { destination = issued.DestinationMasked, issued.ResendInSeconds, sandboxCode = issued.SandboxCode });
+        return Results.Ok(new { destination = issued.DestinationMasked, issued.ResendInSeconds, sandboxCode = issued.SandboxCode, otpRequired = issued.Required });
     }
 
     private static async Task<IResult> OwnerVerifyOtp(OwnerOtpRequest req, HttpContext http, RahoonDbContext db, IClock clock,

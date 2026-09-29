@@ -8,9 +8,11 @@ using Rahoon.Api.Infrastructure.Time;
 
 namespace Rahoon.Api.Modules.Identity;
 
-public sealed record OtpIssued(Guid ChallengeId, string DestinationMasked, int ExpiresInSeconds, int ResendInSeconds, string? SandboxCode);
+/// <param name="Required">false when SMS confirmation is off: the web confirms with <paramref name="SandboxCode"/> without showing a code step.</param>
+public sealed record OtpIssued(Guid ChallengeId, string DestinationMasked, int ExpiresInSeconds, int ResendInSeconds, string? SandboxCode, bool Required);
 
-/// <summary>One-time codes over the (sandboxed) SMS channel: 6 digits, 3 attempts, 5-minute expiry, 60-second resend cooldown.</summary>
+/// <summary>One-time codes over the (sandboxed) SMS channel: 6 digits, 3 attempts, 5-minute expiry, 60-second resend cooldown.
+/// With <see cref="AuthOptions.SmsConfirmation"/> off, nothing is sent and the code is handed back for automatic confirmation.</summary>
 public sealed class OtpService(RahoonDbContext db, IClock clock, ISmsGateway sms, AuthOptions options)
 {
     public const int MaxAttempts = 3;
@@ -44,10 +46,12 @@ public sealed class OtpService(RahoonDbContext db, IClock clock, ISmsGateway sms
             OtpPurpose.StepUp => $"رمز تأكيد الإجراء في رهون: {code}. صالح 5 دقائق.",
             _ => $"رمز الدخول إلى رهون: {code}. صالح 5 دقائق. لا تشاركه مع أحد.",
         };
-        if (send) await sms.SendAsync(phone, text, orgId, caseId);
+        if (send && options.SmsConfirmation) await sms.SendAsync(phone, text, orgId, caseId);
         await db.SaveChangesAsync();
+        // A decoy never returns its code and still asks for one, so it looks like a real challenge that was not delivered.
+        var autoConfirm = send && !options.SmsConfirmation;
         return new OtpIssued(challenge.Id, challenge.Destination!, options.OtpMinutes * 60, ResendCooldownSeconds,
-            options.ExposeSandboxOtp && send ? code : null);
+            send && (autoConfirm || options.ExposeSandboxOtp) ? code : null, Required: !autoConfirm);
     }
 
     /// <summary>Verifies and consumes. Throws with remaining attempts; returns false when attempts are exhausted (caller locks).</summary>

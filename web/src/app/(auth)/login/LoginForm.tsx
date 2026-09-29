@@ -11,16 +11,15 @@ import { Icon } from "@/components/ui/Icon";
 import { IconButton } from "@/components/ui/IconButton";
 import { Logo } from "@/components/ui/Logo";
 import { apiSend, isApiError } from "@/lib/api/client";
+import { autoOtpCode, type OtpIssued } from "@/lib/api/otp";
 import { writeSessionValue } from "@/lib/hooks";
 import { useI18n } from "@/lib/i18n/client";
-import { MFA_STORAGE_KEY, type MfaHandoff } from "../mfa-handoff";
+import { hardNavigate } from "@/lib/navigation";
+import { destinationAfterMfa, MFA_STORAGE_KEY, type MfaHandoff } from "../mfa-handoff";
 
-interface LoginResponse {
+interface LoginResponse extends OtpIssued {
   mfaRequired: boolean;
   factor: string;
-  destination: string;
-  resendInSeconds: number;
-  sandboxCode?: string | null;
 }
 
 type FormError =
@@ -55,6 +54,15 @@ export function LoginForm({ next }: { next: string }) {
     setLoading(true);
     try {
       const res = await apiSend<LoginResponse>("POST", "/auth/login", { email: email.trim(), password });
+      // SMS confirmation off: confirm the second factor now; the code step is shown only if that fails.
+      const auto = autoOtpCode(res);
+      if (auto) {
+        const verified = await apiSend<{ next: string }>("POST", "/auth/mfa/verify", { code: auto }).catch(() => null);
+        if (verified) {
+          hardNavigate(destinationAfterMfa(verified.next, next), "/");
+          return;
+        }
+      }
       const handoff: MfaHandoff = {
         destination: res.destination,
         resendAt: Date.now() + (res.resendInSeconds ?? 60) * 1000,

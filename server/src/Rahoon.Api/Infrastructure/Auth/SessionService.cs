@@ -24,6 +24,12 @@ public sealed class AuthOptions
     public int StepUpMinutes { get; set; } = 5;
     /// <summary>Development only: echo sandbox OTP codes in API responses so demos and E2E tests can proceed.</summary>
     public bool ExposeSandboxOtp { get; set; }
+    /// <summary>
+    /// When false (the default), one-time codes are not sent by SMS: each issue call returns the code with
+    /// <c>otpRequired=false</c> and the web confirms it straight away, so no code step is shown. Turn it on
+    /// only once a real SMS gateway is wired; the sandbox gateway delivers nothing.
+    /// </summary>
+    public bool SmsConfirmation { get; set; }
 }
 
 /// <summary>Creates, rotates and revokes server-side sessions and their cookies.</summary>

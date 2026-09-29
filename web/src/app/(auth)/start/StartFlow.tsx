@@ -11,21 +11,16 @@ import { OtpInput } from "@/components/ui/OtpInput";
 import { SkipLink } from "@/components/ui/SkipLink";
 import { IntegrationStateTag, type IntegrationState } from "@/components/ui/Status";
 import { apiSend, isApiError, useIdempotencyKey } from "@/lib/api/client";
+import { autoOtpCode, type OtpIssued } from "@/lib/api/otp";
 import { cn } from "@/lib/cn";
 import { formatCountdown } from "@/lib/format";
 import { useNow } from "@/lib/hooks";
 import { useI18n } from "@/lib/i18n/client";
 import { hardNavigate } from "@/lib/navigation";
 
-interface OtpIssued {
-  destination: string;
-  resendInSeconds: number;
-  sandboxCode?: string | null;
-}
-
 type Step =
   | { kind: "id" }
-  | { kind: "otp"; destination: string; resendAt: number; sandboxCode: string | null }
+  | { kind: "otp"; destination: string; resendAt: number; sandboxCode: string | null; auto: boolean }
   | { kind: "locked"; message: string };
 
 const toLatinDigits = (v: string) => v.replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));
@@ -34,8 +29,9 @@ const toLatinDigits = (v: string) => v.replace(/[٠-٩]/g, (d) => String("٠١٢
  * OR01 → OR02 (B13): one flow for registering and signing in. The API answers the same way whether the ID is
  * registered or not (anti-enumeration), so terms are accepted on the code screen every time. Interim rules:
  * mobile code only (national digital identity «unavailable», Q10), no password (Q15), no «مجاني» (Q9).
+ * With SMS confirmation off (Auth:SmsConfirmation=false) the code is confirmed automatically: the last step only asks for the terms.
  */
-export function StartFlow({ mode, next, nationalIdState }: { mode: "register" | "signin"; next: string; nationalIdState: IntegrationState }) {
+export function StartFlow({ mode, next, nationalIdState, smsConfirmation }: { mode: "register" | "signin"; next: string; nationalIdState: IntegrationState; smsConfirmation: boolean }) {
   const { t } = useI18n();
   const S = t.individual.start;
   const [step, setStep] = useState<Step>({ kind: "id" });
@@ -71,8 +67,9 @@ export function StartFlow({ mode, next, nationalIdState }: { mode: "register" | 
     try {
       const res = await apiSend<OtpIssued>("POST", "/auth/individual/start", { nationalId: id, phone: mobile }, { idempotencyKey: sendKey.get() });
       sendKey.reset();
-      setCode("");
-      setStep({ kind: "otp", destination: res.destination, resendAt: Date.now() + (res.resendInSeconds ?? 60) * 1000, sandboxCode: res.sandboxCode ?? null });
+      const auto = autoOtpCode(res);
+      setCode(auto ?? "");
+      setStep({ kind: "otp", destination: res.destination, resendAt: Date.now() + (res.resendInSeconds ?? 60) * 1000, sandboxCode: res.sandboxCode ?? null, auto: Boolean(auto) });
     } catch (err) {
       sendKey.reset();
       if (!isApiError(err)) setErrors({ form: t.auth.login.network });
@@ -89,7 +86,9 @@ export function StartFlow({ mode, next, nationalIdState }: { mode: "register" | 
     setLoading(true);
     try {
       const res = await apiSend<OtpIssued>("POST", "/auth/individual/resend");
-      setStep({ kind: "otp", destination: res.destination, resendAt: Date.now() + (res.resendInSeconds ?? 60) * 1000, sandboxCode: res.sandboxCode ?? null });
+      const auto = autoOtpCode(res);
+      if (auto) setCode(auto);
+      setStep({ kind: "otp", destination: res.destination, resendAt: Date.now() + (res.resendInSeconds ?? 60) * 1000, sandboxCode: res.sandboxCode ?? null, auto: Boolean(auto) });
     } catch (err) {
       setErrors({ form: isApiError(err) ? err.title : t.auth.login.network });
     } finally {
@@ -154,8 +153,12 @@ export function StartFlow({ mode, next, nationalIdState }: { mode: "register" | 
       <Frame top={<DebtorTop title={title} sub={S.codeSub} back={{ onClick: () => setStep({ kind: "id" }) }} showBell={false} />}>
         <form noValidate onSubmit={verify} aria-labelledby="code-title" className="flex flex-1 flex-col gap-[18px]">
           <h1 id="code-title" className="m-0 text-24 leading-9 font-bold">
-            {S.codeHeading}
+            {step.auto ? S.termsHeading : S.codeHeading}
           </h1>
+          {step.auto ? (
+            errors.form ? <Alert tone="err">{errors.form}</Alert> : null
+          ) : (
+          <>
           <p className="m-0 text-17 leading-[28px]">
             {S.codeLead}{" "}
             <bdi dir="ltr" className="font-mono">
@@ -185,6 +188,8 @@ export function StartFlow({ mode, next, nationalIdState }: { mode: "register" | 
             </Button>
           ) : null}
           <p className="m-0 text-14 leading-[22px] text-muted">{S.notReceived}</p>
+          </>
+          )}
           <div className="flex flex-col gap-3 rounded-md border border-line bg-white p-4">
             <Checkbox
               boxSize={24}
@@ -248,7 +253,7 @@ export function StartFlow({ mode, next, nationalIdState }: { mode: "register" | 
         <TextField
           ref={phoneRef}
           label={S.phoneLabel}
-          help={S.phoneHint}
+          help={smsConfirmation ? S.phoneHint : S.phoneHintNoSms}
           size="xl"
           ltr
           mono
@@ -271,8 +276,8 @@ export function StartFlow({ mode, next, nationalIdState }: { mode: "register" | 
           </span>
           <IntegrationStateTag state={nationalIdState} />
         </div>
-        <Button type="submit" size="xl" fullWidth loading={loading} loadingLabel={S.sending} className="mt-auto">
-          {S.sendCode}
+        <Button type="submit" size="xl" fullWidth loading={loading} loadingLabel={smsConfirmation ? S.sending : S.verifying} className="mt-auto">
+          {smsConfirmation ? S.sendCode : S.next}
         </Button>
         <Link href={mode === "signin" ? "/start" : "/start?mode=signin"} className="flex min-h-11 items-center justify-center text-16 font-semibold">
           {mode === "signin" ? S.toRegister : S.toSignIn}

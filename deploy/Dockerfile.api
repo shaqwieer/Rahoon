@@ -1,0 +1,18 @@
+# API image for the staging deployment (see deploy/README.md). Build context: the repository root.
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY server/src/Rahoon.Api/Rahoon.Api.csproj server/src/Rahoon.Api/
+RUN dotnet restore server/src/Rahoon.Api/Rahoon.Api.csproj
+COPY server/src/ server/src/
+RUN dotnet publish server/src/Rahoon.Api/Rahoon.Api.csproj -c Release -o /out --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
+WORKDIR /app
+COPY --from=build /out .
+# Document storage and data-protection keys live on a volume mounted at /data (owned by the image's non-root user).
+RUN mkdir -p /data/documents /data/keys && chown -R app:app /data
+USER app
+ENV ASPNETCORE_URLS=http://+:8080 \
+    ASPNETCORE_ENVIRONMENT=Staging
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "Rahoon.Api.dll"]
