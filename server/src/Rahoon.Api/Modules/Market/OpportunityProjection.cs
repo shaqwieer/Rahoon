@@ -78,6 +78,7 @@ public static class OpportunityProjection
         return new
         {
             reference = o.Reference, title = o.Title, city = o.City, cityLabel = FieldCatalog.City(o.City)?.Label ?? o.City, district = o.District, project = o.Project,
+            developerName = o.Track == "financier" ? null : o.DeveloperName,
             propertyType = o.PropertyType, propertyTypeLabel = FieldCatalog.Label(FieldCatalog.PropertyTypes, o.PropertyType),
             track = o.Track, readiness = o.Readiness, readinessLabel = o.Readiness is null ? null : FieldCatalog.Label(Readiness, o.Readiness), deliveryMonth = o.DeliveryMonth,
             area = o.Area, bedrooms = o.Bedrooms, bathrooms = o.Bathrooms, specs = Specs(o).Take(3),
@@ -86,13 +87,14 @@ public static class OpportunityProjection
             installment = r.Installment, installmentFrequency = r.InstallmentFrequency,
             installmentFrequencyLabel = r.InstallmentFrequency is null ? null : FieldCatalog.Label(FieldCatalog.Frequencies, r.InstallmentFrequency),
             installmentMonthlyEquivalent = r.InstallmentMonthlyEquivalent, largestExtraPayment = r.LargestExtraPayment,
+            extraPaymentRecurrence = t.ExtraPaymentRecurrence, remainingMonths = r.RemainingMonths,
             needsNewFinancing = r.NeedsNewFinancing, quality = r.Quality, complete = r.Complete,
             verifiedOn = t.VerifiedOn, publishedAt = o.PublishedAt, saved, isDemo = o.IsDemo,
             location = o.PublicLatitude is null ? null : new { lat = o.PublicLatitude, lng = o.PublicLongitude, precision = o.LocationPrecision },
         };
     }
 
-    public static object Detail(Opportunity o, OpportunityTerms t, bool saved, IEnumerable<object> approvals, object? fit, object? myInterest)
+    public static object Detail(Opportunity o, OpportunityTerms t, bool saved, IEnumerable<object> approvals, object? fit, object? myInterest, object? schedule = null)
     {
         var maps = o.PublicLatitude is { } lat && o.PublicLongitude is { } lng ? GoogleMapsUrl(lat, lng) : null;
         return new
@@ -105,6 +107,7 @@ public static class OpportunityProjection
             approvals,
             fit,
             myInterest,
+            schedule,
             status = o.Status,
             statusLabel = OpportunityFlow.Labels[o.Status],
         };

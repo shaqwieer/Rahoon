@@ -3,6 +3,7 @@ using Rahoon.Api.Infrastructure.Http;
 using Rahoon.Api.Infrastructure.Persistence;
 using Rahoon.Api.Infrastructure.Tenancy;
 using Rahoon.Api.Infrastructure.Time;
+using Rahoon.Api.Modules.Market.Discovery;
 
 namespace Rahoon.Api.Modules.Market;
 
@@ -55,6 +56,7 @@ public static class BuyerEndpoints
         editable = r.Status is not (BuyerRequestStatus.Rejected or BuyerRequestStatus.Withdrawn),
         r.AvailableNow, r.InstallmentComfort, r.InstallmentFrequency, r.MaxPrice, r.PurchaseMode, r.PreferredFinancierId, r.PreferredFinancierName, r.Cities, r.AreasText, r.PropertyTypes, r.AreaMin, r.AreaMax,
         r.BedroomsMin, r.Readiness, r.DeliveryBy, r.ContactName, r.SubmittedAt, r.CreatedAt, r.UpdatedAt, r.DecisionReason, isDemo = r.IsDemo,
+        preferencesRevision = r.PreferencesRevision,
         installmentMonthlyEquivalent = MarketCalculator.MonthlyEquivalent(r.InstallmentComfort, r.InstallmentFrequency),
         capacity = new
         {
@@ -158,8 +160,16 @@ public static class BuyerEndpoints
         r.PreferredFinancierName = org.NameAr;
     }
 
+    /// <summary>Everything matching reads; a change bumps <see cref="BuyerRequest.PreferencesRevision"/>.</summary>
+    private static string MatchingState(BuyerRequest r) => System.Text.Json.JsonSerializer.Serialize(new
+    {
+        r.AvailableNow, r.InstallmentComfort, r.InstallmentFrequency, r.MaxPrice, r.PurchaseMode, Cities = r.Cities.Order(), r.AreasText,
+        Types = r.PropertyTypes.Order(), r.AreaMin, r.AreaMax, r.BedroomsMin, r.Readiness, r.DeliveryBy,
+    });
+
     private static bool Apply(BuyerRequest r, BuyerSave req)
     {
+        var before = MatchingState(r);
         var capacityChanged = r.AvailableNow != req.AvailableNow || r.InstallmentComfort != req.InstallmentComfort || r.InstallmentFrequency != req.InstallmentFrequency
                               || r.MaxPrice != req.MaxPrice || r.PurchaseMode != req.PurchaseMode;
         r.AvailableNow = req.AvailableNow;
@@ -177,6 +187,7 @@ public static class BuyerEndpoints
         r.Readiness = req.Readiness;
         r.DeliveryBy = req.Readiness == "ready" ? null : req.DeliveryBy;
         if (req.ContactName is not null) r.ContactName = Identity.PhoneAuthEndpoints.CleanName(req.ContactName) ?? r.ContactName;
+        if (MatchingState(r) != before) r.PreferencesRevision++;
         return capacityChanged;
     }
 
@@ -294,28 +305,45 @@ public static class BuyerEndpoints
     private static async Task<IResult> Mine(RahoonDbContext db, RequestContext rc)
     {
         var r = await db.BuyerRequests.Where(x => x.ApplicantUserId == rc.UserId).OrderByDescending(x => x.CreatedAt).FirstOrDefaultAsync();
-        if (r is null) return Results.Ok(new { request = (object?)null, suggestions = Array.Empty<object>() });
+        if (r is null) return Results.Ok(new { request = (object?)null, suggestions = Array.Empty<object>(), incomplete = Array.Empty<object>(), matching = (object?)null });
         var open = await db.CompletionRequests.Where(c => c.SubjectId == r.Id && c.AnsweredAt == null).OrderByDescending(c => c.RequestedAt).FirstOrDefaultAsync();
         var events = await db.MarketEvents.Where(e => e.SubjectId == r.Id && e.VisibleToApplicant).OrderByDescending(e => e.At).ToListAsync();
         object[] suggestions = [];
+        object[] incomplete = [];
+        object? matching = null;
         if (r.Status is not (BuyerRequestStatus.Withdrawn or BuyerRequestStatus.Rejected or BuyerRequestStatus.Draft))
         {
-            using var _ = rc.BeginSystemScope();
-            var query = db.Opportunities.Where(o => o.Status == OpportunityStatus.Published);
-            if (r.Cities.Count > 0) query = query.Where(o => r.Cities.Contains(o.City));
-            if (r.PropertyTypes.Count > 0) query = query.Where(o => r.PropertyTypes.Contains(o.PropertyType));
-            var rows = await query.Join(db.OpportunityTerms, o => o.PublishedTermsId, t => t.Id, (o, t) => new { o, t }).Take(60).ToListAsync();
+            // The same spine as the public list with «match=me»: eligibility (cities, types), the strict affordability rules, then
+            // ranking by the buyer's preferences. Each match explains itself; nothing is a percentage or a financing decision.
             var saved = await db.SavedOpportunities.Where(s => s.ApplicantUserId == rc.UserId && s.RemovedAt == null).Select(s => s.OpportunityId).ToListAsync();
-            var cap = new CapacityInput(r.AvailableNow, r.InstallmentComfort, r.InstallmentFrequency, r.MaxPrice);
-            suggestions = rows
-                .Select(x => new { x.o, x.t, fit = MarketCalculator.Fit(cap, x.t.DueNow, x.t.PurchaseTotal, x.t.InstallmentMonthlyEquivalent, x.t.LargestExtraPayment, x.t.NeedsNewFinancing) })
-                .Where(x => x.fit.Comparable)
-                .OrderByDescending(x => x.fit.Fits).ThenBy(x => x.t.DueNow)
-                .Take(12)
-                .Select(x => (object)new { card = OpportunityProjection.Card(x.o, x.t, saved.Contains(x.o.Id)), fit = x.fit })
-                .ToArray();
+            var criteria = Matching.WithProfile(new SearchCriteria { MatchMe = true }, r);
+            var prefs = Matching.Preferences(r);
+            var cap = criteria.Capacity;
+            using var _ = rc.BeginSystemScope();
+            var eligible = DiscoveryQuery.Attributes(DiscoveryQuery.Published(db), criteria);
+            var (passing, unknown) = DiscoveryQuery.Budget(eligible, cap);
+            var eligibleCount = await eligible.CountAsync();
+            var fitsCount = await passing.CountAsync();
+            var incompleteCount = cap.Any ? await unknown.CountAsync() : 0;
+            var rows = await DiscoveryQuery.Order(passing, "relevance", cap.Any, prefs).Take(12).ToListAsync();
+            var rowsIncomplete = cap.Any ? await DiscoveryQuery.Order(unknown, "relevance", cap.Any, prefs).Take(6).ToListAsync() : [];
+            object Item(PublishedRow x) => new
+            {
+                card = OpportunityProjection.Card(x.O, x.T, saved.Contains(x.O.Id)), fit = Affordability.Classify(cap, x.T), match = Matching.Explain(x.O, criteria, prefs),
+            };
+            suggestions = rows.Select(Item).ToArray();
+            incomplete = rowsIncomplete.Select(Item).ToArray();
+            matching = new
+            {
+                revision = r.PreferencesRevision, eligible = eligibleCount, fits = fitsCount, incomplete = incompleteCount,
+                doesNotFit = eligibleCount - fitsCount - incompleteCount, searchUrl = "/opportunities?match=me",
+                sortExplanation = DiscoveryEndpoints.SortExplanation("relevance", cap.Any, prefs.Any),
+            };
         }
-        return Results.Ok(new { request = BuyerDto(r, open), events = events.Select(SaleRequestFile.EventDto), suggestions });
+        return Results.Ok(new
+        {
+            request = BuyerDto(r, open), events = events.Select(SaleRequestFile.EventDto), suggestions, incomplete, matching,
+        });
     }
 
     // ── Interest and saved ──
@@ -422,17 +450,22 @@ public static class BuyerEndpoints
         return Results.Ok(new { saved = false });
     }
 
+    /// <summary>
+    /// Saved opportunities. One that is no longer published (paused, withdrawn, reserved…) shows only its reference, its title as
+    /// saved and that it is unavailable — never the figures or photos it used to show.
+    /// </summary>
     private static async Task<IResult> MySaved(RahoonDbContext db, RequestContext rc)
     {
         var ids = await db.SavedOpportunities.Where(s => s.ApplicantUserId == rc.UserId && s.RemovedAt == null).OrderByDescending(s => s.UpdatedAt).Select(s => s.OpportunityId).ToListAsync();
         using var _ = rc.BeginSystemScope();
-        var rows = await db.Opportunities.Where(o => ids.Contains(o.Id))
-            .Join(db.OpportunityTerms, o => o.PublishedTermsId, t => t.Id, (o, t) => new { o, t }).ToListAsync();
-        return Results.Ok(rows.Select(x => new
+        var published = await DiscoveryQuery.Published(db).Where(x => ids.Contains(x.O.Id)).ToListAsync();
+        var others = await db.Opportunities.Where(o => ids.Contains(o.Id) && o.Status != OpportunityStatus.Published).Select(o => new { o.Id, o.Reference, o.Title }).ToListAsync();
+        return Results.Ok(ids.Select(id =>
         {
-            card = OpportunityProjection.Card(x.o, x.t, true),
-            available = x.o.Status == OpportunityStatus.Published,
-            statusLabel = OpportunityFlow.Labels[x.o.Status],
-        }));
+            if (published.FirstOrDefault(x => x.O.Id == id) is { } x)
+                return (object)new { reference = x.O.Reference, available = true, card = OpportunityProjection.Card(x.O, x.T, true) };
+            var o = others.FirstOrDefault(y => y.Id == id);
+            return o is null ? null : new { reference = o.Reference, available = false, title = o.Title, card = (object?)null, statusLabel = "لم تعد متاحة" };
+        }).Where(x => x is not null));
     }
 }

@@ -84,6 +84,8 @@ public static class TeamOpportunityEndpoints
             Specs = specKeys.ToDictionary(k => k, k => r.Answers[k]),
             Features = (r.Answers.GetValueOrDefault("features") ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries).ToList(),
             ExactLatitude = r.Latitude, ExactLongitude = r.Longitude, LocationPrecision = precision, PublicLatitude = plat, PublicLongitude = plng,
+            DeveloperPartyId = f.Obligations.FirstOrDefault(o => o.Kind == "developer")?.PartyId,
+            DeveloperName = f.Obligations.FirstOrDefault(o => o.Kind == "developer")?.PartyDisplayName is { Length: > 0 } dn ? dn : null,
             PhotoIds = photos, PreparedByUserId = rc.UserId, PreparedByLabel = rc.UserName, AssignedToUserId = rc.UserId, AssignedToLabel = rc.UserName,
         };
         db.Opportunities.Add(opp);
@@ -123,16 +125,7 @@ public static class TeamOpportunityEndpoints
         var result = MarketCalculator.Compute(input, policy);
         t.InputJson = JsonSerializer.Serialize(input, JsonOptions.Web);
         t.ResultJson = JsonSerializer.Serialize(result, JsonOptions.Web);
-        t.DueNow = result.DueNow;
-        t.PurchaseTotal = result.BuyerTotal;
-        t.FutureBalance = result.FutureBalance;
-        t.Installment = result.Installment;
-        t.InstallmentFrequency = result.InstallmentFrequency;
-        t.InstallmentMonthlyEquivalent = result.InstallmentMonthlyEquivalent;
-        t.LargestExtraPayment = result.LargestExtraPayment;
-        t.RemainingMonths = result.RemainingMonths;
-        t.NeedsNewFinancing = result.NeedsNewFinancing;
-        t.Complete = result.Complete;
+        Discovery.TermsSnapshot.Apply(t, input, result);
         t.TransferConditions = transfer;
         t.VerificationScope = scope;
         t.VerifiedOn = verifiedOn;

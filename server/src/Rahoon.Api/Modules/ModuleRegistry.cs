@@ -9,6 +9,8 @@ public static class ModuleRegistry
     {
         services.AddScoped<OtpService>();
         services.AddScoped<Market.MarketService>();
+        services.AddScoped<Market.Discovery.SearchAlertJob>();
+        services.AddHostedService<Market.Discovery.SearchAlertWorker>();
         services.AddScoped<OrgDirectory.DirectoryImporter>();
         return services;
     }
@@ -23,6 +25,9 @@ public static class ModuleRegistry
         TeamAdminEndpoints.Map(app);
         // Exit/buy marketplace: sale and buyer requests, team review, opportunities, interests.
         Market.MarketPublicEndpoints.Map(app);
+        // Discovery (Phase 2): list, map, comparison, saved searches and their alerts.
+        Market.Discovery.DiscoveryEndpoints.Map(app);
+        Market.Discovery.SavedSearchEndpoints.Map(app);
         Market.SaleRequestEndpoints.Map(app);
         Market.BuyerEndpoints.Map(app);
         Market.TeamMarketEndpoints.Map(app);

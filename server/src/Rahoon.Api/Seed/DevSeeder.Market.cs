@@ -163,6 +163,7 @@ public sealed partial class DevSeeder
                 DeliveryMonth = r.Answers.GetValueOrDefault("delivery_month"), Specs = specKeys.ToDictionary(k => k, k => r.Answers[k]),
                 Features = (r.Answers.GetValueOrDefault("features") ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries).ToList(),
                 ExactLatitude = r.Latitude, ExactLongitude = r.Longitude, LocationPrecision = precision, PublicLatitude = plat, PublicLongitude = plng,
+                DeveloperName = r.Obligations.FirstOrDefault(x => x.Kind == "developer")?.PartyDisplayName,
                 PhotoIds = photos.Select(p => p.Id).ToList(), PreparedByUserId = nayef?.Id ?? Guid.Empty, PreparedByLabel = nayef?.FullName ?? "فريق رهون",
                 AssignedToUserId = nayef?.Id, AssignedToLabel = nayef?.FullName, IsDemo = true, CreatedAt = t0.AddDays(-daysAgo - 2), UpdatedAt = t0.AddDays(-daysAgo),
             };
@@ -177,15 +178,13 @@ public sealed partial class DevSeeder
             {
                 OrganizationId = org, OpportunityId = o.Id, ApplicantUserId = o.ApplicantUserId, VersionNo = version, Status = status, Track = o.Track,
                 InputJson = JsonSerializer.Serialize(input, JsonOptions.Web), ResultJson = JsonSerializer.Serialize(result, JsonOptions.Web),
-                DueNow = result.DueNow, PurchaseTotal = result.BuyerTotal, FutureBalance = result.FutureBalance, Installment = result.Installment,
-                InstallmentFrequency = result.InstallmentFrequency, InstallmentMonthlyEquivalent = result.InstallmentMonthlyEquivalent,
-                LargestExtraPayment = result.LargestExtraPayment, RemainingMonths = result.RemainingMonths, NeedsNewFinancing = result.NeedsNewFinancing,
-                Complete = result.Complete, TransferConditions = transfer, VerificationScope = scope, VerifiedOn = DateOnly.FromDateTime(t0.AddDays(-daysAgo - 1).UtcDateTime),
+                TransferConditions = transfer, VerificationScope = scope, VerifiedOn = DateOnly.FromDateTime(t0.AddDays(-daysAgo - 1).UtcDateTime),
                 PreparedByUserId = nayef?.Id ?? Guid.Empty, PreparedByLabel = nayef?.FullName ?? "فريق رهون",
                 SentToOwnerAt = status is TermsStatus.Draft ? null : t0.AddDays(-daysAgo - 1),
                 OwnerDecidedAt = status is TermsStatus.OwnerConfirmed ? t0.AddDays(-daysAgo) : null,
                 OwnerConfirmationText = status is TermsStatus.OwnerConfirmed ? $"أكد صاحب العقار ملخص الفرصة {o.Reference} (الإصدار {version})." : null,
             };
+            Modules.Market.Discovery.TermsSnapshot.Apply(t, input, result);
             db.OpportunityTerms.Add(t);
             return t;
         }

@@ -59,9 +59,10 @@ public sealed class MarketService(RahoonDbContext db, RequestContext rc, IClock 
 
     /// <summary>
     /// Tries the SMS channel after the business change is saved, in its own unit of work, and records the honest result
-    /// (simulated in the sandbox, failed, unavailable). A failure never undoes the request or claims delivery.
+    /// (simulated in the sandbox, failed, unavailable). A failure never undoes the request or claims delivery. Returns that result
+    /// (null when nothing could be attempted or recorded).
     /// </summary>
-    public async Task NotifyBySmsAsync(Guid userId, Guid? eventId, string body)
+    public async Task<string?> NotifyBySmsAsync(Guid userId, Guid? eventId, string body)
     {
         try
         {
@@ -71,7 +72,7 @@ public sealed class MarketService(RahoonDbContext db, RequestContext rc, IClock 
             using var _ = other.Request.BeginSystemScope();
             var org = await OperatorOrgIdAsync();
             var profile = await other.IndividualProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.UserId == userId);
-            if (profile is null) return;
+            if (profile is null) return null;
             string result;
             string? error = null;
             try
@@ -91,10 +92,12 @@ public sealed class MarketService(RahoonDbContext db, RequestContext rc, IClock 
                 Result = result, Error = error, At = clock.UtcNow,
             });
             await other.SaveChangesAsync();
+            return result;
         }
         catch (Exception ex)
         {
             log.LogWarning(ex, "Market SMS notification could not be recorded");
+            return null;
         }
     }
 

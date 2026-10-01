@@ -322,10 +322,14 @@ public sealed class MarketTests(ApiFixture api)
     }
 
     [Fact]
-    public async Task Installment_filter_uses_the_monthly_equivalent_and_city_filter_works()
+    public async Task Installment_filter_uses_the_monthly_equivalent_and_counts_the_annual_payment()
     {
-        // Seeded Jeddah townhouse: 21,000 quarterly = 7,000 monthly.
-        var (_, r) = await api.Client().GetAsync("/api/market/opportunities?city=jeddah&maxInstallment=7000&freq=monthly");
+        // Seeded Jeddah townhouse: 21,000 quarterly = 7,000 monthly, plus 50,000 every year (Phase 2: a year is 134,000).
+        // 7,000 a month is comfortable for the installments alone, but not with the annual payment (84,000 a year).
+        var (_, low) = await api.Client().GetAsync("/api/market/opportunities?city=jeddah&maxInstallment=7000&freq=monthly");
+        Assert.DoesNotContain(low!["items"]!.AsArray(), i => i!["card"]!["installmentFrequency"]?.GetValue<string>() == "quarterly");
+        // 11,200 a month (134,400 a year) covers both; the city filter still applies.
+        var (_, r) = await api.Client().GetAsync("/api/market/opportunities?city=jeddah&maxInstallment=11200&freq=monthly");
         Assert.All(r!["items"]!.AsArray(), i => Assert.Equal("jeddah", i!["card"]!["city"]!.GetValue<string>()));
         Assert.Contains(r["items"]!.AsArray(), i => i!["card"]!["installmentFrequency"]?.GetValue<string>() == "quarterly");
         var (_, none) = await api.Client().GetAsync("/api/market/opportunities?city=jeddah&maxInstallment=6000&freq=monthly");

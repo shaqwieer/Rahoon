@@ -5,12 +5,16 @@ using Rahoon.Api.Infrastructure.Security;
 using Rahoon.Api.Infrastructure.Storage;
 using Rahoon.Api.Infrastructure.Tenancy;
 using Rahoon.Api.Infrastructure.Time;
+using Rahoon.Api.Modules.Market.Discovery;
 
 namespace Rahoon.Api.Modules.Market;
 
 public sealed record ContactInput(string? Name, string? Phone, string? Topic, string? Message, bool Consent);
-public sealed record CalcTermsInput(DeveloperTerms? Developer, FinancierTerms? Financier, decimal? SellerCosts, decimal? BuyerCostsNow, decimal? BuyerCostsLater, bool NeedsNewFinancing);
-public sealed record CalcCapacityInput(decimal? AvailableNow, decimal? InstallmentComfort, string? InstallmentFrequency, decimal? MaxPrice, int? CommitMonths);
+public sealed record CalcTermsInput(DeveloperTerms? Developer, FinancierTerms? Financier, decimal? SellerCosts, decimal? BuyerCostsNow, decimal? BuyerCostsLater, bool NeedsNewFinancing,
+    List<FeeItem>? Fees = null, DateOnly? AsOf = null, Dictionary<string, string>? States = null, MarketReference? Reference = null);
+public sealed record CalcCapacityInput(decimal? AvailableNow, decimal? InstallmentComfort, string? InstallmentFrequency, decimal? MaxPrice, int? CommitMonths, int? MaxTermMonths = null);
+/// <summary>A dated market reference with its source, for a comparison that is never presented as a saving or a return.</summary>
+public sealed record MarketReference(decimal? Value, DateOnly? Date, string? Source, string? Description);
 
 /// <summary>
 /// Open to visitors: the field catalog, the contact form, the calculators (same engine as the team) and the published
@@ -27,7 +31,7 @@ public static class MarketPublicEndpoints
         g.MapPost("/contact", Contact).RequireRateLimiting("auth").Idempotent();
         g.MapPost("/calc/terms", CalcTerms).RequireRateLimiting("auth");
         g.MapPost("/calc/capacity", CalcCapacity).RequireRateLimiting("auth");
-        g.MapGet("/opportunities", Search);
+        // The list, the map and the comparison are Discovery.DiscoveryEndpoints (one query spine).
         g.MapGet("/opportunities/{reference}", Detail);
         g.MapGet("/photos/{id:guid}", PublicPhoto);
         g.MapPost("/calc/opportunities/{reference}/fit", FitOne).RequireRateLimiting("auth");
@@ -70,18 +74,65 @@ public static class MarketPublicEndpoints
         return Results.Ok(new { c.Reference });
     }
 
-    private static IResult CalcTerms(CalcTermsInput req, IConfiguration config)
+    private static readonly string[] Payers = ["buyer", "seller", "split"];
+    private static readonly string[] FigureStateValues = [FigureStates.Verified, FigureStates.Declared, FigureStates.Estimated];
+
+    private static IResult CalcTerms(CalcTermsInput req, IConfiguration config, IClock clock)
     {
         var bad = new[] { req.SellerCosts, req.BuyerCostsNow, req.BuyerCostsLater, req.Developer?.PaidApproved, req.Developer?.RemainingBalance, req.Developer?.Arrears,
                           req.Developer?.Installment, req.Developer?.ExtraPayment, req.Financier?.SalePrice, req.Financier?.PayoffAmount, req.Financier?.Arrears }
+            .Concat((req.Fees ?? []).Select(f => f.Amount))
             .Any(x => x is < 0) || req.Developer?.Reduction < 0;
         if (bad) Validate.Throw("amounts", "لا تُقبل مبالغ سالبة.");
+        var v = new Validator();
+        v.Require((req.Fees ?? []).Count <= 10, "fees", "عشرة رسوم على الأكثر.");
+        foreach (var (f, i) in (req.Fees ?? []).Select((f, i) => (f, i)))
+        {
+            v.Require(f.Label?.Trim() is { Length: >= 2 and <= 80 }, $"fees[{i}].label", "اكتب اسم الرسم.");
+            v.Require(Payers.Contains(f.Payer), $"fees[{i}].payer", "اختر من يتحمل الرسم.");
+            v.Require(f.Timing is "now" or "later", $"fees[{i}].timing", "اختر موعد الرسم.");
+            v.Require(f.Payer != "split" || f.BuyerSharePercent is >= 0 and <= 100, $"fees[{i}].buyerSharePercent", "حصة المشتري بين 0 و100%.");
+        }
+        v.Require((req.States ?? []).Values.All(FigureStateValues.Contains), "states", "حالة الرقم غير معروفة.");
+        v.Require(req.AsOf is null || req.AsOf <= clock.TodayRiyadh, "asOf", "تاريخ الأرقام في المستقبل.");
+        v.ThrowIfInvalid();
         var input = new TermsInput
         {
             Developer = req.Developer, Financier = req.Financier, SellerCosts = req.SellerCosts, BuyerCostsNow = req.BuyerCostsNow, BuyerCostsLater = req.BuyerCostsLater,
-            NeedsNewFinancing = req.NeedsNewFinancing,
+            NeedsNewFinancing = req.NeedsNewFinancing, Fees = req.Fees?.Select(f => f with { Label = f.Label.Trim() }).ToList(), AsOf = req.AsOf,
+            States = req.States ?? new(),
         };
-        return Results.Ok(MarketCalculator.Compute(input, CommissionPolicy.From(config)));
+        var result = MarketCalculator.Compute(input, CommissionPolicy.From(config));
+        return Results.Ok(new { result, comparison = req.Reference is null ? null : CompareWithReference(req.Reference, result, clock) });
+    }
+
+    /// <summary>
+    /// The buyer's all-in total against a dated, sourced market reference. Only when that total is complete; worded as a difference,
+    /// never a saving or a return. Rahoon's commission is outside the totals until its policy is approved.
+    /// </summary>
+    public static object CompareWithReference(MarketReference reference, TermsResult result, IClock clock)
+    {
+        var v = new Validator();
+        v.Require(reference.Value is > 0, "reference.value", "أدخل قيمة المرجع.");
+        v.Require(reference.Date is not null && reference.Date <= clock.TodayRiyadh, "reference.date", "أدخل تاريخ المرجع (ليس في المستقبل).");
+        v.Require(reference.Source?.Trim() is { Length: >= 2 and <= 120 }, "reference.source", "اذكر مصدر المرجع.");
+        v.ThrowIfInvalid();
+        var source = reference.Source!.Trim();
+        var age = clock.TodayRiyadh.DayNumber - reference.Date!.Value.DayNumber;
+        var notes = new List<string> { "فرق تقديري بين أرقام أدخلتها ومرجع ذكرته؛ ليس توفيرًا مضمونًا ولا عائدًا متوقعًا." };
+        if (age > 365) notes.Add("المرجع أقدم من سنة؛ قد لا يعكس السوق الآن.");
+        if (!result.Commission.PolicyApproved) notes.Add("لا يشمل الإجمالي عمولة رهون لأن سياستها لم تُعتمد بعد.");
+        if (result.BuyerTotal is not { } total)
+            return new { comparable = false, reason = "إجمالي التزام المشتري غير مكتمل، فلا تصح المقارنة بالمرجع.", reference = new { reference.Value, reference.Date, source }, notes };
+        var diff = reference.Value!.Value - total;
+        var amount = Math.Abs(diff).ToString("#,0", System.Globalization.CultureInfo.InvariantCulture);
+        var text = diff switch
+        {
+            > 0 => $"إجمالي الالتزام أقل من المرجع بفرق {amount} ر.س.",
+            < 0 => $"إجمالي الالتزام أعلى من المرجع بفرق {amount} ر.س.",
+            _ => "إجمالي الالتزام يساوي المرجع.",
+        };
+        return new { comparable = true, buyerTotal = total, difference = diff, text, reference = new { reference.Value, reference.Date, source, reference.Description }, stale = age > 365, notes };
     }
 
     /// <summary>Capacity from the buyer's own figures, and the real number of published opportunities that fit them (never invented).</summary>
@@ -95,118 +146,41 @@ public static class MarketPublicEndpoints
             .ThrowIfInvalid();
         var monthly = MarketCalculator.MonthlyEquivalent(req.InstallmentComfort, req.InstallmentFrequency ?? "monthly");
         decimal? capacityTotal = req.AvailableNow is { } a && monthly is { } m && req.CommitMonths is { } months ? a + m * months : null;
-        int fitting = 0, comparable = 0;
-        if (req.AvailableNow is not null)
+        var cap = new CapacityProfile(req.AvailableNow, req.InstallmentComfort, req.InstallmentFrequency ?? "monthly", req.MaxPrice, req.MaxTermMonths);
+        int fitting = 0, incomplete = 0, published = 0;
+        if (cap.Any)
         {
+            // The same strict rules as the list and the map (Discovery.DiscoveryQuery), so the counts match a search with these figures.
             using var _ = rc.BeginSystemScope();
-            var rows = await db.Opportunities.Where(o => o.Status == OpportunityStatus.Published)
-                .Join(db.OpportunityTerms, o => o.PublishedTermsId, t => t.Id, (o, t) => t).ToListAsync();
-            var cap = new CapacityInput(req.AvailableNow, req.InstallmentComfort, req.InstallmentFrequency, req.MaxPrice);
-            foreach (var t in rows)
-            {
-                var fit = MarketCalculator.Fit(cap, t.DueNow, t.PurchaseTotal, t.InstallmentMonthlyEquivalent, t.LargestExtraPayment, t.NeedsNewFinancing);
-                if (fit.Comparable) comparable++;
-                if (fit.Fits) fitting++;
-            }
+            var all = DiscoveryQuery.Published(db);
+            var (passing, unknown) = DiscoveryQuery.Budget(all, cap);
+            published = await all.CountAsync();
+            fitting = await passing.CountAsync();
+            incomplete = await unknown.CountAsync();
         }
         return Results.Ok(new
         {
-            monthlyEquivalent = monthly, availableNow = req.AvailableNow, capacityTotal,
+            monthlyEquivalent = monthly, availableNow = req.AvailableNow, capacityTotal, annualComfort = monthly is { } mm ? mm * 12 : (decimal?)null,
             notes = new[]
             {
                 "هذه أرقام تصرح بها أنت، وليست موافقة تمويل.",
-                "القسط ربع السنوي أو السنوي يُحوّل إلى مكافئ شهري للمقارنة فقط؛ تُعرض الأقساط الفعلية ومواعيدها في كل فرصة.",
+                "القسط ربع السنوي أو السنوي يُحوّل إلى مكافئ شهري للمقارنة فقط؛ وتُحسب الدفعات السنوية ضمن التزامك في السنة.",
             },
-            published = new { fitting, comparable },
+            published = new { fitting, incomplete, comparable = published - incomplete, total = published },
         });
     }
-
-    // ── Search ──
-
-    public sealed record SearchQuery(
-        string? City, string? Types, decimal? MaxNow, decimal? MaxInstallment, string? Freq, decimal? MaxTotal, string? Readiness, decimal? MinArea,
-        int? Bedrooms, string? Track, string? Sort, int? Page, int? PageSize);
-
-    private static async Task<IResult> Search([AsParameters] SearchQuery q, RahoonDbContext db, RequestContext rc)
-    {
-        var page = Math.Max(1, q.Page ?? 1);
-        var size = Math.Clamp(q.PageSize ?? 12, 1, MaxPageSize);
-        var cities = Split(q.City).Where(c => FieldCatalog.City(c) is not null).ToList();
-        var types = Split(q.Types).Where(t => FieldCatalog.PropertyTypes.Any(p => p.Value == t)).ToList();
-        var comfortMonthly = MarketCalculator.MonthlyEquivalent(q.MaxInstallment, q.Freq ?? "monthly");
-
-        List<Guid> savedIds = [];
-        if (rc.IsIndividual) savedIds = await db.SavedOpportunities.Where(s => s.ApplicantUserId == rc.UserId && s.RemovedAt == null).Select(s => s.OpportunityId).ToListAsync();
-
-        using var _ = rc.BeginSystemScope();
-        var baseQuery = db.Opportunities.Where(o => o.Status == OpportunityStatus.Published)
-            .Join(db.OpportunityTerms, o => o.PublishedTermsId, t => t.Id, (o, t) => new { o, t });
-        if (cities.Count > 0) baseQuery = baseQuery.Where(x => cities.Contains(x.o.City));
-        if (types.Count > 0) baseQuery = baseQuery.Where(x => types.Contains(x.o.PropertyType));
-        if (q.Readiness is "ready" or "under_construction") baseQuery = baseQuery.Where(x => x.o.Readiness == q.Readiness);
-        if (q.MinArea is { } minArea) baseQuery = baseQuery.Where(x => x.o.Area != null && x.o.Area >= minArea);
-        if (q.Bedrooms is { } beds) baseQuery = baseQuery.Where(x => x.o.Bedrooms != null && x.o.Bedrooms >= beds);
-        if (q.Track is "developer" or "financier" or "mixed") baseQuery = baseQuery.Where(x => x.o.Track == q.Track);
-
-        // Budget filters: an unknown figure never passes as 0. Those excluded only because a figure is missing are counted.
-        var budget = baseQuery;
-        var incomplete = 0;
-        if (q.MaxNow is { } maxNow)
-        {
-            incomplete += await baseQuery.CountAsync(x => x.t.DueNow == null);
-            budget = budget.Where(x => x.t.DueNow != null && x.t.DueNow <= maxNow);
-        }
-        if (q.MaxTotal is { } maxTotal)
-        {
-            incomplete += await budget.CountAsync(x => x.t.PurchaseTotal == null);
-            budget = budget.Where(x => x.t.PurchaseTotal != null && x.t.PurchaseTotal <= maxTotal);
-        }
-        if (comfortMonthly is { } cm)
-        {
-            // No future installments (e.g. a bank-financed property bought outright) passes; an unknown installment with a future balance doesn't.
-            incomplete += await budget.CountAsync(x => x.t.InstallmentMonthlyEquivalent == null && x.t.FutureBalance != 0);
-            budget = budget.Where(x => (x.t.InstallmentMonthlyEquivalent != null && x.t.InstallmentMonthlyEquivalent <= cm)
-                                       || (x.t.InstallmentMonthlyEquivalent == null && x.t.FutureBalance == 0));
-        }
-
-        var total = await budget.CountAsync();
-        var sort = q.Sort ?? (q.MaxNow is not null ? "fit" : "newest");
-        var ordered = sort switch
-        {
-            "now" => budget.OrderBy(x => x.t.DueNow == null).ThenBy(x => x.t.DueNow).ThenByDescending(x => x.o.PublishedAt),
-            "price" => budget.OrderBy(x => x.t.PurchaseTotal == null).ThenBy(x => x.t.PurchaseTotal).ThenByDescending(x => x.o.PublishedAt),
-            // «الأنسب لقدرتك»: the most room left after the amount due now, then the smallest installment.
-            "fit" when q.MaxNow is not null => budget.OrderBy(x => x.t.DueNow).ThenBy(x => x.t.InstallmentMonthlyEquivalent ?? 0).ThenByDescending(x => x.o.PublishedAt),
-            _ => budget.OrderByDescending(x => x.o.PublishedAt),
-        };
-        var rows = await ordered.Skip((page - 1) * size).Take(size).ToListAsync();
-        var cap = new CapacityInput(q.MaxNow, q.MaxInstallment, q.Freq ?? "monthly", q.MaxTotal);
-        var items = rows.Select(x => new
-        {
-            card = OpportunityProjection.Card(x.o, x.t, savedIds.Contains(x.o.Id)),
-            fit = q.MaxNow is null && q.MaxInstallment is null && q.MaxTotal is null ? null
-                : MarketCalculator.Fit(cap, x.t.DueNow, x.t.PurchaseTotal, x.t.InstallmentMonthlyEquivalent, x.t.LargestExtraPayment, x.t.NeedsNewFinancing),
-        });
-        return Results.Ok(new { items, total, page, pageSize = size, pages = (int)Math.Ceiling(total / (double)size), excludedIncomplete = incomplete, sort });
-    }
-
-    private static IEnumerable<string> Split(string? csv) => (csv ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Distinct();
 
     private static async Task<IResult> Detail(string reference, RahoonDbContext db, RequestContext rc)
     {
-        Guid? myBuyer = null;
-        CapacityInput? cap = null;
         var saved = false;
         object? myInterest = null;
         Guid oppId;
         using (rc.BeginSystemScope())
             oppId = await db.Opportunities.Where(o => o.Reference == reference && o.Status == OpportunityStatus.Published).Select(o => o.Id).FirstOrDefaultAsync();
         if (oppId == Guid.Empty) throw new NotFoundException();
+        var buyer = await Matching.OwnLiveRequestAsync(db, rc);
         if (rc.IsIndividual)
         {
-            var b = await db.BuyerRequests.Where(x => x.ApplicantUserId == rc.UserId && x.Status != BuyerRequestStatus.Withdrawn && x.Status != BuyerRequestStatus.Rejected)
-                .FirstOrDefaultAsync();
-            if (b is not null) { myBuyer = b.Id; cap = new CapacityInput(b.AvailableNow, b.InstallmentComfort, b.InstallmentFrequency, b.MaxPrice); }
             saved = await db.SavedOpportunities.AnyAsync(s => s.ApplicantUserId == rc.UserId && s.OpportunityId == oppId && s.RemovedAt == null);
             var i = await db.Interests.Where(x => x.ApplicantUserId == rc.UserId && x.OpportunityId == oppId && x.Status != InterestStatus.Withdrawn).FirstOrDefaultAsync();
             if (i is not null) myInterest = new { i.Reference, status = i.Status, statusLabel = InterestFlow.Labels[i.Status] };
@@ -214,22 +188,17 @@ public static class MarketPublicEndpoints
         using var _ = rc.BeginSystemScope();
         var opp = await db.Opportunities.FirstAsync(o => o.Id == oppId);
         var terms = await db.OpportunityTerms.FirstAsync(t => t.Id == opp.PublishedTermsId);
-        var obligations = await db.SaleObligations.Where(o => o.SaleRequestId == opp.SaleRequestId && o.RemovedAt == null).ToListAsync();
-        var approvals = await db.ExternalApprovals.Where(a => a.SaleRequestId == opp.SaleRequestId).OrderBy(a => a.RecordedAt).ToListAsync();
-        // Public-safe approval summary: the party's own decision on a transfer, separate from Rahoon's review. No documents.
-        var approvalSummary = obligations.Select(o =>
-        {
-            var a = approvals.LastOrDefault(x => x.ObligationId == o.Id);
-            var status = a?.Status ?? ExternalApprovalStatus.NotRequested;
-            return (object)new
+        var approvals = (await DiscoveryEndpoints.PublicApprovalsAsync(db, [opp.SaleRequestId])).GetValueOrDefault(opp.SaleRequestId) ?? [];
+        var cap = buyer is null ? null : Matching.Capacity(buyer);
+        object? fit = cap is { Any: true }
+            ? new
             {
-                party = o.Kind == "developer" ? "موافقة المطور على النقل" : "موافقة جهة التمويل",
-                status, statusLabel = ExternalApprovalLabels.Labels[status], conditions = status == ExternalApprovalStatus.Conditional ? a?.Conditions : null,
-                expiresOn = a?.ExpiresOn,
-            };
-        }).ToList();
-        var fit = cap is null ? null : MarketCalculator.Fit(cap, terms.DueNow, terms.PurchaseTotal, terms.InstallmentMonthlyEquivalent, terms.LargestExtraPayment, terms.NeedsNewFinancing);
-        return Results.Ok(OpportunityProjection.Detail(opp, terms, saved, approvalSummary, fit is null ? null : new { fit, hasBuyerRequest = myBuyer is not null }, myInterest));
+                fit = Affordability.Classify(cap, terms), hasBuyerRequest = true, revision = buyer!.PreferencesRevision,
+                match = Matching.Explain(opp, Matching.WithProfile(new SearchCriteria(), buyer), Matching.Preferences(buyer)),
+            }
+            : null;
+        return Results.Ok(OpportunityProjection.Detail(opp, terms, saved, approvals, fit, myInterest,
+            new { nextPayments = Affordability.NextPayments(terms), caveats = Affordability.Caveats(terms) }));
     }
 
     /// <summary>The opportunity calculator: the visitor's own figures against the published terms (same rules as search).</summary>
@@ -238,14 +207,13 @@ public static class MarketPublicEndpoints
         new Validator()
             .Require(req.AvailableNow is null or >= 0, "availableNow", "أدخل مبلغًا صحيحًا.")
             .Require(req.InstallmentComfort is null or >= 0, "installmentComfort", "أدخل مبلغًا صحيحًا.")
+            .Require(req.MaxPrice is null or >= 0, "maxPrice", "أدخل مبلغًا صحيحًا.")
+            .Require(req.InstallmentFrequency is null or "monthly" or "quarterly" or "semiannual" or "annual", "installmentFrequency", "اختر دورية القسط.")
             .ThrowIfInvalid();
         using var _ = rc.BeginSystemScope();
-        var t = await db.Opportunities.Where(o => o.Reference == reference && o.Status == OpportunityStatus.Published)
-            .Join(db.OpportunityTerms, o => o.PublishedTermsId, x => x.Id, (o, x) => x).FirstOrDefaultAsync() ?? throw new NotFoundException();
-        var fit = MarketCalculator.Fit(new CapacityInput(req.AvailableNow, req.InstallmentComfort, req.InstallmentFrequency ?? "monthly", req.MaxPrice),
-            t.DueNow, t.PurchaseTotal, t.InstallmentMonthlyEquivalent, t.LargestExtraPayment, t.NeedsNewFinancing);
-        decimal? left = req.AvailableNow is { } a && t.DueNow is { } d ? a - d : null;
-        return Results.Ok(new { fit, leftAfterNow = left, monthlyEquivalent = t.InstallmentMonthlyEquivalent });
+        var t = await DiscoveryQuery.Published(db).Where(x => x.O.Reference == reference).Select(x => x.T).FirstOrDefaultAsync() ?? throw new NotFoundException();
+        var fit = Affordability.Classify(new CapacityProfile(req.AvailableNow, req.InstallmentComfort, req.InstallmentFrequency ?? "monthly", req.MaxPrice, req.MaxTermMonths), t);
+        return Results.Ok(new { fit, leftAfterNow = fit.CashLeftAfterNow, monthlyEquivalent = t.InstallmentMonthlyEquivalent, annualCommitment = fit.AnnualCommitment, comfortAnnual = fit.ComfortAnnual });
     }
 
     /// <summary>A listing photo is public only while it is approved and shown in a published opportunity. Private documents are never served here.</summary>
@@ -259,7 +227,15 @@ public static class MarketPublicEndpoints
         }
         if (photo is null) throw new NotFoundException();
         var read = await files.ReadAsync(photo.FileId) ?? throw new NotFoundException();
-        http.Response.Headers.CacheControl = "public, max-age=600";
+        // Revalidated on every use (ETag = content hash): once the opportunity is withdrawn or the photo removed, the next request is a 404.
+        var etag = $"\"{read.File.Sha256}\"";
+        http.Response.Headers.CacheControl = "public, no-cache";
+        http.Response.Headers.ETag = etag;
+        if (http.Request.Headers.IfNoneMatch.ToString() == etag)
+        {
+            http.Response.Headers.Remove("X-Robots-Tag");
+            return Results.StatusCode(StatusCodes.Status304NotModified);
+        }
         http.Response.Headers.Remove("X-Robots-Tag");
         return Results.Bytes(read.Content, read.File.ContentType);
     }

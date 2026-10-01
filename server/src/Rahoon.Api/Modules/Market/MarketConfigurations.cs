@@ -176,6 +176,8 @@ internal sealed class OpportunityConfig : IEntityTypeConfiguration<Opportunity>
         b.HasIndex(x => x.Reference).IsUnique();
         b.HasIndex(x => x.SaleRequestId);
         b.HasIndex(x => new { x.Status, x.City, x.PropertyType });
+        // Map and "search this area": bounds are applied to the public point of published opportunities only.
+        b.HasIndex(x => new { x.PublicLatitude, x.PublicLongitude }).HasFilter("status = 'Published'").HasDatabaseName("ix_opportunities_published_point");
         b.HasOne<SaleRequest>().WithMany().HasForeignKey(x => x.SaleRequestId).OnDelete(DeleteBehavior.Restrict);
         b.Property(x => x.Reference).HasMaxLength(20);
         b.Property(x => x.Title).HasMaxLength(160);
@@ -184,6 +186,8 @@ internal sealed class OpportunityConfig : IEntityTypeConfiguration<Opportunity>
         b.Property(x => x.City).HasMaxLength(60);
         b.Property(x => x.District).HasMaxLength(100);
         b.Property(x => x.Project).HasMaxLength(150);
+        b.Property(x => x.DeveloperName).HasMaxLength(200);
+        b.HasOne<OrgDirectory.DirectoryOrganization>().WithMany().HasForeignKey(x => x.DeveloperPartyId).OnDelete(DeleteBehavior.Restrict);
         b.Property(x => x.Track).HasMaxLength(20);
         b.Property(x => x.Readiness).HasMaxLength(20);
         b.Property(x => x.DeliveryMonth).HasMaxLength(7);
@@ -207,6 +211,9 @@ internal sealed class OpportunityTermsConfig : IEntityTypeConfiguration<Opportun
         b.Property(x => x.InputJson).HasColumnType("jsonb");
         b.Property(x => x.ResultJson).HasColumnType("jsonb");
         b.Property(x => x.InstallmentFrequency).HasMaxLength(20);
+        b.Property(x => x.Quality).HasMaxLength(30);
+        b.Property(x => x.ExtraPaymentRecurrence).HasMaxLength(10);
+        b.Property(x => x.NextExtraPaymentDate).HasMaxLength(10);
         b.Property(x => x.TransferConditions).HasMaxLength(2000);
         b.Property(x => x.VerificationScope).HasMaxLength(1000);
         b.Property(x => x.PreparedByLabel).HasMaxLength(150);
@@ -293,5 +300,38 @@ internal sealed class ContactMessageConfig : IEntityTypeConfiguration<ContactMes
         b.Property(x => x.Topic).HasMaxLength(20);
         b.Property(x => x.HandledNote).HasMaxLength(500);
         b.Property(x => x.HandledByLabel).HasMaxLength(150);
+    }
+}
+
+internal sealed class SavedSearchConfig : IEntityTypeConfiguration<Discovery.SavedSearch>
+{
+    public void Configure(EntityTypeBuilder<Discovery.SavedSearch> b)
+    {
+        b.ToTable("saved_searches", "market");
+        // One live search per person and criteria: saving the same search twice returns the first.
+        b.HasIndex(x => new { x.ApplicantUserId, x.QueryHash }).IsUnique().HasFilter("deleted_at IS NULL").HasDatabaseName("ux_saved_searches_one_live");
+        b.HasIndex(x => new { x.AlertsEnabled, x.DeletedAt, x.PausedAt });
+        b.HasOne<Identity.User>().WithMany().HasForeignKey(x => x.ApplicantUserId).OnDelete(DeleteBehavior.Restrict);
+        b.Property(x => x.Name).HasMaxLength(80);
+        b.Property(x => x.Query).HasMaxLength(1500);
+        b.Property(x => x.QueryHash).HasMaxLength(64);
+        b.Property(x => x.AlertChannel).HasMaxLength(10);
+    }
+}
+
+internal sealed class SearchAlertConfig : IEntityTypeConfiguration<Discovery.SearchAlert>
+{
+    public void Configure(EntityTypeBuilder<Discovery.SearchAlert> b)
+    {
+        b.ToTable("search_alerts", "market");
+        // The deduplication key of the alert job.
+        b.HasIndex(x => new { x.SavedSearchId, x.OpportunityId, x.TermsId }).IsUnique().HasDatabaseName("ux_search_alerts_once");
+        b.HasIndex(x => new { x.Status, x.CreatedAt });
+        b.HasOne<Discovery.SavedSearch>().WithMany().HasForeignKey(x => x.SavedSearchId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<Opportunity>().WithMany().HasForeignKey(x => x.OpportunityId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<OpportunityTerms>().WithMany().HasForeignKey(x => x.TermsId).OnDelete(DeleteBehavior.Restrict);
+        b.Property(x => x.Kind).HasMaxLength(20);
+        b.Property(x => x.Channel).HasMaxLength(10);
+        b.Property(x => x.Reason).HasMaxLength(300);
     }
 }

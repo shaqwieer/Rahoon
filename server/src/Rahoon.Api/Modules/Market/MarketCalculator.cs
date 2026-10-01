@@ -59,7 +59,21 @@ public sealed record TermsInput
     public bool NeedsNewFinancing { get; init; }
     /// <summary>Per-figure state for display: key → verified | declared | estimated.</summary>
     public Dictionary<string, string> States { get; init; } = new();
+    /// <summary>
+    /// Optional fees with who carries them (Phase 2 calculators). Absent on every stored terms version, which keeps their results
+    /// unchanged; when given, each fee's share is added to the seller's or the buyer's costs (now or later). Example fees typed by
+    /// the person are not approved real fees.
+    /// </summary>
+    public List<FeeItem>? Fees { get; init; }
+    /// <summary>The date the figures are as of (provenance), shown with the result.</summary>
+    public DateOnly? AsOf { get; init; }
 }
+
+/// <param name="Amount">null = unknown (the result becomes incomplete), never 0.</param>
+/// <param name="Payer">buyer | seller | split</param>
+/// <param name="BuyerSharePercent">With «split»: the buyer's share, 0–100 (the seller carries the rest).</param>
+/// <param name="Timing">now | later — when the buyer's share is due (the seller's share is settled at completion).</param>
+public sealed record FeeItem(string Label, decimal? Amount, string Payer, decimal? BuyerSharePercent, string Timing);
 
 /// <param name="Payee">seller | developer | financier | other | rahoon</param>
 /// <param name="BornBy">buyer | seller</param>
@@ -91,6 +105,10 @@ public sealed record TermsResult
     public int? RemainingMonths { get; init; }
     public bool NeedsNewFinancing { get; init; }
     public required CommissionLine Commission { get; init; }
+    /// <summary>How each fee was allocated (only when fees were given).</summary>
+    public List<CalcLine>? FeeLines { get; init; }
+    /// <summary>What the result assumes: figure states, the as-of date, example fees (only from Phase 2 calculators).</summary>
+    public List<string>? Assumptions { get; init; }
 }
 
 /// <summary>Commission policy (Market:Commission). Not approved → never computed, never shown as 0 (§8).</summary>
@@ -148,6 +166,39 @@ public static class MarketCalculator
         var dev = input.Developer;
         var fin = input.Financier;
         if (dev is null && fin is null) Need(false, "جهة الالتزام");
+
+        // ── Fees (optional): each fee's share goes to the seller's costs or the buyer's costs now/later ──
+        List<CalcLine>? feeLines = null;
+        if (input.Fees is { Count: > 0 } fees)
+        {
+            feeLines = [];
+            decimal? sellerAdd = 0, buyerNowAdd = 0, buyerLaterAdd = 0;
+            foreach (var (fee, i) in fees.Select((f, i) => (f, i)))
+            {
+                var buyerShare = fee.Payer switch { "buyer" => 1m, "seller" => 0m, _ => Math.Clamp(fee.BuyerSharePercent ?? 50m, 0m, 100m) / 100m };
+                var later = fee.Timing == "later";
+                if (fee.Amount is not { } amount)
+                {
+                    Need(false, $"قيمة الرسم: {fee.Label}");
+                    if (buyerShare < 1) sellerAdd = null;
+                    if (buyerShare > 0) { if (later) buyerLaterAdd = null; else buyerNowAdd = null; }
+                    feeLines.Add(new CalcLine($"fee:{i}", fee.Label, null, "other", fee.Payer, later ? "later" : "now", "القيمة غير معروفة"));
+                    continue;
+                }
+                var b = R(amount * buyerShare);
+                var sPart = R(amount - b);
+                if (sPart > 0) sellerAdd += sPart;
+                if (b > 0) { if (later) buyerLaterAdd += b; else buyerNowAdd += b; }
+                var who = fee.Payer switch { "buyer" => "يتحمله المشتري", "seller" => "يتحمله صاحب العقار", _ => $"مقسوم: المشتري {b.ToString("#,0.##", System.Globalization.CultureInfo.InvariantCulture)} وصاحب العقار {sPart.ToString("#,0.##", System.Globalization.CultureInfo.InvariantCulture)}" };
+                feeLines.Add(new CalcLine($"fee:{i}", fee.Label, R(amount), "other", fee.Payer, later ? "later" : "now", who + (later ? " لاحقًا" : " عند الإتمام")));
+            }
+            input = input with
+            {
+                SellerCosts = input.SellerCosts is { } sc0 && sellerAdd is { } sa ? sc0 + sa : null,
+                BuyerCostsNow = input.BuyerCostsNow is { } bn0 && buyerNowAdd is { } bna ? bn0 + bna : null,
+                BuyerCostsLater = input.BuyerCostsLater is { } bl0 && buyerLaterAdd is { } bla ? bl0 + bla : null,
+            };
+        }
 
         // ── Developer part ──
         decimal? devArrears = null, devTotalBalance = null;
@@ -296,7 +347,30 @@ public static class MarketCalculator
             Installment = dev?.Installment, InstallmentFrequency = dev?.InstallmentFrequency, InstallmentMonthlyEquivalent = monthly,
             LargestExtraPayment = dev?.ExtraPayment, RemainingMonths = remainingMonths,
             NeedsNewFinancing = input.NeedsNewFinancing, Commission = commissionLine,
+            FeeLines = feeLines, Assumptions = input.Fees is null && input.AsOf is null ? null : Assumptions(input),
         };
+    }
+
+    private static readonly Dictionary<string, string> StateWords = new()
+    {
+        [FigureStates.Verified] = "تحقق منه الفريق من مستند", [FigureStates.Declared] = "مصرح به", [FigureStates.Estimated] = "تقدير",
+    };
+
+    private static readonly Dictionary<string, string> FigureWords = new()
+    {
+        ["paid_approved"] = "المدفوع المعتمد", ["remaining_balance"] = "الرصيد المتبقي", ["arrears"] = "المتأخرات", ["installment_amount"] = "القسط",
+        ["sale_price"] = "سعر البيع", ["payoff_amount"] = "مبلغ السداد", ["seller_costs"] = "تكاليف صاحب العقار", ["buyer_costs_now"] = "تكاليف المشتري الآن",
+    };
+
+    private static List<string> Assumptions(TermsInput input)
+    {
+        var a = new List<string>();
+        if (input.AsOf is { } d) a.Add($"الأرقام كما في {d:yyyy-MM-dd}.");
+        foreach (var (k, v) in input.States.OrderBy(kv => kv.Key, StringComparer.Ordinal))
+            a.Add($"{FigureWords.GetValueOrDefault(k, k)}: {StateWords.GetValueOrDefault(v, v)}.");
+        if (input.States.Count == 0) a.Add("كل الأرقام كما أدخلتها، ولم يتحقق منها فريق رهون.");
+        if (input.Fees is { Count: > 0 }) a.Add("الرسوم أمثلة أدخلتها أنت لتجربة توزيعها، وليست رسومًا معتمدة.");
+        return a;
     }
 
     /// <summary>

@@ -43,6 +43,8 @@ public sealed class RahoonDbContext(DbContextOptions<RahoonDbContext> options, R
     public DbSet<MarketEvent> MarketEvents => Set<MarketEvent>();
     public DbSet<MarketNotification> MarketNotifications => Set<MarketNotification>();
     public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
+    public DbSet<Modules.Market.Discovery.SavedSearch> SavedSearches => Set<Modules.Market.Discovery.SavedSearch>();
+    public DbSet<Modules.Market.Discovery.SearchAlert> SearchAlerts => Set<Modules.Market.Discovery.SearchAlert>();
 
     // Saudi organization directory (developers, banks, finance companies)
     public DbSet<Modules.OrgDirectory.DirectoryOrganization> DirectoryOrganizations => Set<Modules.OrgDirectory.DirectoryOrganization>();

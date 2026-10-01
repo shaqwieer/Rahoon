@@ -227,6 +227,8 @@ public sealed class BuyerRequest : OrgEntity, IApplicantOwned, IConcurrencyVersi
     public string? Readiness { get; set; }
     /// <summary>YYYY-MM: preferred delivery no later than.</summary>
     public string? DeliveryBy { get; set; }
+    /// <summary>Bumped on every change of capacity or preferences; matches report the revision they were computed from.</summary>
+    public int PreferencesRevision { get; set; } = 1;
 
     // Step 3
     public string? ContactName { get; set; }
@@ -285,6 +287,10 @@ public sealed class Opportunity : OrgEntity, IApplicantOwned, IConcurrencyVersio
     public required string City { get; set; }
     public string? District { get; set; }
     public string? Project { get; set; }
+    /// <summary>The developer of the live developer obligation (directory id + the name recorded), for the public developer filter.
+    /// The financier's identity is never copied here: it is never public.</summary>
+    public Guid? DeveloperPartyId { get; set; }
+    public string? DeveloperName { get; set; }
     /// <summary>developer | financier | mixed</summary>
     public required string Track { get; set; }
     public decimal? Area { get; set; }
@@ -362,6 +368,19 @@ public sealed class OpportunityTerms : OrgEntity, IApplicantOwned
     public int? RemainingMonths { get; set; }
     public bool NeedsNewFinancing { get; set; }
     public bool Complete { get; set; }
+    /// <summary>complete_verified | complete_estimate | incomplete (as computed when the version was made).</summary>
+    public string? Quality { get; set; }
+    /// <summary>once | annual — of the developer's extra payment; null when there is none or it isn't recorded.</summary>
+    public string? ExtraPaymentRecurrence { get; set; }
+    public decimal? AnnualExtraPayment { get; set; }
+    public decimal? OneOffExtraPayment { get; set; }
+    /// <summary>The next extra payment's date as recorded (text, YYYY-MM-DD); there is no next-installment date in the model.</summary>
+    public string? NextExtraPaymentDate { get; set; }
+    /// <summary>
+    /// The future schedule is known well enough for a strict affordability check: no future balance, or the installment and its
+    /// frequency known and any extra payment's amount and recurrence known. Otherwise affordability is «incomplete».
+    /// </summary>
+    public bool ScheduleKnown { get; set; }
 
     public string? TransferConditions { get; set; }
     /// <summary>What has been checked, in plain words (shown with the verification badge).</summary>

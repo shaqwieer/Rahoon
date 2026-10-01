@@ -77,8 +77,8 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
-// ── CLI: `dotnet run -- migrate` / `seed` / `reset-demo` / `import-directory` / `bootstrap-owner` ──
-if (args.Length > 0 && args[0] is "migrate" or "seed" or "reset-demo" or "import-directory" or "bootstrap-owner")
+// ── CLI: `dotnet run -- migrate` / `seed` / `reset-demo` / `import-directory` / `bootstrap-owner` / `run-alerts` ──
+if (args.Length > 0 && args[0] is "migrate" or "seed" or "reset-demo" or "import-directory" or "bootstrap-owner" or "run-alerts")
 {
     // Demo-data commands are refused outside Development/Staging/Testing *before* touching the database.
     if (args[0] is "seed" or "reset-demo" && !DemoDataGuard.IsAllowed(app.Environment))
@@ -94,6 +94,13 @@ if (args.Length > 0 && args[0] is "migrate" or "seed" or "reset-demo" or "import
         if (args[0] == "import-directory")
         {
             Environment.ExitCode = await DirectoryCli.RunAsync(scope.ServiceProvider, args.Skip(1).ToArray());
+            return;
+        }
+        if (args[0] == "run-alerts")
+        {
+            // One evaluation + delivery run of the saved-search alerts (the worker does the same on its interval).
+            var report = await scope.ServiceProvider.GetRequiredService<Rahoon.Api.Modules.Market.Discovery.SearchAlertJob>().RunOnceAsync();
+            Console.WriteLine($"run-alerts: {report.Searches} searches, {report.Queued} queued, {report.Delivered} delivered, {report.Skipped} skipped, {report.Failed} failed");
             return;
         }
         if (args[0] == "bootstrap-owner")
