@@ -161,11 +161,17 @@ public static class BuyerEndpoints
     }
 
     /// <summary>Everything matching reads; a change bumps <see cref="BuyerRequest.PreferencesRevision"/>.</summary>
-    private static string MatchingState(BuyerRequest r) => System.Text.Json.JsonSerializer.Serialize(new
+    private static string MatchingState(BuyerRequest r)
     {
-        r.AvailableNow, r.InstallmentComfort, r.InstallmentFrequency, r.MaxPrice, r.PurchaseMode, Cities = r.Cities.Order(), r.AreasText,
-        Types = r.PropertyTypes.Order(), r.AreaMin, r.AreaMax, r.BedroomsMin, r.Readiness, r.DeliveryBy,
-    });
+        // Decimals by value (320000 and 320000.00 are the same figure).
+        static string? N(decimal? d) => d?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+        return System.Text.Json.JsonSerializer.Serialize(new
+        {
+            AvailableNow = N(r.AvailableNow), InstallmentComfort = N(r.InstallmentComfort), r.InstallmentFrequency, MaxPrice = N(r.MaxPrice), r.PurchaseMode,
+            Cities = r.Cities.Order(StringComparer.Ordinal), r.AreasText, Types = r.PropertyTypes.Order(StringComparer.Ordinal), AreaMin = N(r.AreaMin),
+            AreaMax = N(r.AreaMax), r.BedroomsMin, r.Readiness, r.DeliveryBy,
+        });
+    }
 
     private static bool Apply(BuyerRequest r, BuyerSave req)
     {
@@ -206,6 +212,7 @@ public static class BuyerEndpoints
         };
         await ApplyFinancierAsync(db, r, req);
         Apply(r, req);
+        r.PreferencesRevision = 1;
         db.BuyerRequests.Add(r);
         market.Event(org, "buyer_request", r.Id, rc.UserId, "created", "بدأت طلب شراء", visible: false);
         try { await db.SaveChangesAsync(); }

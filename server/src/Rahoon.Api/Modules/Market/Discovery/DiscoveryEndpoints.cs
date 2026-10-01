@@ -51,7 +51,8 @@ public static class DiscoveryEndpoints
 
     private static async Task<IResult> Search(HttpRequest http, RahoonDbContext db, RequestContext rc)
     {
-        var (c, prefs, profile, saved) = await ResolveAsync(SearchCriteria.Parse(http.Query), db, rc);
+        var asked = SearchCriteria.Parse(http.Query);
+        var (c, prefs, profile, saved) = await ResolveAsync(asked, db, rc);
         using var _ = rc.BeginSystemScope();
         var cap = c.Capacity;
         var (passing, incomplete) = DiscoveryQuery.Budget(DiscoveryQuery.Attributes(DiscoveryQuery.Published(db), c), cap);
@@ -77,7 +78,8 @@ public static class DiscoveryEndpoints
         {
             items, total, page = c.Page, pageSize = c.PageSize, pages = (int)Math.Ceiling(total / (double)c.PageSize),
             excludedIncomplete = excluded, withoutLocation, sort, sortExplanation = SortExplanation(sort, cap.Any, prefs is { Any: true }),
-            query = c.ToQuery(sortAndPage: true), profile,
+            // The URL state echoes what was asked, never the profile values merged in: a shared link carries «match=me», not a buyer's numbers.
+            query = asked.ToQuery(sortAndPage: true, includePage: true), profile,
             facets = new
             {
                 cities = cityFacet.OrderByDescending(f => f.count).ThenBy(f => f.key, StringComparer.Ordinal)
