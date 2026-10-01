@@ -42,7 +42,8 @@ Each module owns its entities, EF configuration and endpoints (a static `Map(IEn
 | `SaleRequestEndpoints.cs` | Owner: create (idempotent per device draft id), autosave, submit, resubmit, withdraw, files, opportunity confirmation |
 | `BuyerEndpoints.cs` | Buyer: one live buyer request (optional preferred financier from the directory), suggestions with fit, interests, saved, account summary |
 | `TeamMarketEndpoints.cs`, `TeamOpportunityEndpoints.cs` | «فريق رهون»: review, completion, figure verification, corrections, file review, external approvals, opportunity preparation, owner confirmation, publish/pause/withdraw, interests, contact messages |
-| `MarketPublicEndpoints.cs` | Visitors: catalog, contact, calculators, search, opportunity details, public photos |
+| `MarketPublicEndpoints.cs` | Visitors: catalog, contact, calculators (fees with payer, as-of date, dated market reference), opportunity details with the next payments, public photos |
+| `Discovery/` (Phase 2) | The one discovery spine: `SearchCriteria` (the only parser/validator of search state, canonical query + hash), `DiscoveryQuery` (the only filter builder: published + public points; strict budget in SQL), `Affordability` (its C# twin: fits / does_not_fit / incomplete, reasons, next payments), `Matching` (eligibility vs ranking preferences, explanations, `match=me` from the session), `DiscoveryEndpoints` (list, map, compare), `SavedSearchEndpoints`, `SearchAlertJob` + `SearchAlertWorker` |
 
 Rules worth knowing:
 - Rows are operator-owned and applicant-owned (`IApplicantOwned`): an owner or buyer reads only their rows; the team reads all.
@@ -50,7 +51,12 @@ Rules worth knowing:
   API unless the owner explicitly chose to show them (`OpportunityProjection.PublicPoint`).
 - Approving a sale request never publishes. Terms sent to the owner are immutable; a change is a new version that needs
   the owner's confirmation and a new publication. Interests keep the terms version they were made on.
-- Unknown amounts never pass a budget filter, and the number excluded for that reason is returned.
+- Unknown amounts never pass a budget filter, and the number excluded for that reason is returned. A year of installments
+  plus an annual extra payment must fit within a year of the buyer's comfortable installment; an unknown schedule is
+  «incomplete», never a pass.
+- List, map, facets, comparison, matching, the capacity calculator and saved-search alerts all read through
+  `Discovery/DiscoveryQuery`, so they always see the same published set; map bounds apply to public points only.
+- The typed terms snapshot (`TermsSnapshot`) is written once per version; published terms are never recomputed.
 - Sign-in for owners and buyers is by mobile (`PhoneAuthEndpoints`); one account per mobile.
 
 ### Organization directory (`Modules/OrgDirectory`)
@@ -164,6 +170,15 @@ columns and refuses to run while any file is not copied.
 
 SMS goes through `ISmsGateway`; the only adapter is the **sandbox** (records the attempt as `simulated` in
 `app.outbound_sms`, sends nothing). No other external system is connected.
+
+## Background work
+
+`SearchAlertWorker` (hosted service, Phase 2) runs `SearchAlertJob` every `Alerts:IntervalSeconds` when `Alerts:Enabled`
+(on in Development and Staging, off by default and in Testing; CLI `run-alerts` runs it once). The job queues unseen matches of
+active, consented saved searches with `INSERT … ON CONFLICT DO NOTHING` on (search, opportunity, terms version), claims them with
+`FOR UPDATE SKIP LOCKED`, re-checks publication and opt-out at send time, writes the in-app notification and the status in one
+transaction, and marks SMS rows `sending` before the gateway call so a crash can't send twice. With one API instance or several,
+nothing is sent twice.
 
 ## Tests
 

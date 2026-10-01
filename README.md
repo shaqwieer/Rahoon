@@ -47,7 +47,7 @@ bash scripts/dev-api.sh            # build + start on :5080 (log: %TEMP%/rahoon-
 bash scripts/dev-api.sh --reset    # drop, migrate and reseed the demo data first (local demo DB only)
 ```
 An existing database keeps its data: `dotnet run -- migrate` (in `server/src/Rahoon.Api`) applies migrations and moves any
-file still on disk into the database; `dotnet run -- seed` adds missing demo data. `--reset` and `reset-demo` drop the
+file still on disk into the database; `dotnet run -- seed` adds missing demo data. `dotnet run -- run-alerts` runs one saved-search alert pass (the API's worker does it every `Alerts:IntervalSeconds` when `Alerts:Enabled`). `--reset` and `reset-demo` drop the
 database (and empty the organization directory) and are refused outside Development/Staging/Testing.
 
 **Organization directory** (real developers, banks and finance companies from official sources; never demo data):
@@ -153,6 +153,7 @@ A phone-sized window for the owner/buyer and a desktop window for the team. Step
 8. **Team:** tick the checklist → «نشر الفرصة». Changing a published figure creates a new version that needs the owner again.
 9. **Buyer:** `/opportunities` → filter by what you can pay now and the installment; open a card; «مهتم بالفرصة». The team sees it in `/team/interests` and follows it up; nothing is reserved.
 10. **Buyer:** «سجّل قدرتك الشرائية» (`/buy/new`; with external finance, optionally name the bank or finance company) → suggestions with why they fit; `/calculators` for the three calculators.
+10a. **Discovery (Phase 2):** `/opportunities` — list and map side by side (phones: «القائمة | الخريطة»), move the map and «ابحث في هذه المنطقة», remove filter chips, reload or share the URL; «قارن» on 2–4 cards → `/compare`; signed in: «طابق مع قدرتي الشرائية المسجلة» and «احفظ هذا البحث» with alerts → `/account/searches`. Alerts arrive in the account (the worker runs every minute locally; `dotnet run -- run-alerts` runs it once); SMS alerts are sandboxed.
 11. **Team lead:** `/team/organizations` → search and filter, add an organization, edit it (it becomes protected from imports), deactivate it with a reason.
 
 ## Tests

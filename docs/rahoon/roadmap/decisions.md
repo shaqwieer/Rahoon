@@ -31,6 +31,27 @@ product decisions D1–D8). This file records what the roadmap phases adopted.
 | Bootstrap | CLI `bootstrap-owner`, refused once an active owner exists | No public super-admin endpoint, no default password |
 | Password for invited staff | ≥ 10 characters with letters and digits | No policy existed for staff passwords set by users |
 
+## Adopted in Phase 2 (reversible technical/product defaults)
+
+| Topic | Choice | Why |
+|---|---|---|
+| One spine | `SearchCriteria` + `DiscoveryQuery` + `Affordability` for list, map, facets, comparison, matching, capacity calculator and alerts | Brief: list, map, comparison, calculator and saved search agree on the same data |
+| Strict affordability | Unknown → incomplete (excluded and counted); annual extra payment counted in the year; one-off extra must fit in cash left after paying now | Brief acceptance 2; Phase 1 extra-payment rule kept |
+| Snapshot backfill | New typed columns filled from stored JSON only; sent/published terms never recomputed | Terms are immutable once sent |
+| Relevance | Preferences met (with a profile) → verified figures → lowest cash now (with a budget) → newest → id; no percentage | Explainable and SQL-paginated |
+| Buyer profile in search | `match=me` from the session only; URL never carries the buyer's numbers | Brief: shared URLs must not expose another buyer's profile |
+| Guest favorites | Not stored locally; guests sign in (existing UX) | Brief: «if supported by current UX» |
+| Negotiability filter | Not offered | Not recorded in the model |
+| Next payments | Due now, installment cadence («next due date not recorded»), extra payment with its recorded date | No next-installment date in the model; no invented dates |
+| Map | OSM tiles via env; client-side grid clustering; 500-marker cap with a notice; bounds on public points only, span ≤ 40° | D3 open; no extra dependency |
+| Comparison | ≤ 4, browser-local selection; «لا ينطبق» / «غير معروف بعد» cells; unavailable → reference only | Brief |
+| Market reference | Calculator only, entered by the person with date and source; difference wording, never saving/return | Brief: dated comparable reference, no guaranteed saving |
+| Alerts | Baseline on save/enable/resume; alert new matches, re-alert only when cash now drops; one in-app notification per search per run; SMS optional, sandboxed (D1) | «Meaningful qualifying revisions»; no spam; honest delivery |
+| Alert worker | Hosted service, `Alerts:Enabled` (Dev/Staging on, Testing off), `Alerts:IntervalSeconds`; CLI `run-alerts` | No worker existed; tests call the job directly |
+| Saved searches | ≤ 20 per person; same criteria → same search; soft delete | Duplicate operations are idempotent |
+| Photo caching | `public, no-cache` + ETag | A withdrawn listing's photo must not stay cached |
+| Search platform | PostgreSQL; one partial index on published public points; measured on 20k rows | Brief: no separate engine by default |
+
 ## Open material decisions (owner)
 
 None blocks Phase 1.5. Still open from the product definition: D1 SMS provider (team sign-in codes and customer codes

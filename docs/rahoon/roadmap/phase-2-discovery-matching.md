@@ -1,6 +1,6 @@
 # Phase 2 — Discovery, maps, explained matching, comparison, saved searches and calculators
 
-**Status:** 🟡 In progress (started 2026-10-01). The status section at the end is kept current during the session.
+**Status:** ✅ Completed 2026-10-02 (local commits; not pushed, not deployed) — [handoff](handoffs/phase-2-handoff.md).
 **Brief:** `Rahoon_Next_Phases/Rahoon_Phase_2_Discovery_Matching.md` (owner's phase pack). This file maps that brief onto
 the code. **Prerequisite:** Phase 1.5 ([handoff](handoffs/phase-1.5-handoff.md)).
 
@@ -146,12 +146,12 @@ screens are unchanged.
 | 6 | Favorites, comparison and saved searches handle unavailability, duplicates, foreign ids | `DiscoveryTests` |
 | 7 | Alert job retry-safe, opt-out, no send for withdrawn; tested with the sandbox | `SearchAlertTests` |
 
-## Status (kept current during the session)
+## Status
 
-- [ ] Plan (this file)
-- [ ] Server: criteria, query, affordability, map, compare, matching, calculators, migration
-- [ ] Server: saved searches, alerts job and worker
-- [ ] Web: discovery page, map, compare, saved searches, matches, calculators
-- [ ] Tests: API, Playwright, browser desktop/390 px
-- [ ] Query measurement
-- [ ] Handoff and roadmap status
+- [x] Plan (this file)
+- [x] Server: criteria, query, affordability, map, compare, matching, calculators, migration — `9a04fdd`
+- [x] Server: saved searches, alerts job and worker — `9a04fdd`, tests `b4d3a35`
+- [x] Web: discovery page, map, compare, saved searches, matches, calculators — `73ebee3`
+- [x] Tests: API 122/122, Playwright 22/22, desktop and 390 px
+- [x] Query measurement (20k synthetic rows, see handoff)
+- [x] Handoff and roadmap status
