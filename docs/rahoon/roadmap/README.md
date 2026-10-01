@@ -7,7 +7,7 @@ in [`docs/phases/`](../../phases/README.md)) are done. The next phases come from
 | Order | Phase | Outcome | Prerequisite | Plan | Status |
 |---|---|---|---|---|---|
 | 1 | 1.5 | Team membership, invitations, custom roles, permission catalog, effective access, resource scopes | Phase 1 | [phase-1.5-admin-access.md](phase-1.5-admin-access.md) | ✅ Completed 2026-10-01, deployed to staging — [handoff](handoffs/phase-1.5-handoff.md) |
-| 2 | 2 | Search & map discovery, explained matching, comparison, saved searches/alerts, calculators | 1.5 | [phase-2-discovery-matching.md](phase-2-discovery-matching.md) | ✅ Completed 2026-10-02, local commits — **not pushed, not deployed**; SMS alerts sandboxed (D1) — [handoff](handoffs/phase-2-handoff.md) |
+| 2 | 2 | Search & map discovery, explained matching, comparison, saved searches/alerts, calculators | 1.5 | [phase-2-discovery-matching.md](phase-2-discovery-matching.md) | ✅ Completed 2026-10-02, pushed (`84c547d`) and deployed to staging; SMS alerts sandboxed (D1) — [handoff](handoffs/phase-2-handoff.md) |
 | 3 | 3A | Versioned offers, negotiation, owner acceptance, exclusive provisional reservation | 2 | brief `Rahoon_Phase_3A_Offers_Reservations.md` | ▶ **NEXT** |
 | 4 | 3B | Closing cases, external approvals, payment evidence, transfer confirmation | 3A | brief `Rahoon_Phase_3B_Transfer_Completion.md` | ⬜ |
 | 5 | 4 | Dashboards, assignments/reminders, versioned settings, directory import, support, reports | 3B | brief `Rahoon_Phase_4_Operations_Reports.md` | ⬜ |

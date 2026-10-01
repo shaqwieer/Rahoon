@@ -1,6 +1,6 @@
 # Phase 2 — Discovery, maps, explained matching, comparison, saved searches and calculators
 
-**Status:** ✅ Completed 2026-10-02 (local commits; not pushed, not deployed) — [handoff](handoffs/phase-2-handoff.md).
+**Status:** ✅ Completed 2026-10-02, pushed and deployed to staging — [handoff](handoffs/phase-2-handoff.md).
 **Brief:** `Rahoon_Next_Phases/Rahoon_Phase_2_Discovery_Matching.md` (owner's phase pack). This file maps that brief onto
 the code. **Prerequisite:** Phase 1.5 ([handoff](handoffs/phase-1.5-handoff.md)).
 

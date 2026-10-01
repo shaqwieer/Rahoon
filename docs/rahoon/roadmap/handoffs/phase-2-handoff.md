@@ -3,7 +3,9 @@
 **Status:** Completed · **Date:** 2026-10-02 · **Commits on `master`:** `9a04fdd` (server spine, migration), `b4d3a35` (API
 tests), `73ebee3` (web, e2e), `bf66899` (docs, line endings), and a final commit (public developer name restricted to the
 directory, its test, an e2e hydration wait, these results).
-**Push / deployment:** **not pushed, not deployed.** origin/master and staging are still at `95e2f5c` (Phase 1.5).
+**Push / deployment:** `master` pushed to origin at `84c547d` and deployed to staging (`rahoon.talentfold.net`) on 2026-10-02.
+The database and key ring were backed up first: `/root/rahoon-backups/before-phase-2-20261002-0026.dump` and
+`rahoon-keys-before-phase-2-20261002-0026.tgz`.
 
 ## Verified prerequisites
 
@@ -111,7 +113,13 @@ SaveSearch, SavedSearchList), `lib/market/search.ts` (URL state), `lib/market/co
 Where it has been applied:
 - Test databases: applied on every run.
 - Local development database: applied on startup on 2026-10-01. The backfill was checked: OP-2026-00005 has an annual extra payment of 50,000 and its schedule is known; developer names are filled from the obligations.
-- Staging: **not applied** (not deployed). The first startup after deployment migrates.
+- Staging: **applied** 2026-10-02 by migrate-on-startup («Applying migration '20261001200520_DiscoveryMatching'»). The backfill was checked live: OP-2026-00005 has an annual extra payment of 50,000 and its schedule is known; the demo developers are typed names (not from the directory), so no developer name is public. The alert worker is on (every 300 s). Live checks:
+  - The Jeddah townhouse is excluded at 7,000/month and fits at 11,200.
+  - The map has 3 public markers (2 approximate, 1 exact by the owner's choice).
+  - The comparison shows «لا ينطبق» for the bank villa and only «unavailable» for OP-2026-00003.
+  - Filtered URLs are `noindex, follow`; the plain list is indexable.
+  - All public pages answer 200, and `/account/searches` redirects to sign-in.
+  - Playwright Chromium on the live site at 1440 and 390 px: the page hydrates, the map loads, a filter change updates the URL, no overflow, no page errors.
 - Production: none.
 
 ## Permissions
