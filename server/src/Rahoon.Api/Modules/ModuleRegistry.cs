@@ -49,6 +49,8 @@ public static class ModuleRegistry
         // B10/B11 (merged in Phase 1A-2 step 6)
         services.AddScoped<ReferralService>();
         services.AddScoped<ClosureService>();
+        // Exit/buy platform (2026-10-01)
+        services.AddScoped<Market.MarketService>();
         return services;
     }
 
@@ -57,6 +59,13 @@ public static class ModuleRegistry
         var features = app.ServiceProvider.GetRequiredService<FeatureFlags>();
         // Shared by every model: staff sessions, MFA, step-up, sign-out.
         AuthEndpoints.Map(app, features.LegacyMortgage);
+        // The current model: mobile sign-in, sale and buyer requests, team review, opportunities, interests.
+        PhoneAuthEndpoints.Map(app);
+        Market.MarketPublicEndpoints.Map(app);
+        Market.SaleRequestEndpoints.Map(app);
+        Market.BuyerEndpoints.Map(app);
+        Market.TeamMarketEndpoints.Map(app);
+        Market.TeamOpportunityEndpoints.Map(app);
         if (features.LegacyMortgage) MapLegacyMortgage(app);
         return app;
     }

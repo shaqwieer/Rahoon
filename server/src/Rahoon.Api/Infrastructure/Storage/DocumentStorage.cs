@@ -13,7 +13,10 @@ public sealed record StoredFile(string StorageKey, string Sha256, long SizeBytes
 /// </summary>
 public interface IDocumentStorage
 {
-    Task<StoredFile> SaveAsync(Stream content, string fileName, Guid orgId, CancellationToken ct = default);
+    /// <param name="area">Optional storage area kept apart from the others (e.g. market-photos vs market-docs).</param>
+    /// <param name="allowedTypes">Content types accepted for this upload (default: PDF, JPG, PNG).</param>
+    Task<StoredFile> SaveAsync(Stream content, string fileName, Guid orgId, CancellationToken ct = default, string? area = null,
+        IReadOnlyCollection<string>? allowedTypes = null, long? maxBytes = null);
     Task<Stream> OpenReadAsync(string storageKey, CancellationToken ct = default);
 }
 
@@ -32,6 +35,7 @@ public static class FileRules
         [0x25, 0x50, 0x44, 0x46, ..] => "application/pdf",
         [0xFF, 0xD8, 0xFF, ..] => "image/jpeg",
         [0x89, 0x50, 0x4E, 0x47, ..] => "image/png",
+        [0x52, 0x49, 0x46, 0x46, _, _, _, _, 0x57, 0x45, 0x42, 0x50, ..] => "image/webp",
         _ => "",
     };
 }
@@ -43,18 +47,26 @@ public sealed class LocalDocumentStorage(IConfiguration config, IHostEnvironment
         ? (Path.IsPathRooted(r) ? r : Path.Combine(env.ContentRootPath, r))
         : Path.Combine(env.ContentRootPath, ".data", "documents"));
 
-    public async Task<StoredFile> SaveAsync(Stream content, string fileName, Guid orgId, CancellationToken ct = default)
+    private static readonly string[] DefaultTypes = ["application/pdf", "image/jpeg", "image/png"];
+
+    public async Task<StoredFile> SaveAsync(Stream content, string fileName, Guid orgId, CancellationToken ct = default, string? area = null,
+        IReadOnlyCollection<string>? allowedTypes = null, long? maxBytes = null)
     {
+        var limit = maxBytes ?? FileRules.MaxBytes;
         using var buffer = new MemoryStream();
         await content.CopyToAsync(buffer, ct);
         if (buffer.Length == 0) throw new DomainException("file_empty", "الملف فارغ.");
-        if (buffer.Length > FileRules.MaxBytes) throw new DomainException("file_too_large", "حجم الملف يتجاوز 20 م.ب.");
+        if (buffer.Length > limit) throw new DomainException("file_too_large", $"حجم الملف يتجاوز {limit / (1024 * 1024)} م.ب.");
 
         var bytes = buffer.ToArray();
-        var type = FileRules.DetectContentType(bytes.AsSpan(0, Math.Min(8, bytes.Length)));
-        if (type.Length == 0) throw new DomainException("file_type", "نوع الملف غير مدعوم. الأنواع المقبولة: PDF أو JPG أو PNG.");
+        var type = FileRules.DetectContentType(bytes.AsSpan(0, Math.Min(12, bytes.Length)));
+        var allowed = allowedTypes ?? DefaultTypes;
+        if (type.Length == 0 || !allowed.Contains(type))
+            throw new DomainException("file_type", allowedTypes is null
+                ? "نوع الملف غير مدعوم. الأنواع المقبولة: PDF أو JPG أو PNG."
+                : $"نوع الملف غير مدعوم. الأنواع المقبولة: {string.Join(" أو ", allowed.Select(t => t switch { "application/pdf" => "PDF", "image/jpeg" => "JPG", "image/png" => "PNG", "image/webp" => "WebP", _ => t }))}.");
 
-        var key = $"{orgId:N}/{DateTime.UtcNow:yyyy/MM}/{Guid.CreateVersion7():N}";
+        var key = $"{(area is { Length: > 0 } ? area + "/" : "")}{orgId:N}/{DateTime.UtcNow:yyyy/MM}/{Guid.CreateVersion7():N}";
         var path = ResolvePath(key);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         await File.WriteAllBytesAsync(path, bytes, ct);

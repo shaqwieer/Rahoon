@@ -127,6 +127,16 @@ public sealed class TestClient(HttpClient http)
         }
     }
 
+    /// <summary>Mobile-first sign-in of an owner or buyer (sandbox code); returns the verify response.</summary>
+    public async Task<JsonNode?> PhoneLoginAsync(string phone, string? name = null)
+    {
+        var (s1, start) = await PostAsync("/api/auth/phone/start", new { phone });
+        if (s1 != HttpStatusCode.OK) throw new InvalidOperationException($"phone start failed {s1}: {start}");
+        var (s2, verify) = await PostAsync("/api/auth/phone/verify", new { code = start!["sandboxCode"]!.GetValue<string>(), acceptTerms = true, name });
+        if (s2 != HttpStatusCode.OK) throw new InvalidOperationException($"phone verify failed {s2}: {verify}");
+        return verify;
+    }
+
     /// <summary>Completes an MFA step-up (sandbox OTP) for sensitive decisions.</summary>
     public async Task StepUpAsync()
     {

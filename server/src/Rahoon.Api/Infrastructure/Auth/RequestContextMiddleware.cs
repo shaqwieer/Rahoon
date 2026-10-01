@@ -20,6 +20,8 @@ public sealed class RequestContextMiddleware(RequestDelegate next)
     private static readonly string[] CsrfExempt =
     [
         "/api/auth/login", "/api/auth/owner/", "/api/auth/individual/", "/api/public/", "/api/invitations/", "/api/health",
+        // Mobile sign-in (before a session exists), the visitor contact form and the stateless calculators. Origin is still checked.
+        "/api/auth/phone/", "/api/market/contact", "/api/market/calc/",
     ];
 
     public async Task InvokeAsync(HttpContext http, RequestContext rc, RahoonDbContext db, SessionService sessions,

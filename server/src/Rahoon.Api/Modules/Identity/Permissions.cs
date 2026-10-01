@@ -124,8 +124,22 @@ public static class P
     public const string RequestExecutionRecord = "request.execution_record";
     public const string RequestExecutionVerify = "request.execution_verify";
 
+    // Rahoon team — exit/buy platform (2026-10-01, docs/product/product-definition.md)
+    public const string MarketView = "market.view";
+    public const string MarketAssign = "market.assign";
+    public const string MarketReview = "market.review";
+    public const string MarketPrepare = "market.prepare";
+    public const string MarketPublish = "market.publish";
+    public const string MarketFollow = "market.follow";
+
     public static readonly IReadOnlyList<PermissionDef> Catalog =
     [
+        new(MarketView, "عرض طلبات البيع والشراء والفرص", "View sale/buyer requests and opportunities", "فريق رهون", Sensitivity.Medium, PermissionScope.Institution),
+        new(MarketAssign, "إسناد المسؤول", "Assign the owner of a file", "فريق رهون", Sensitivity.Normal, PermissionScope.Institution),
+        new(MarketReview, "مراجعة الطلبات والمستندات والأرقام", "Review requests, documents and figures", "فريق رهون", Sensitivity.Medium, PermissionScope.Case, "قرار مسبب · مسجل"),
+        new(MarketPrepare, "تجهيز الفرصة وإرسالها للمالك", "Prepare an opportunity and send it to the owner", "فريق رهون", Sensitivity.Medium, PermissionScope.Case),
+        new(MarketPublish, "نشر الفرصة وإيقافها", "Publish or pause an opportunity", "فريق رهون", Sensitivity.High, PermissionScope.Case, "بعد تأكيد المالك وشروط النشر"),
+        new(MarketFollow, "متابعة الاهتمامات والرسائل", "Follow interests and messages", "فريق رهون", Sensitivity.Normal, PermissionScope.Case),
         new(PortfolioView, "عرض المحفظة", "View portfolio", "الحالات", Sensitivity.Normal, PermissionScope.Institution),
         new(CaseView, "عرض الحالات المسندة", "View assigned cases", "الحالات", Sensitivity.Normal, PermissionScope.Case),
         new(CaseViewAll, "عرض كل حالات المنشأة", "View all institution cases", "الحالات", Sensitivity.Medium, PermissionScope.Institution),

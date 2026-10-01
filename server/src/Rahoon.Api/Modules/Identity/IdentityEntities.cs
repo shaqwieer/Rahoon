@@ -191,11 +191,13 @@ public sealed class IndividualProfile : Entity, IHasTimestamps
 {
     public Guid UserId { get; set; }
     public User? User { get; set; }
-    public required string NationalIdEnc { get; set; }
-    public required string NationalIdHash { get; set; }
-    public required string NationalIdMasked { get; set; }
-    /// <summary>citizen (starts with 1) or resident (iqama, starts with 2).</summary>
-    public required string IdType { get; set; }
+    // National ID: collected by the withdrawn mortgage-help sign-in only. The current model signs in by mobile and never
+    // asks for it (2026-10-01), so it is null for accounts created since.
+    public string? NationalIdEnc { get; set; }
+    public string? NationalIdHash { get; set; }
+    public string? NationalIdMasked { get; set; }
+    /// <summary>citizen (starts with 1) or resident (iqama, starts with 2); null when no national ID was given.</summary>
+    public string? IdType { get; set; }
     public required string PhoneEnc { get; set; }
     public required string PhoneHash { get; set; }
     public required string PhoneMasked { get; set; }

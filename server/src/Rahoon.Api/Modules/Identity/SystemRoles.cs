@@ -107,15 +107,18 @@ public static class SystemRoles
             [P.AgentWork]),
 
         // «فريق رهون» (ADR 0001 §4.2). Separation of duties (verifier ≠ recorder) is enforced on the server regardless.
-        new(TeamCoordinator, "منسق حالات", "Case coordinator", OrganizationKind.Operator,
+        // «فريق رهون». The legacy request.* permissions stay on the templates for the archived model (Features:LegacyMortgage).
+        new(TeamCoordinator, "منسق الطلبات", "Request coordinator", OrganizationKind.Operator,
         [
+            P.MarketView, P.MarketReview, P.MarketPrepare, P.MarketFollow,
             P.RequestViewAssigned, P.RequestReview, P.RequestRequestInfo, P.RequestCoordinate, P.RequestMessage, P.RequestOfferRecord,
             P.RequestResponseRelay, P.RequestClose, P.RequestObjectionHandle, P.RequestExecutionRecord,
         ]),
-        new(TeamVerifier, "مراجِع العروض", "Offer verifier", OrganizationKind.Operator,
-            [P.RequestViewAssigned, P.RequestOfferVerify, P.RequestExecutionVerify]),
+        new(TeamVerifier, "مراجِع النشر", "Publication reviewer", OrganizationKind.Operator,
+            [P.MarketView, P.MarketReview, P.MarketPublish, P.RequestViewAssigned, P.RequestOfferVerify, P.RequestExecutionVerify]),
         new(TeamLead, "قائد الفريق", "Team lead", OrganizationKind.Operator,
         [
+            P.MarketView, P.MarketAssign, P.MarketReview, P.MarketPrepare, P.MarketPublish, P.MarketFollow,
             P.RequestViewAssigned, P.RequestViewAll, P.RequestAssign, P.RequestReview, P.RequestRequestInfo, P.RequestCoordinate, P.RequestMessage,
             P.RequestOfferRecord, P.RequestOfferVerify, P.RequestResponseRelay, P.RequestClose, P.RequestObjectionHandle,
             P.RequestExecutionRecord, P.RequestExecutionVerify,

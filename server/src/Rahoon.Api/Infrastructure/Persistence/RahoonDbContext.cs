@@ -116,6 +116,24 @@ public sealed class RahoonDbContext(DbContextOptions<RahoonDbContext> options, R
     public DbSet<RequestScheduleItem> RequestScheduleItems => Set<RequestScheduleItem>();
     public DbSet<RequestPaymentReport> RequestPaymentReports => Set<RequestPaymentReport>();
 
+    // Exit/buy platform (2026-10-01): operator tenant + the person (seller or buyer)
+    public DbSet<Modules.Market.ObligationParty> ObligationParties => Set<Modules.Market.ObligationParty>();
+    public DbSet<Modules.Market.SaleRequest> SaleRequests => Set<Modules.Market.SaleRequest>();
+    public DbSet<Modules.Market.SaleObligation> SaleObligations => Set<Modules.Market.SaleObligation>();
+    public DbSet<Modules.Market.PrivateDocument> PrivateDocuments => Set<Modules.Market.PrivateDocument>();
+    public DbSet<Modules.Market.ListingPhoto> ListingPhotos => Set<Modules.Market.ListingPhoto>();
+    public DbSet<Modules.Market.FigureVerification> FigureVerifications => Set<Modules.Market.FigureVerification>();
+    public DbSet<Modules.Market.ExternalApproval> ExternalApprovals => Set<Modules.Market.ExternalApproval>();
+    public DbSet<Modules.Market.CompletionRequest> CompletionRequests => Set<Modules.Market.CompletionRequest>();
+    public DbSet<Modules.Market.BuyerRequest> BuyerRequests => Set<Modules.Market.BuyerRequest>();
+    public DbSet<Modules.Market.Opportunity> Opportunities => Set<Modules.Market.Opportunity>();
+    public DbSet<Modules.Market.OpportunityTerms> OpportunityTerms => Set<Modules.Market.OpportunityTerms>();
+    public DbSet<Modules.Market.Interest> Interests => Set<Modules.Market.Interest>();
+    public DbSet<Modules.Market.SavedOpportunity> SavedOpportunities => Set<Modules.Market.SavedOpportunity>();
+    public DbSet<Modules.Market.MarketEvent> MarketEvents => Set<Modules.Market.MarketEvent>();
+    public DbSet<Modules.Market.MarketNotification> MarketNotifications => Set<Modules.Market.MarketNotification>();
+    public DbSet<Modules.Market.ContactMessage> ContactMessages => Set<Modules.Market.ContactMessage>();
+
     // Providers, imports, administration, audit
     public DbSet<ProviderAssignment> Assignments => Set<ProviderAssignment>();
     public DbSet<AssignmentMessage> AssignmentMessages => Set<AssignmentMessage>();
