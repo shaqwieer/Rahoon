@@ -34,7 +34,8 @@ async function phoneSignIn(page: Page, mobile: string, name?: string, submit = "
 async function pickFirstOrg(page: Page, label: string, query: string) {
   const box = page.getByRole("combobox", { name: label });
   await box.fill(query);
-  await page.getByRole("listbox", { name: label }).getByRole("option").first().click();
+  // Wait for a real directory match: before the directory has loaded, the only option is «… غير موجود في الدليل».
+  await page.getByRole("listbox", { name: label }).getByRole("option", { name: new RegExp(query) }).first().click();
   await expect(page.getByRole("button", { name: "تغيير" })).toBeVisible();
 }
 

@@ -1,7 +1,7 @@
 # Phase 1.5 handoff — Rahoon administration, team members, roles and permissions
 
-**Status:** Completed · **Date:** 2026-10-01 · **Commits on `master`:** `4c19cec` (API, migration, tests) and the
-following commit "feat(team): Phase 1.5 console …" (web console, docs).
+**Status:** Completed · **Date:** 2026-10-01 · **Commits on `master`:** `4c19cec` (API, migration, tests), `9adae0c`
+(web console, docs) and a follow-up fix (overview needs `dashboard.view`; landing; e2e picker wait; this handoff).
 **Push / deployment:** not pushed, not deployed. Staging (`rahoon.talentfold.net`) still runs `0c942dc`.
 
 ## Verified prerequisites
@@ -30,7 +30,8 @@ Both are now scoped (see below).
   a returning staff account proves its password. **No e-mail is sent**; the console shows the link once and says so.
 - **Live revocation**: grants re-read per request; suspend/remove revoke the member's sessions; private files `no-store`.
 - **Bootstrap**: `bootstrap-owner` CLI (refused once an active owner exists).
-- **Landing**: the first area the member's grants open (`TeamHome`); navigation follows grants and scopes.
+- **Landing**: the first area the member's grants open (`TeamHome`; the overview needs `dashboard.view` and
+  `market.view`, and the API enforces `dashboard.view` on it); navigation follows grants and scopes.
 - **Audit**: `team.*` and `role.*` events with grants before/after; `/team/audit` (`audit.read`).
 
 ## Code entry points
@@ -83,10 +84,11 @@ assigned requests; support follows all work for the visitor inbox; invitation li
   role key. Also fixed a pre-existing flaky check: `SmsConfirmationTests` counted SMS by masked number (last two digits only)
   and now counts from the test's start time.
 - Web: `tsc --noEmit` ✓, `eslint src` ✓, `next build` ✓.
-- Playwright `market-journey.spec.ts` (local stack, owner account): **15 passed, 1 failed**. The failure is in the
-  public sale wizard's developer picker. On the local database (with the 2026-10-01 REGA dataset) the test's first
-  option click lands on «غير موجودة». This phase changed neither the picker nor the lookup endpoint. Recorded as a
-  known issue below.
+- Playwright `market-journey.spec.ts` (local stack): **16 passed**, including the full sale → completion → approval →
+  opportunity → owner confirmation → publication → interest journey through the team screens. The first run had 1
+  failure: the test clicked the developer picker's first option before the directory had loaded, which picked
+  «المطور غير موجود في الدليل». The test now waits for a real match (`e2e/market-journey.spec.ts`, `pickFirstOrg`).
+- `TeamAccessTests` ran green 5 times in a row (the concurrent two-owner test included).
 - Browser: console pages checked in Chrome at desktop width, and with Playwright at 390 px. No horizontal overflow on
   members, member, invite, roles, role, new role, audit, overview or join. The real UI flow was also run: invite →
   link shown with «لم يُرسل الرابط إلى أحد» → `/join` at 390 px → password → joined → reused link refused → document
@@ -114,8 +116,6 @@ assigned requests; support follows all work for the visitor inbox; invitation li
   multi-assignee model (one assignee per record), so a case manager and a reviewer can't both hold the same file at
   once. Phase 4 (assignments/workload) should decide whether records get a reviewer slot.
 - Reserved transaction/settings/report permissions do nothing until their phases.
-- E2E `market-journey.spec.ts` developer-picker step fails on the local data set (pre-existing, not 1.5). Not
-  re-baselined against a `--reset` database in this session.
 - No Playwright spec for the console yet. Coverage is the API suite plus the manual/scripted browser checks above.
 
 ## Next phase

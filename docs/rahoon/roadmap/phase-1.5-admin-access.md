@@ -133,7 +133,7 @@ middleware also kills any session whose membership isn't active. Private file re
 
 | Endpoint | Requirement |
 |---|---|
-| `GET /api/team/market/overview` | operator + `market.view` (counts filtered by scope; contact count only with `market.follow` all) |
+| `GET /api/team/market/overview` | operator + `market.view` + `dashboard.view` (counts filtered by scope; contact count only with `market.follow` all) |
 | `GET /api/team/market/{sale,buyer}-requests` | `market.view`, rows filtered by scope |
 | `GET …/sale-requests/{ref}`, `…/buyer-requests/{ref}` | `market.view` on the record (404 otherwise) |
 | `GET …/sale-requests/{ref}/contact` | `market.follow` on the record (audited reveal) |

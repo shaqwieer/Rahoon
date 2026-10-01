@@ -497,6 +497,26 @@ public sealed class TeamAccessTests(ApiFixture api)
         Assert.Equal(HttpStatusCode.Forbidden, (await member.Client.GetAsync("/api/team/market/overview")).Status);
         var (_, audit) = await Ok(member.Client.GetAsync("/api/team/admin/audit?group=team"));
         Assert.Contains(audit!["items"]!.AsArray(), e => TestClient.Str(e, "type") == "team.roles_changed");
+
+        // Dashboard + team administration but no request access: the overview (which reads request queues) isn't
+        // offered; the member lands on the team page, and the API enforces dashboard.view on the overview itself.
+        var (_, adminRole) = await Ok(lead.PostAsync("/api/team/admin/roles", new
+        {
+            nameAr = $"إدارة الفريق فقط {Guid.NewGuid().ToString("N")[..4]}",
+            grants = new[] { new { key = P.DashboardView, scope = "all" }, new { key = P.TeamRead, scope = "all" } },
+        }));
+        await Ok(lead.PostAsync($"/api/team/admin/members/{member.MembershipId}/roles", new { roleIds = new[] { Guid.Parse(TestClient.Str(adminRole, "id")) } }));
+        var (_, me2) = await member.Client.GetAsync("/api/auth/me");
+        Assert.Equal("/team/members", TestClient.Str(me2, "home"));
+        await Ok(member.Client.GetAsync("/api/team/admin/members"));
+        var (_, noDash) = await Ok(lead.PostAsync("/api/team/admin/roles", new
+        {
+            nameAr = $"طلبات بلا لوحة {Guid.NewGuid().ToString("N")[..4]}", grants = new[] { new { key = P.MarketView, scope = "all" } },
+        }));
+        await Ok(lead.PostAsync($"/api/team/admin/members/{member.MembershipId}/roles", new { roleIds = new[] { Guid.Parse(TestClient.Str(noDash, "id")) } }));
+        Assert.Equal(HttpStatusCode.Forbidden, (await member.Client.GetAsync("/api/team/market/overview")).Status);
+        var (_, me3) = await member.Client.GetAsync("/api/auth/me");
+        Assert.Equal("/team/sale", TestClient.Str(me3, "home"));
         _ = ids;
     }
 

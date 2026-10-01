@@ -38,7 +38,7 @@ public static class TeamMarketEndpoints
     public static void Map(IEndpointRouteBuilder app)
     {
         var g = app.MapGroup("/api/team/market").RequireOrg(OrganizationKind.Operator).RequirePermission(P.MarketView);
-        g.MapGet("/overview", Overview);
+        g.MapGet("/overview", Overview).RequirePermission(P.DashboardView);
         g.MapGet("/members", Members);
 
         g.MapGet("/sale-requests", ListSale);
