@@ -9,7 +9,8 @@ RUN dotnet publish server/src/Rahoon.Api/Rahoon.Api.csproj -c Release -o /out --
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=build /out .
-# Document storage and data-protection keys live on a volume mounted at /data (owned by the image's non-root user).
+# Data-protection keys live on a volume mounted at /data (owned by the non-root user). Files are stored in the database;
+# /data/documents is read only once, by the migration that moved older files into the database.
 RUN mkdir -p /data/documents /data/keys && chown -R app:app /data
 USER app
 ENV ASPNETCORE_URLS=http://+:8080 \

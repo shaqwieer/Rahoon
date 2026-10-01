@@ -3,154 +3,156 @@
 ## Overview
 
 ```
-web/      Next.js 16 (App Router, TypeScript, Tailwind v4) — public pages + role-aware portals
+web/      Next.js 16 (App Router, TypeScript, Tailwind v4): public pages, the owner/buyer account, the team workspace
 server/   ASP.NET Core 10 Web API (modular monolith) + xUnit integration tests
           PostgreSQL 16 via EF Core 10 (Npgsql), one schema per module
-design-source/  Mirror of the design project (source of truth for UI)
-docs/adr/       Architecture decision records (0001: request ownership, Rahoon team tenant, request lifecycle)
-docs/     Specs per design batch, implementation map, matrices, progress
+deploy/   Staging compose files, Dockerfiles, nginx site
+docs/     Product definition, phase plan, this file
 ```
 
-The browser only talks to the Next.js origin. `next.config.ts` rewrites `/api/*` to the API
-(`API_ORIGIN`, default `http://localhost:5080`), so session cookies are first-party. Server
-Components call the API directly, forwarding the incoming `Cookie` header.
+The browser only talks to the Next.js origin. `next.config.ts` rewrites `/api/*` to the API (`API_ORIGIN`, default
+`http://localhost:5080`), so session cookies are first-party. Server Components call the API directly and forward the
+incoming `Cookie` header.
 
-## Current model and the archived one (2026-10-01)
+The product is the Saudi exit/buy platform (`docs/product/product-definition.md`). The mortgage-default help model that
+preceded it was **removed** on 2026-10-01 (code, routes, schemas, data and files; see
+`docs/redefinition/legacy-inventory.md`). Its last state is the git tag `legacy-mortgage-final`.
 
-The product is the Saudi exit/buy platform (`docs/product/product-definition.md`). Its backend is the **Market** module
-(schema `market`) plus the shared Identity, Audit, storage and integration pieces. Everything else below belongs to the
-withdrawn mortgage-help model: `Features:LegacyMortgage` (API, default false) maps its endpoints, jobs and demo seed only
-when true; `RAHOON_LEGACY_MODES=1` does the same for the web routes (`src/proxy.ts` answers 404 otherwise). Its tables are
-kept untouched (`docs/redefinition/legacy-inventory.md`).
+## Backend modules (`server/src/Rahoon.Api/Modules`)
+
+| Module | Schema | Responsibility |
+|---|---|---|
+| Identity | `identity` | the Rahoon team organization, users, memberships, roles and permissions, sessions, one-time codes, owners' and buyers' mobile accounts |
+| Market | `market` | sale requests, obligations, private documents, listing photos, verifications, external approvals, buyer requests, opportunities and their versioned terms, interests, saved items, events and notifications, contact messages |
+| OrgDirectory | `directory` | the directory of real Saudi developers, banks and finance companies; importer; administration |
+| Files | `files` | stable file endpoint; storage itself is `Infrastructure/Storage` |
+| Audit | `audit` | append-only, hash-chained audit events (a DB trigger rejects UPDATE/DELETE) |
+| (shared) | `app` | idempotency records, reference counters, the SMS log |
+
+Each module owns its entities, EF configuration and endpoints (a static `Map(IEndpointRouteBuilder)` registered in
+`Modules/ModuleRegistry.cs`).
 
 ### Market module (`Modules/Market`)
 
 | File | Role |
 |---|---|
-| `FieldCatalog.cs` | The single rule set for sale-request fields: scope (property / obligation), property types, obligation kinds, conditions, «لا أعرف», submit tier and publish tier, documents per kind, Saudi cities. Served at `GET /api/market/catalog`; applied on every save (inactive branches dropped) |
-| `MarketCalculator.cs` | One calculation engine (decimal) for developer, financier and mixed tracks, buyer fit, commission policy (`Market:Commission`, never 0 while unapproved). Used by the public calculators, the owner estimate, the team's terms and the search snapshot |
-| `MarketEntities.cs` | SaleRequest, SaleObligation, PrivateDocument, ListingPhoto, FigureVerification, ExternalApproval, CompletionRequest, BuyerRequest, Opportunity, OpportunityTerms (versioned), Interest, SavedOpportunity, MarketEvent (log + in-app notifications), MarketNotification (SMS attempts with honest results), ContactMessage, ObligationParty |
+| `FieldCatalog.cs` | The single rule set for sale-request fields: scope (property / obligation), property types, obligation kinds, conditions, «لا أعرف», submit and publish tiers, documents per kind, Saudi cities. Served at `GET /api/market/catalog`; applied on every save |
+| `MarketCalculator.cs` | One calculation engine (decimal) for developer, financier and mixed tracks, buyer fit and commission policy (`Market:Commission`, never 0 while unapproved) |
+| `MarketEntities.cs` | The market entities. Files are referenced by stable file id (`PrivateDocument.FileId`, `ListingPhoto.FileId`); obligation parties by directory id plus the name recorded when chosen |
 | `SaleRequestEndpoints.cs` | Owner: create (idempotent per device draft id), autosave, submit, resubmit, withdraw, files, opportunity confirmation |
-| `BuyerEndpoints.cs` | Buyer: one live buyer request, suggestions with fit, interests, saved, account summary |
-| `TeamMarketEndpoints.cs`, `TeamOpportunityEndpoints.cs` | «فريق رهون»: review, completion, figure verification with source/date, corrections with reason, file review, external approvals, opportunity preparation, owner confirmation, checklist, publish/pause/withdraw, interests, contact messages |
-| `MarketPublicEndpoints.cs` | Visitors: catalog, contact, calculators, server-side search, opportunity details, public photos |
+| `BuyerEndpoints.cs` | Buyer: one live buyer request (optional preferred financier from the directory), suggestions with fit, interests, saved, account summary |
+| `TeamMarketEndpoints.cs`, `TeamOpportunityEndpoints.cs` | «فريق رهون»: review, completion, figure verification, corrections, file review, external approvals, opportunity preparation, owner confirmation, publish/pause/withdraw, interests, contact messages |
+| `MarketPublicEndpoints.cs` | Visitors: catalog, contact, calculators, search, opportunity details, public photos |
 
 Rules worth knowing:
-- Rows are operator-owned and applicant-owned (`IApplicantOwned`): the owner/buyer reads only their rows; the team reads all.
-- Public payloads come from published opportunities and their published terms only; exact coordinates never leave the API
-  (`OpportunityProjection.PublicPoint`). Listing photos and private documents use separate storage areas
-  (`market-photos/…`, `market-docs/…`); photos are public only while approved and shown in a published opportunity.
-- Approving a sale request never publishes. Terms sent to the owner are immutable; any change is a new version that needs
+- Rows are operator-owned and applicant-owned (`IApplicantOwned`): an owner or buyer reads only their rows; the team reads all.
+- Public payloads come from published opportunities and their published terms only; exact coordinates never leave the
+  API unless the owner explicitly chose to show them (`OpportunityProjection.PublicPoint`).
+- Approving a sale request never publishes. Terms sent to the owner are immutable; a change is a new version that needs
   the owner's confirmation and a new publication. Interests keep the terms version they were made on.
-- Search: unknown amounts never pass a budget filter (`IS NOT NULL AND <= max`), and the count excluded for that reason is returned.
-- Sign-in is by mobile (`PhoneAuthEndpoints`); the account of an existing mobile is reused, never duplicated.
+- Unknown amounts never pass a budget filter, and the number excluded for that reason is returned.
+- Sign-in for owners and buyers is by mobile (`PhoneAuthEndpoints`); one account per mobile.
 
-## Backend modules of the archived model (`server/src/Rahoon.Api/Modules`)
+### Organization directory (`Modules/OrgDirectory`)
 
-| Module | Schema | Responsibility |
-|---|---|---|
-| Identity | `identity` | users, organizations (tenants), memberships, roles/permissions, sessions, OTP, invitations |
-| Cases | `cases` | case aggregate, parties (PII encrypted), property, mortgage, financing, debt snapshots, workflow, access, wizard, import |
-| Documents | `documents` | document types/rules, case documents, append-only versions, requests, download log |
-| Assessment | `assessment` | valuation reports, affordability analysis |
-| Solutions | `solutions` | solution versions, approval requests/limits, offers, negotiation, consent records |
-| Agreements | `agreements` | agreements, installments, payments (maker-checker), breach reviews |
-| Communications | `comms` | messages, tasks, appointments, notifications, templates, outbound (sandbox) |
-| Complaints | `complaints` | complaints/objections with independent reviewer |
-| Referral | `referral` | manual judicial referral, external reference + official status (verbatim) |
-| Closure | `closure` | reconciliation, closure documents |
-| Providers | `providers` | assignments for valuers/brokers/agents, messages, submissions |
-| Administration | `admin` | SLA rules, integration states, temp access, applications, retention, idempotency |
-| Audit | `audit` | append-only hash-chained audit events (DB trigger rejects UPDATE/DELETE) |
-| Owner | — | owner (debtor) portal endpoints over the modules above |
+`directory.organizations`: Arabic and English names (with normalized forms for matching), one or more types
+(`developer`, `bank`, `finance_company`), official website, source name and URL, verification date, active flag,
+origin (`import` | `manual`), import keys, licence/registration numbers **only when the cited official source
+publishes them**. Listing says nothing about partnership with Rahoon, support for contract transfers, or (without a
+cited source) licensing.
 
-Each module owns its entities (`*Entities.cs`), configuration (in `Infrastructure/Persistence/Configurations.cs`,
-one `IEntityTypeConfiguration` per entity, table in the module schema) and endpoints (`*Endpoints.cs`,
-a static `Map(IEndpointRouteBuilder)` registered in `Modules/ModuleRegistry.cs`).
+- **Importer** (`DirectoryImporter`, CLI `dotnet Rahoon.Api.dll import-directory`): sources in `DirectorySources.Catalog.cs`
+  — SAMA licensed banks and licensed finance companies (SAMA's JSON list handler) and REGA's qualified off-plan
+  developers (Wafi results pages, paced, stops when REGA throttles and says where to resume). A verified CSV/JSON
+  dataset goes through the same pipeline (`--file`). Matching: the source's own key, then the normalized Arabic name,
+  then the normalized English name; types merge. The source item that created a record owns its fields; other items only
+  fill gaps. Records an administrator edited (`AdminEditedAt`) are never changed again. Nothing is ever deleted or
+  deactivated by an import; a failed source changes nothing. Report: discovered, created, updated, skipped, failed.
+- **Administration** (`/api/team/directory`, permission `directory.manage`, team lead): list/search/filter (type,
+  status, origin), add, edit (optimistic concurrency), activate/deactivate with reason — no delete. Every change is
+  audited. Web: `/team/organizations`.
+- **Forms**: `GET /api/directory/organizations?kind=developer|financier` (active only) feeds the searchable picker in
+  the sale wizard and the buyer form. A request keeps the id **and** the name recorded when chosen, so later edits or
+  deactivation never rewrite it; deactivated organizations can no longer be chosen.
+
+## File storage (`Infrastructure/Storage`)
+
+Business code holds only a stable **file id**. Each upload is two rows:
+
+- `files.stored_files` — metadata and ownership: original file name, content type detected from the file signature,
+  size, SHA-256, provider, provider storage reference, visibility (`Private` | `ListingPhoto`), uploader, owner,
+  subject (`sale_request` + id), timestamps. Safe in any query: it has no payload.
+- the payload, behind `IFileContentStore`. Today's provider is **`database`** (`DatabaseContentStore`): bytes in
+  `files.file_blobs.content` (`bytea`, never Base64), written in the same transaction as the business change and read
+  only when the file is served.
+
+`FileStore` validates (`Storage:Limits`: `MaxPhotoBytes`, `MaxDocumentBytes`, `MaxPhotosPerRequest`,
+`MaxDocumentsPerRequest`, `PhotoTypes`, `DocumentTypes`; types detected from magic bytes — PDF, JPEG, PNG, WebP), stores
+through the provider named by `Storage:Provider` (default `database`), and reads through **the provider recorded on each
+file**, checking size and checksum. Listing photos have EXIF/XMP/IPTC metadata (including GPS) stripped before storing.
+
+Serving: `GET /api/files/{fileId}` decides access from what the file is attached to — a private document: its owner and
+the team (`market.view`); a listing photo: the same, plus anyone while it is approved and shown in a published
+opportunity. Anything else is 404. Public photos also keep `GET /api/market/photos/{photoId}`.
+
+No malware scanning is part of this platform today.
+
+### Moving to object storage later (not provisioned)
+
+Database and object-storage files can coexist because every file row names its provider:
+1. Implement `IFileContentStore` for the object store (e.g. `Provider = "s3"`, `StorageRef` = object key), register it
+   next to `DatabaseContentStore`.
+2. Set `Storage:Provider` to the new provider: new uploads go there; existing files keep being read from the database.
+3. To move old files: for each `stored_files` row with `provider = 'database'`, read the blob, put it in the object
+   store, verify size and SHA-256 by reading it back, then in one transaction update `provider` and `storage_ref` and
+   delete the `file_blobs` row. File ids, URLs and references never change.
+
+### Backup and restore
+
+Files live in PostgreSQL, so **a database backup is the complete data backup** (`pg_dump` of the `rahoon` database:
+schemas `identity`, `market`, `directory`, `files`, `app`, `audit`). The API's `/data` volume holds only the
+Data Protection key ring (`/data/keys`), which must be backed up too and kept with the database: without it the
+encrypted mobile numbers cannot be read. `PII_LOOKUP_KEY` must stay the same. See `deploy/README.md`.
+
+### Migration of the earlier disk files (2026-10-01)
+
+`DatabaseMigrator` (CLI `migrate`, migrate-on-startup, tests) applies migrations up to `RemoveLegacyMortgageModel`, then
+`LegacyDiskFileMigrator` copies every marketplace file still on disk (`Storage:Root`) into `files.*` — checking the
+recorded size and SHA-256 before, and the bytes read back from the database after — links the row, and only then deletes
+the disk copy; it also deletes the removed model's per-organization folders. `FilesInDatabase` then drops the disk-path
+columns and refuses to run while any file is not copied.
 
 ## Security model
 
-* **Sessions** — `Infrastructure/Auth`. Opaque random token in an HttpOnly `rahoon_sid` cookie
-  (SameSite=Lax, Secure outside development); only its SHA-256 is stored (`identity.sessions`).
-  Idle timeout per organization (30 min default), absolute 12 h, immediate revocation.
-  No bearer tokens, nothing in localStorage.
-* **CSRF** — double submit: a readable `rahoon_csrf` cookie must be echoed in `X-CSRF-Token` for
-  every unsafe `/api` request, and is verified against the hash stored on the server-side session.
-  Unsafe requests must also carry an allowed `Origin`/`Referer` (`Web:AllowedOrigins`).
-* **MFA** — password + SMS OTP (sandbox gateway) for every institutional login; 5 failed
-  passwords or 3 wrong codes → 15-minute lock. Sensitive decisions (approvals, cancellation,
-  referral, closure) require a fresh OTP step-up (`EndpointAccess.EnsureStepUp`).
-* **Owners** never use passwords: invitation link + last 4 digits of the national ID + SMS OTP.
-  An owner session is pinned to exactly one case (`RequestContext.OwnerCaseId`).
-  > **Superseded by the product direction of 2026-09-25** (`docs/product/product-direction.md`, X3/X4).
-  > Individuals self-register (national ID/iqama + mobile + OTP) and own **requests** before any case exists; the
-  > lender invitation becomes a secondary route. Decided (Q7, Q14): an independent account with several requests,
-  > each with its own reference, status, documents and access; the session is not tied to one case. The code above is
-  > still the implemented behaviour; the rework is planned in Phase 1A step 4 (returning sign-in: Q15, open).
-  > In the MVP, lenders have no platform access; the **Rahoon team** (platform staff) reviews and coordinates (Q1).
-* **Individuals** (implemented in Phase 1A step 4): self-registration and sign-in with national ID/iqama + SMS code at
-  `/start` (no password, Q15 interim); session scope `Individual` with no organization and no tenant data; anti-enumeration
-  (same answer whether the ID is registered; decoy challenge when the mobile differs); 3 wrong codes on the real mobile →
-  15-minute lock. Identity is self-declared until a national identity provider exists (Q10).
-* **Tenancy** — `RequestContext` is resolved from the session and the *active membership*, never
-  from client input. Every `IOrgOwned` entity has a global EF query filter on
-  `RequestContext.DataOrganizationIds`, and `TenantWriteGuardInterceptor` refuses writes outside it.
-  Providers/agents get lender orgs only through unexpired assignments; platform staff get tenant
-  data only through an approved, unexpired temporary-access grant.
-* **Authorization** — permission catalog `Modules/Identity/Permissions.cs` (`P.*`), role templates
-  `SystemRoles.cs` copied per organization. Endpoints declare `.RequirePermission(...)`,
-  `.RequireOrg(kind)`, `.RequireOwner()`. Within a tenant, `CaseAccess` restricts roles without
-  `case.view_all` to their own/team cases. Refusals use the same response whether or not the
-  resource exists.
-* **Hidden vs disabled** — an action the role can never perform is not returned; an action the role
-  may perform but the case is not eligible for is returned `enabled:false` with Arabic `reasons`.
-* **PII** — national ID, phone and deed numbers are encrypted with ASP.NET Data Protection
-  (`PiiProtector`) and stored with masked copies (A-10 rules). Full values are only returned by the
-  audited 60-second reveal endpoint. **Production** must store the key ring in a KMS/HSM.
-
-## Domain rules implemented in code
-
-* **Case state machine** — `Modules/Cases/CaseWorkflow.cs`: 16 statuses, an explicit transition
-  table (actor permission, allowed sources, reason, step-up, named guards). `TransitionAsync`
-  checks expected status (stale → 409), permission, reason, step-up, guards; refusals are audited
-  in a separate transaction (`AuditLog.RecordBlockedAsync`) so they survive the rollback.
-  Declines never lead to referral; referral is a separate approved decision; `Paused` restores the
-  previous status on resume.
-* **Separation of duties** — preparer ≠ reviewer ≠ approver (enforced in submit/decision), payment
-  recorder ≠ matcher (also a DB check constraint), complaint reviewer independent of the case team.
-* **Approval limits** — `ApprovalRouting` picks the lowest effective tier covering amount, waiver %
-  and solution kind; exceeding a tier escalates rather than blocking; re-checked at decision time.
-* **Money** — `decimal(18,2)`; calculations only on the server (`SolutionCalculator`); the final
-  installment absorbs rounding so Σ installments = rescheduled amount.
-* **Time** — all timestamps `timestamptz` UTC; business dates `date`; SLA in Saudi business days
-  (Fri/Sat weekend); Hijri display via Umm al-Qura.
-* **Idempotency & concurrency** — state-changing endpoints use `.Idempotent()` (`Idempotency-Key`
-  header; same key + same payload replays the stored response byte-for-byte; different payload → 422).
-  Aggregates carrying `IConcurrencyVersioned` use PostgreSQL `xmin` optimistic concurrency (→ 409).
-  Unique partial indexes prevent duplicate pending approvals.
-* **Audit** — every transition, decision, reveal, upload/download, config change; hash chain per
-  organization serialised with `pg_advisory_xact_lock`; verified by `AuditLog.VerifyChainAsync`.
-  **Ordering rule:** inside a transaction call `workflow.TransitionAsync` (which may record a blocked
-  attempt in its own transaction) *before* any `audit.RecordAsync`, which takes the chain lock.
+* **Sessions** — opaque random token in an HttpOnly `rahoon_sid` cookie (SameSite=Lax, Secure outside development);
+  only its SHA-256 is stored. Idle timeout 30 min, absolute 12 h, immediate revocation. No bearer tokens.
+* **CSRF** — double submit: the readable `rahoon_csrf` cookie must be echoed in `X-CSRF-Token` on every unsafe `/api`
+  request and is checked against the server-side session; unsafe requests also need an allowed `Origin`/`Referer`.
+* **Team sign-in** — e-mail + password + SMS code (sandbox gateway); 5 failed passwords or 3 wrong codes → 15-minute
+  lock. Only members of «فريق رهون» can sign in at `/login`.
+* **Owners and buyers** — mobile + SMS code, no password (`Auth:SmsConfirmation`; when off, codes are confirmed
+  automatically and the UI never claims the mobile was verified).
+* **Tenancy** — `RequestContext` comes from the session and the active membership, never from client input. Operator
+  rows have a global EF query filter; individuals see only their own applicant-owned rows; `TenantWriteGuardInterceptor`
+  refuses writes outside them.
+* **Authorization** — permission catalog `Modules/Identity/Permissions.cs`: `market.view|assign|review|prepare|publish|follow`
+  and `directory.manage`. Role templates (`SystemRoles.cs`): coordinator, publication reviewer, team lead.
+  `SystemRoleSync` brings the team's roles to the templates on every migration.
+* **PII** — mobiles are encrypted with ASP.NET Data Protection (`PiiProtector`) with an HMAC lookup hash and masked
+  copies. The SMS log stores masked numbers and blanks one-time codes.
+* **Idempotency & concurrency** — state-changing endpoints use `.Idempotent()` (`Idempotency-Key`; same key + same
+  payload replays the stored response; different payload → 422). Entities with `IConcurrencyVersioned` use `xmin`.
+* **Audit** — sign-ins, contact reveals and directory changes; hash chain per organization verified by
+  `AuditLog.VerifyChainAsync` (hash version 3; `data_json` is stored as text so the hash verifies after a round-trip).
 
 ## Integrations
 
-`Infrastructure/Integrations`: every integration has a state `enabled | simulated | pending |
-unavailable | failed` stored in `admin.integration_settings` and shown in the UI. No live external
-system is connected: SMS/e-mail are **simulated** (messages stored, never sent; in Development the
-OTP is echoed as `sandboxCode` and labelled as sandbox in the UI); national identity, licensed
-e-signature, licensed payment, core banking and the judicial channel are **unavailable** adapters
-that refuse with a clear message, and the product uses documented manual paths instead.
-
-## Document storage
-
-`IDocumentStorage` with `LocalDocumentStorage` (private directory, org-scoped keys). Content types
-are detected from magic bytes (PDF/JPG/PNG, ≤ 20 MB); `BasicSignatureScanner` is a placeholder
-(EICAR signature only) — production needs a real scanner and object storage adapter.
+SMS goes through `ISmsGateway`; the only adapter is the **sandbox** (records the attempt as `simulated` in
+`app.outbound_sms`, sends nothing). No other external system is connected.
 
 ## Tests
 
-`server/tests/Rahoon.Api.Tests`: xUnit + `WebApplicationFactory` + Testcontainers PostgreSQL. The
-fixture applies the real EF migrations and seeds fictional data (without the bulk portfolio).
-`Scenarios` builds independent cases through the API so tests never depend on order.
-Frontend: ESLint, `tsc --noEmit`, `next build`, Playwright E2E (see web/README.md).
+`server/tests/Rahoon.Api.Tests`: xUnit + `WebApplicationFactory` + Testcontainers PostgreSQL. The fixture migrates
+through `DatabaseMigrator` and seeds the demo. `MigrationTests` upgrades a database holding data of the removed model;
+`CurrentModelTests` checks a fresh database has none of its objects. Frontend: ESLint, `tsc --noEmit`, `next build`,
+Playwright (`web/e2e/market-journey.spec.ts`).

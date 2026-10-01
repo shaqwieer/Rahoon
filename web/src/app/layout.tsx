@@ -2,9 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans, IBM_Plex_Sans_Arabic } from "next/font/google";
 import { M } from "@/components/market/copy";
 import { ToastProvider } from "@/components/ui/Toast";
-import { LEGACY_MODES } from "@/lib/legacy";
 import { I18nProvider } from "@/lib/i18n/client";
-import { dirFor, getDictionary } from "@/lib/i18n";
+import { dirFor } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import "./globals.css";
 
@@ -34,8 +33,7 @@ const MATERIAL_SYMBOLS =
   "https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400..700,0..1,0&display=block";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = getDictionary(await getLocale());
-  const meta = LEGACY_MODES ? t.meta : M.meta;
+  const meta = M.meta;
   return {
     title: { default: meta.title, template: `%s · ${meta.title}` },
     description: meta.description,

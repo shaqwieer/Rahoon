@@ -4,9 +4,7 @@ using Rahoon.Api.Infrastructure.Persistence;
 using Rahoon.Api.Infrastructure.Security;
 using Rahoon.Api.Infrastructure.Tenancy;
 using Rahoon.Api.Infrastructure.Time;
-using Rahoon.Api.Modules.Administration;
 using Rahoon.Api.Modules.Identity;
-using Rahoon.Api.Modules.Providers;
 
 namespace Rahoon.Api.Infrastructure.Auth;
 
@@ -19,7 +17,7 @@ public sealed class RequestContextMiddleware(RequestDelegate next)
 {
     private static readonly string[] CsrfExempt =
     [
-        "/api/auth/login", "/api/auth/owner/", "/api/auth/individual/", "/api/public/", "/api/invitations/", "/api/health",
+        "/api/auth/login", "/api/health",
         // Mobile sign-in (before a session exists), the visitor contact form and the stateless calculators. Origin is still checked.
         "/api/auth/phone/", "/api/market/contact", "/api/market/calc/",
     ];
@@ -44,8 +42,8 @@ public sealed class RequestContextMiddleware(RequestDelegate next)
                 session = await sessions.FindActiveAsync(token);
                 if (session?.User is { Status: UserStatus.Active } user)
                 {
-                    rc.SetSession(user.Id, session.Id, user.FullName, session.Scope, session.Stage, session.StepUpUntil);
-                    var idle = await ResolveScopeAsync(rc, db, session, clock);
+                    rc.SetSession(user.Id, session.Id, user.FullName, session.Scope, session.Stage);
+                    var idle = await ResolveScopeAsync(rc, db, session);
                     if (idle is null)
                     {
                         // Membership revoked/suspended since login: kill the session.
@@ -80,7 +78,7 @@ public sealed class RequestContextMiddleware(RequestDelegate next)
     }
 
     /// <returns>Idle timeout in minutes, or null if the session's scope is no longer valid.</returns>
-    internal static async Task<int?> ResolveScopeAsync(RequestContext rc, RahoonDbContext db, Session session, IClock clock)
+    internal static async Task<int?> ResolveScopeAsync(RequestContext rc, RahoonDbContext db, Session session)
     {
         switch (session.Scope)
         {
@@ -94,40 +92,10 @@ public sealed class RequestContextMiddleware(RequestDelegate next)
 
                 var roles = m.Roles.Select(r => r.Role!).ToList();
                 var permissions = roles.SelectMany(r => r.Permissions).Select(p => p.PermissionKey).ToHashSet();
-                var dataOrgs = new List<Guid> { org.Id };
-                var now = clock.UtcNow;
-
-                if (org.Kind is OrganizationKind.ServiceProvider or OrganizationKind.JudicialAgent)
-                {
-                    var lenderOrgs = await db.Assignments
-                        .Where(a => a.ProviderOrganizationId == org.Id && a.Status != AssignmentStatus.Cancelled
-                                    && (a.AccessExpiresAt == null || a.AccessExpiresAt > now))
-                        .Select(a => a.OrganizationId).Distinct().ToListAsync();
-                    dataOrgs.AddRange(lenderOrgs);
-                }
-                else if (org.Kind == OrganizationKind.Platform)
-                {
-                    // Platform staff read tenant data only under an approved, unexpired temporary grant.
-                    var granted = await db.TempAccessRequests
-                        .Where(t => t.RequesterUserId == session.UserId && t.Status == TempAccessStatus.Active && t.ExpiresAt > now)
-                        .Select(t => t.OrganizationId).Distinct().ToListAsync();
-                    dataOrgs.AddRange(granted);
-                }
+                if (org.Kind != OrganizationKind.Operator) return null;
 
                 rc.SetOrganization(org.Id, org.Kind, org.NameAr, m.Id, roles.Select(r => r.Key).ToHashSet(), permissions,
-                    roles.FirstOrDefault()?.NameAr, dataOrgs);
-                return org.IdleTimeoutMinutes;
-            }
-            case SessionScope.Owner when session.OwnerAccessId is { } accessId:
-            {
-                var access = await db.OwnerAccesses.FirstOrDefaultAsync(a => a.Id == accessId);
-                if (access is null || access.RevokedAt != null || access.UserId != session.UserId) return null;
-                var org = await db.Organizations.FirstAsync(o => o.Id == access.OrganizationId);
-                // Closed cases: owner keeps read-only access for the configured window (default 90 days), then it lapses.
-                var closedAt = await db.Cases.Where(c => c.Id == access.CaseId && c.Status == Modules.Cases.CaseStatus.Closed).Select(c => c.ClosedAt).FirstOrDefaultAsync();
-                if (closedAt is { } at && at.AddDays(await Modules.Analytics.OperationalSettings.DaysAsync(db, org.Id, Modules.Analytics.OperationalSettings.OwnerReadOnlyDays, 90)) < clock.UtcNow)
-                    return null;
-                rc.SetOwner(org.Id, org.NameAr, access.CaseId, access.PartyId, access.Id);
+                    roles.FirstOrDefault()?.NameAr, [org.Id]);
                 return org.IdleTimeoutMinutes;
             }
             case SessionScope.Individual:

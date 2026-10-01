@@ -8,39 +8,87 @@ using static Rahoon.Api.Tests.Infrastructure.MarketScenarios;
 namespace Rahoon.Api.Tests;
 
 /// <summary>
-/// The default configuration (Features:LegacyMortgage off) on a fresh database: the core seed creates only «فريق رهون», the
-/// role sync grants market.* permissions, the market seed runs, the old routes are gone, and the whole journey works.
-/// Also the privacy rules that depend on files and location: photo metadata and the owner's location choice.
+/// The product on a fresh database migrated through the full history: only the current model's schemas and tables exist,
+/// the seed creates only «فريق رهون» and the market demo, the team roles carry the current permissions, the withdrawn
+/// routes are gone, and the whole journey works. Also the privacy rules that depend on files and location.
 /// </summary>
-[Collection(CurrentModelCollection.Name)]
-public sealed class CurrentModelTests(CurrentModelFixture api)
+[Collection(ApiCollection.Name)]
+public sealed class CurrentModelTests(ApiFixture api)
 {
-    [Fact]
-    public async Task Fresh_database_has_only_the_rahoon_team_and_the_market_demo_data()
-    {
-        var kinds = await api.WithDbAsync(db => db.Organizations.Select(o => o.Kind).ToListAsync());
-        Assert.Equal([OrganizationKind.Operator], kinds.Distinct().ToList());
-        Assert.Equal(0, await api.WithDbAsync(db => db.Cases.IgnoreQueryFilters().CountAsync()));
-        Assert.True(await api.WithDbAsync(db => db.Opportunities.CountAsync()) >= 5);
+    private static readonly string[] LegacySchemas =
+        ["admin", "agreements", "analytics", "assessment", "cases", "closure", "comms", "complaints", "documents", "ecosystem", "providers", "referral", "requests", "sale", "solutions"];
 
-        var leadPerms = await api.WithDbAsync(db => db.Roles.Include(r => r.Permissions)
-            .Where(r => r.Key == SystemRoles.TeamLead).SelectMany(r => r.Permissions.Select(p => p.PermissionKey)).ToListAsync());
-        Assert.Contains(P.MarketPublish, leadPerms);
+    [Fact]
+    public async Task Fresh_database_has_no_object_of_the_withdrawn_model()
+    {
+        var schemas = await api.WithDbAsync(db => db.Database.SqlQueryRaw<string>(
+            "SELECT nspname AS \"Value\" FROM pg_namespace WHERE nspname NOT LIKE 'pg_%' AND nspname <> 'information_schema'").ToListAsync());
+        Assert.Equal(["app", "audit", "directory", "files", "identity", "market", "public"], schemas.Order().ToList());
+        Assert.Empty(schemas.Intersect(LegacySchemas));
+
+        var tables = await api.WithDbAsync(db => db.Database.SqlQueryRaw<string>(
+            "SELECT table_schema || '.' || table_name AS \"Value\" FROM information_schema.tables WHERE table_schema IN ('app','audit','directory','files','identity','public')").ToListAsync());
+        Assert.Equal(
+            ["app.idempotency_records", "app.outbound_sms", "app.reference_counters", "audit.audit_events", "directory.organizations", "files.file_blobs",
+             "files.stored_files", "identity.individual_profiles", "identity.membership_roles", "identity.memberships", "identity.organizations",
+             "identity.otp_challenges", "identity.role_permissions", "identity.roles", "identity.sessions", "identity.terms_acceptances", "identity.users",
+             "public.__ef_migrations"],
+            tables.Order().ToList());
+
+        var legacyColumns = await api.WithDbAsync(db => db.Database.SqlQueryRaw<string>("""
+            SELECT table_schema || '.' || table_name || '.' || column_name AS "Value" FROM information_schema.columns
+            WHERE table_schema IN ('identity','audit','market')
+              AND column_name IN ('case_id','case_reference','national_id_enc','national_id_hash','owner_access_id','step_up_until','team_id','storage_key','allowed_email_domains')
+            """).ToListAsync());
+        Assert.Empty(legacyColumns);
+        var functions = await api.WithDbAsync(db => db.Database.SqlQueryRaw<string>(
+            "SELECT routine_schema || '.' || routine_name AS \"Value\" FROM information_schema.routines WHERE routine_schema NOT IN ('pg_catalog','information_schema')").ToListAsync());
+        Assert.Equal(["audit.reject_audit_mutation"], functions);
     }
 
     [Fact]
-    public async Task Team_signs_in_catalog_and_search_work_and_old_routes_are_gone()
+    public async Task Fresh_database_has_only_the_rahoon_team_its_current_permissions_and_the_market_demo()
+    {
+        var kinds = await api.WithDbAsync(db => db.Organizations.Select(o => o.Kind).ToListAsync());
+        Assert.Equal([OrganizationKind.Operator], kinds.Distinct().ToList());
+        Assert.True(await api.WithDbAsync(db => db.Opportunities.CountAsync()) >= 5);
+        var permissions = await api.WithDbAsync(db => db.RolePermissions.Select(p => p.PermissionKey).Distinct().ToListAsync());
+        Assert.All(permissions, p => Assert.Contains(p, P.AllKeys));
+        var leadPerms = await api.WithDbAsync(db => db.Roles.Include(r => r.Permissions)
+            .Where(r => r.Key == SystemRoles.TeamLead).SelectMany(r => r.Permissions.Select(p => p.PermissionKey)).ToListAsync());
+        Assert.Contains(P.MarketPublish, leadPerms);
+        Assert.Contains(P.DirectoryManage, leadPerms);
+        // The demo never puts fictional organizations into the directory.
+        Assert.Equal(0, await api.WithDbAsync(db => db.DirectoryOrganizations.CountAsync(d => d.NameAr.Contains("تجريبي"))));
+    }
+
+    [Theory]
+    [InlineData("/api/cases")]
+    [InlineData("/api/my/requests")]
+    [InlineData("/api/team/requests")]
+    [InlineData("/api/owner/case")]
+    [InlineData("/api/platform/overview")]
+    [InlineData("/api/public/invitations/x")]
+    public async Task Withdrawn_routes_are_gone(string path)
+    {
+        var team = await api.LoginAsync(Lead);
+        var (status, _) = await team.GetAsync(path);
+        Assert.Equal(HttpStatusCode.NotFound, status);
+    }
+
+    [Fact]
+    public async Task Team_signs_in_and_catalog_and_search_work()
     {
         var team = await api.LoginAsync(Lead);
         var (s1, overview) = await team.GetAsync("/api/team/market/overview");
         Assert.Equal(HttpStatusCode.OK, s1);
         Assert.NotNull(overview!["myTasks"]);
+        var (_, me) = await team.GetAsync("/api/auth/me");
+        Assert.Equal("/team", TestClient.Str(me, "home"));
         var (_, catalog) = await api.Client().GetAsync("/api/market/catalog");
-        Assert.True(catalog!["parties"]!.AsArray().Count >= 4);
+        Assert.Null(catalog!["parties"]);
         var (_, search) = await api.Client().GetAsync("/api/market/opportunities");
         Assert.True(search!["total"]!.GetValue<int>() >= 3);
-        var (s2, _) = await api.Client().GetAsync("/api/cases");
-        Assert.Equal(HttpStatusCode.NotFound, s2);
     }
 
     [Fact]

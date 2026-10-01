@@ -34,19 +34,6 @@ public sealed class MarketTests(ApiFixture api)
     }
 
     [Fact]
-    public async Task A_mobile_already_registered_by_the_old_sign_in_reuses_that_account()
-    {
-        // Seeded legacy individual (national ID 1087654321, mobile 0551110001).
-        var hash = Hash("0551110001");
-        var legacyUser = await api.WithDbAsync(db => db.IndividualProfiles.Where(p => p.PhoneHash == hash).Select(p => p.UserId).FirstAsync());
-        var c = api.Client();
-        await c.PhoneLoginAsync("0551110001");
-        var (_, me) = await c.GetAsync("/api/auth/me");
-        Assert.Equal(legacyUser, Guid.Parse(TestClient.Str(me!["user"], "id")));
-        Assert.Equal(1, await api.WithDbAsync(db => db.IndividualProfiles.CountAsync(p => p.PhoneHash == hash)));
-    }
-
-    [Fact]
     public async Task Account_says_honestly_whether_a_code_confirmed_the_mobile()
     {
         var c = await SellerAsync(api);
@@ -285,7 +272,7 @@ public sealed class MarketTests(ApiFixture api)
         var (sOwner, _, _) = await owner.GetBytesAsync(url);
         Assert.Equal(HttpStatusCode.OK, sOwner);
         var (sAnon, _, _) = await api.Client().GetBytesAsync(url);
-        Assert.Equal(HttpStatusCode.Unauthorized, sAnon);
+        Assert.Equal(HttpStatusCode.NotFound, sAnon);
         var buyer = await SellerAsync(api);
         var (sBuyer, _, _) = await buyer.GetBytesAsync(url);
         Assert.Equal(HttpStatusCode.NotFound, sBuyer);

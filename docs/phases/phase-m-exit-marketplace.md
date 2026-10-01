@@ -1,8 +1,7 @@
 # Phase M0 + M1 — Redefinition and the request → review → opportunity slice
 
 > **Product source of truth:** [`docs/product/product-definition.md`](../product/product-definition.md) (2026-10-01).
-> **Inventory of the old model:** [`docs/redefinition/legacy-inventory.md`](../redefinition/legacy-inventory.md).
-> Branch `redefine/exit-marketplace`; rollback tag `legacy-mortgage-final`.
+> **Removal of the old model:** [`docs/redefinition/legacy-inventory.md`](../redefinition/legacy-inventory.md) (tag `legacy-mortgage-final`).
 
 **Scope:** this phase covers M0 (correct the model) and M1 (the full request / review / opportunity slice). M2 (advanced search and matching) and M3 (offers, reservation, completion) start **only when the product owner asks**.
 
@@ -28,6 +27,7 @@ It also meets the 11 acceptance criteria of the brief (§13), each checked below
 | 7 | Opportunity preparation, terms versions, owner confirmation, publish / pause / withdraw | ✅ |
 | 8 | Public listing: cards, server-side search and pagination (city, type, due now, installment), details page, map with approximate location | ✅ |
 | 9 | Buyer request (3 steps), team review, status and suggested opportunities with reasons, edit preferences | ✅ |
+| 13 | Permanent removal of the mortgage-help model (code, routes, flags, schemas, data, files), organization directory with importer and administration, files stored in the database behind a storage abstraction (2026-10-01) | ✅ |
 | 10 | Interest linked to the opportunity, the buyer profile and the terms version; team follow-up; saved opportunities | ✅ |
 | 11 | Calculators page (3 calculators) | ✅ |
 | 12 | E2E journey + mobile 390 checks, docs, handoff | ✅ |
@@ -50,6 +50,19 @@ It also meets the 11 acceptance criteria of the brief (§13), each checked below
 
 ## Findings
 
+Step 13 (2026-10-01):
+- `dotnet test`: 87 passed (the legacy suite was deleted with the code): market journeys, calculator, catalog, security,
+  SMS flag, directory (import idempotency, name normalization and type merge, admin-edit protection, never deactivating,
+  dataset files, administration with audit, stale edits, form use), file storage (byte-exact round trip, signature
+  validation, configured limits, authorization, public photos only when published) and migrations (fresh database has
+  no legacy object; upgrading a database with legacy data removes it and moves disk files into the database).
+- `tsc`, `eslint`, `next build` pass; Playwright `market-journey.spec.ts`: 16 passed.
+- Found and fixed: audit `data_json` was `jsonb`, which rewrites JSON and broke the hash of events with data; it is `text` now.
+- Directory sources: SAMA's lists are complete in one call; REGA rate-limits after a few pages, so developer imports run
+  paced and resumable (`--pages`).
+
+Steps 0–12:
+
 Verified on 2026-10-01:
 - `dotnet test`: 254 passed. This covers the archived suite with the legacy flag on, the calculator examples, the catalog rules, the `MarketTests` end-to-end API journeys and `LegacyGateTests`. It also covers `CurrentModelTests`: the default flag-off configuration on a fresh database, photo metadata stripping, and exact location only with the owner's explicit choice.
 - `tsc`, `eslint` and `next build` pass.
@@ -57,7 +70,7 @@ Verified on 2026-10-01:
 - A manual browser pass covered the wizard, the follow-up file, the map, team review and the opportunity editor.
 
 - **Design decisions taken under the brief:**
-  - Old model gated, not deleted (reversible, no data loss).
+  - Old model first gated behind flags; removed for good in step 13.
   - Mobile-only sign-in reuses the account of an existing mobile.
   - Field rules served by the API.
   - One server calculator called by the UI.
@@ -73,8 +86,8 @@ Verified on 2026-10-01:
 - **Map:**
   - OpenStreetMap tiles need a Referer; the site's `same-origin` policy sends none, so the tile layer sets `strict-origin-when-cross-origin`.
   - Nominatim search found nothing for some Arabic district queries; the UI then says so and the pin is placed by hand (D3: production geocoder/tiles provider).
-- **Demo data:** fictional and labelled «تجريبي». Photos are drawn illustrations. Parties end with «(تجريبي)».
-- **Open decisions:** D1 SMS provider (blocking for real use), D2 commission policy, D3 map provider, D4 REGA/FAL advertising requirements per opportunity, D5 real party directory, D6 retention of the archived data, D7 object storage and malware scanning.
+- **Demo data:** fictional and labelled «تجريبي». Photos are drawn illustrations. Demo obligation parties are typed names ending with «(تجريبي)», never directory records.
+- **Open decisions:** D1 SMS provider (blocking for real use), D2 commission policy, D3 map provider, D4 REGA/FAL advertising requirements per opportunity, D5 completing the developer list, D7 object storage and malware scanning.
 - **Deferred to M2/M3 (not built):**
   - **M2:** map-area search and clustering, explained ranking beyond the fit reasons, comparison, saved searches and alerts.
   - **M3:** offers and negotiation, reservation, transfer checklists, closing and fees.

@@ -10,9 +10,8 @@ export interface MfaHandoff {
   sandboxCode: string | null;
 }
 
-/** Where to go after a successful second factor: keep the deep link unless the user must pick a workspace. */
+/** Where to go after a successful second factor: keep the deep link unless access was refused. */
 export function destinationAfterMfa(serverNext: string, next: string) {
-  if (serverNext === "/select-context") return next ? `/select-context?next=${encodeURIComponent(next)}` : serverNext;
   if (serverNext === "/access-denied" || !next) return serverNext;
   return next;
 }

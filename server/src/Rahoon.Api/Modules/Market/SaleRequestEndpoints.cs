@@ -5,7 +5,6 @@ using Rahoon.Api.Infrastructure.Persistence;
 using Rahoon.Api.Infrastructure.Storage;
 using Rahoon.Api.Infrastructure.Tenancy;
 using Rahoon.Api.Infrastructure.Time;
-using Rahoon.Api.Modules.Documents;
 using Rahoon.Api.Modules.Identity;
 
 namespace Rahoon.Api.Modules.Market;
@@ -29,9 +28,6 @@ public sealed record OwnerTermsDecision(Guid TermsId, string? Note);
 public static class SaleRequestEndpoints
 {
     public const string DeclarationsVersion = "sale-declarations-2026-10";
-    private static readonly string[] PhotoTypes = ["image/jpeg", "image/png", "image/webp"];
-    private const long PhotoMaxBytes = 10 * 1024 * 1024;
-    private const int MaxPhotos = 30;
 
     public static void Map(IEndpointRouteBuilder app)
     {
@@ -53,8 +49,6 @@ public static class SaleRequestEndpoints
         g.MapPost("/{reference}/opportunity/request-changes", RequestChanges).Idempotent();
 
         // Private files: the owner, or the Rahoon team with market.view. Never public.
-        app.MapGet("/api/market/sale-requests/{reference}/documents/{id:guid}/file", DocumentFile).RequireSession();
-        app.MapGet("/api/market/sale-requests/{reference}/photos/{id:guid}/file", PhotoFile).RequireSession();
     }
 
     internal static async Task<SaleRequestFile> LoadOwnAsync(RahoonDbContext db, RequestContext rc, string reference) =>
@@ -235,7 +229,9 @@ public static class SaleRequestEndpoints
             default: return;
         }
 
-        var parties = await db.ObligationParties.Where(p => p.Active).ToListAsync();
+        // Directory organizations named in this save (new choices must be active; an earlier choice stays even if since deactivated).
+        var partyIds = list.Where(o => o.PartyId is not null).Select(o => o.PartyId!.Value).Concat(f.Obligations.Where(o => o.PartyId is not null).Select(o => o.PartyId!.Value)).Distinct().ToList();
+        var parties = await db.DirectoryOrganizations.Where(d => partyIds.Contains(d.Id)).ToDictionaryAsync(d => d.Id);
         var keep = new HashSet<Guid>();
         for (var i = 0; i < list.Count; i++)
         {
@@ -252,20 +248,26 @@ public static class SaleRequestEndpoints
             if (o.Kind != kind) changed.Add("obligation_kind");
             o.Kind = kind;
             o.SortOrder = i;
+            var allowedTypes = OrgDirectory.OrgTypes.ForObligationKind(kind);
             if (input.PartyId is { } pid)
             {
-                var party = parties.FirstOrDefault(p => p.Id == pid && p.Kind == kind);
-                if (party is null) invalid[$"o{i}.party"] = "اختر الجهة من القائمة أو «غير موجودة بالقائمة».";
-                else { o.PartyId = pid; o.Party = party; o.PartyOtherName = null; }
+                if (pid != o.PartyId)
+                {
+                    var party = parties.GetValueOrDefault(pid);
+                    if (party is null || !party.Active || !party.Types.Intersect(allowedTypes).Any())
+                        invalid[$"o{i}.party"] = "اختر الجهة من الدليل أو «غير موجودة في الدليل».";
+                    else { o.PartyId = pid; o.PartyName = party.NameAr; o.PartyOtherName = null; }
+                }
             }
             else if (input.PartyOtherName is not null)
             {
                 var other = input.PartyOtherName.Trim();
                 if (other.Length > 200) invalid[$"o{i}.party"] = "اسم الجهة أطول من المسموح.";
-                else { o.PartyId = null; o.Party = null; o.PartyOtherName = other.Length == 0 ? null : other; }
+                else { o.PartyId = null; o.PartyName = null; o.PartyOtherName = other.Length == 0 ? null : other; }
             }
-            // A party of the other kind doesn't survive a kind switch.
-            if (o.Party is { } cur && cur.Kind != kind) { o.PartyId = null; o.Party = null; }
+            // A directory organization of another type doesn't survive a kind switch.
+            if (o.PartyId is { } cur && parties.GetValueOrDefault(cur) is { } curParty && !curParty.Types.Intersect(allowedTypes).Any())
+            { o.PartyId = null; o.PartyName = null; }
             if (input.RelationNote is not null) o.RelationNote = input.RelationNote.Trim() is { Length: > 0 and <= 500 } note ? note : null;
 
             var source = input.Answers ?? o.Answers.ToDictionary(kv => kv.Key, kv => (string?)kv.Value);
@@ -397,11 +399,13 @@ public static class SaleRequestEndpoints
 
     private static bool FilesEditable(SaleRequestStatus s) => SaleRequestFlow.OwnerCanEdit(s) || s == SaleRequestStatus.ApprovedForListing;
 
-    private static async Task<IResult> UploadDocument(string reference, HttpRequest http, RahoonDbContext db, RequestContext rc, IDocumentStorage storage,
-        IFileScanner scanner, MarketService market)
+    private static async Task<IResult> UploadDocument(string reference, HttpRequest http, RahoonDbContext db, RequestContext rc, FileStore files,
+        IConfiguration config, MarketService market)
     {
         var f = await LoadOwnAsync(db, rc, reference);
         if (!FilesEditable(f.Request.Status)) throw new ConflictException("locked", "لا يمكن إضافة مستندات للطلب في حالته الحالية.");
+        var limits = StorageLimits.From(config);
+        if (f.Documents.Count >= limits.MaxDocumentsPerRequest) throw new ConflictException("too_many", $"الحد الأقصى {limits.MaxDocumentsPerRequest} مستندًا للطلب.");
         var form = await http.ReadFormAsync();
         var file = form.Files.GetFile("file") ?? throw new ValidationFailedException(new Dictionary<string, string[]> { ["file"] = ["اختر ملفًا."] });
         var kind = form["kind"].ToString();
@@ -409,35 +413,36 @@ public static class SaleRequestEndpoints
         if (!allowedKinds.Contains(kind)) Validate.Throw("kind", "اختر نوع المستند من القائمة.");
         Guid? obligationId = Guid.TryParse(form["obligationId"].ToString(), out var oid) && f.Obligations.Any(o => o.Id == oid) ? oid : null;
 
-        var doc = await StoreDocumentAsync(db, storage, scanner, f.Request, file, kind, obligationId, "applicant", rc.UserId);
+        var doc = await StoreDocumentAsync(files, limits, db, f.Request, await ReadAsync(file, limits.MaxDocumentBytes), file.FileName, kind, obligationId, "applicant", rc.UserId);
         market.Event(f.Request.OrganizationId, "sale_request", f.Request.Id, f.Request.ApplicantUserId, "document_added",
             $"أُضيف مستند: {FieldCatalog.Documents.FirstOrDefault(d => d.Key == kind)?.Label ?? kind}", visible: true);
         await db.SaveChangesAsync();
         return Results.Ok(f.DocumentDto(doc));
     }
 
-    internal static async Task<PrivateDocument> StoreDocumentAsync(RahoonDbContext db, IDocumentStorage storage, IFileScanner scanner, SaleRequest r,
-        IFormFile file, string kind, Guid? obligationId, string source, Guid uploadedBy)
+    /// <summary>Reads an upload into memory, refusing it early when it is larger than the limit.</summary>
+    internal static async Task<byte[]> ReadAsync(IFormFile file, long maxBytes)
     {
-        await using var stream = file.OpenReadStream();
-        var stored = await storage.SaveAsync(stream, file.FileName, r.OrganizationId, area: "market-docs");
-        if (await scanner.ScanAsync(stored.StorageKey) == ScanStatus.Infected)
-            throw new DomainException("file_infected", "رُفض الملف لأن الفحص كشف محتوى ضارًا.");
+        if (file.Length > maxBytes) throw new DomainException("file_too_large", $"حجم الملف يتجاوز {maxBytes / (1024 * 1024)} م.ب.");
+        await using var input = file.OpenReadStream();
+        using var ms = new MemoryStream();
+        await input.CopyToAsync(ms);
+        return ms.ToArray();
+    }
+
+    /// <summary>Validates (size, signature) and stores a private document in the current unit of work.</summary>
+    internal static async Task<PrivateDocument> StoreDocumentAsync(FileStore files, StorageLimits limits, RahoonDbContext db, SaleRequest r,
+        byte[] content, string fileName, string kind, Guid? obligationId, string source, Guid uploadedBy)
+    {
+        var type = FileStore.Validate(content, limits.MaxDocumentBytes, limits.DocumentTypes!);
+        var stored = await files.AddAsync(new FileUpload(content, fileName, FileVisibility.Private, uploadedBy, r.ApplicantUserId, "sale_request", r.Id), type);
         var doc = new PrivateDocument
         {
             OrganizationId = r.OrganizationId, SaleRequestId = r.Id, ApplicantUserId = r.ApplicantUserId, ObligationId = obligationId, Kind = kind,
-            FileName = SafeName(file.FileName), ContentType = stored.ContentType, SizeBytes = stored.SizeBytes, Sha256 = stored.Sha256,
-            StorageKey = stored.StorageKey, Source = source, UploadedByUserId = uploadedBy,
+            FileId = stored.Id, File = stored, Source = source, UploadedByUserId = uploadedBy,
         };
         db.PrivateDocuments.Add(doc);
         return doc;
-    }
-
-    internal static string SafeName(string name)
-    {
-        var n = Path.GetFileName(name ?? "file");
-        n = new string(n.Where(c => !char.IsControl(c) && c is not ('/' or '\\' or '"')).ToArray());
-        return n.Length == 0 ? "file" : n.Length > 200 ? n[^200..] : n;
     }
 
     private static async Task<IResult> RemoveDocument(string reference, Guid id, RahoonDbContext db, RequestContext rc, MarketService market, IClock clock)
@@ -447,45 +452,36 @@ public static class SaleRequestEndpoints
         var doc = f.Documents.FirstOrDefault(d => d.Id == id) ?? throw new NotFoundException();
         if (doc.ReviewStatus == FileReviewStatus.Accepted) throw new ConflictException("accepted", "قَبِل الفريق هذا المستند. تواصل مع الفريق لاستبداله.");
         doc.RemovedAt = clock.UtcNow;
-        market.Event(f.Request.OrganizationId, "sale_request", f.Request.Id, f.Request.ApplicantUserId, "document_removed", $"أُزيل مستند: {doc.FileName}", visible: true);
+        market.Event(f.Request.OrganizationId, "sale_request", f.Request.Id, f.Request.ApplicantUserId, "document_removed", $"أُزيل مستند: {doc.File?.FileName}", visible: true);
         await db.SaveChangesAsync();
         return Results.Ok(new { removed = true });
     }
 
-    private static async Task<IResult> UploadPhoto(string reference, HttpRequest http, RahoonDbContext db, RequestContext rc, IDocumentStorage storage,
-        IFileScanner scanner, MarketService market)
+    private static async Task<IResult> UploadPhoto(string reference, HttpRequest http, RahoonDbContext db, RequestContext rc, FileStore files,
+        IConfiguration config)
     {
         var f = await LoadOwnAsync(db, rc, reference);
         if (!FilesEditable(f.Request.Status)) throw new ConflictException("locked", "لا يمكن إضافة صور للطلب في حالته الحالية.");
-        if (f.Photos.Count >= MaxPhotos) throw new ConflictException("too_many", $"الحد الأقصى {MaxPhotos} صورة.");
+        var limits = StorageLimits.From(config);
+        if (f.Photos.Count >= limits.MaxPhotosPerRequest) throw new ConflictException("too_many", $"الحد الأقصى {limits.MaxPhotosPerRequest} صورة.");
         var form = await http.ReadFormAsync();
         var file = form.Files.GetFile("file") ?? throw new ValidationFailedException(new Dictionary<string, string[]> { ["file"] = ["اختر صورة."] });
-        var photo = await StorePhotoAsync(db, storage, scanner, f, file, rc.UserId);
+        var photo = await StorePhotoAsync(files, limits, db, f, await ReadAsync(file, limits.MaxPhotoBytes), file.FileName, rc.UserId);
         await db.SaveChangesAsync();
         return Results.Ok(f.PhotoDto(photo));
     }
 
-    internal static async Task<ListingPhoto> StorePhotoAsync(RahoonDbContext db, IDocumentStorage storage, IFileScanner scanner, SaleRequestFile f, IFormFile file, Guid uploadedBy)
+    /// <summary>Validates, strips embedded metadata (EXIF GPS would reveal the exact location) and stores a listing photo.</summary>
+    internal static async Task<ListingPhoto> StorePhotoAsync(FileStore files, StorageLimits limits, RahoonDbContext db, SaleRequestFile f,
+        byte[] content, string fileName, Guid uploadedBy)
     {
-        if (file.Length > PhotoMaxBytes) throw new DomainException("file_too_large", $"حجم الصورة يتجاوز {PhotoMaxBytes / (1024 * 1024)} م.ب.");
-        byte[] bytes;
-        await using (var input = file.OpenReadStream())
-        using (var ms = new MemoryStream())
-        {
-            await input.CopyToAsync(ms);
-            bytes = ms.ToArray();
-        }
-        // Embedded metadata (EXIF GPS on phone photos) would reveal the exact location: removed before storing.
-        bytes = ImageMetadata.Strip(bytes, ImageMetadata.DetectType(bytes.AsSpan(0, Math.Min(12, bytes.Length))));
-        await using var stream = new MemoryStream(bytes);
-        // Listing photos live in their own storage area, apart from private documents.
-        var stored = await storage.SaveAsync(stream, file.FileName, f.Request.OrganizationId, area: "market-photos", allowedTypes: PhotoTypes, maxBytes: PhotoMaxBytes);
-        if (await scanner.ScanAsync(stored.StorageKey) == ScanStatus.Infected)
-            throw new DomainException("file_infected", "رُفض الملف لأن الفحص كشف محتوى ضارًا.");
+        var type = FileStore.Validate(content, limits.MaxPhotoBytes, limits.PhotoTypes!);
+        var stripped = ImageMetadata.Strip(content, type);
+        var stored = await files.AddAsync(new FileUpload(stripped, fileName, FileVisibility.ListingPhoto, uploadedBy, f.Request.ApplicantUserId, "sale_request", f.Request.Id), type);
         var photo = new ListingPhoto
         {
             OrganizationId = f.Request.OrganizationId, SaleRequestId = f.Request.Id, ApplicantUserId = f.Request.ApplicantUserId,
-            FileName = SafeName(file.FileName), ContentType = stored.ContentType, SizeBytes = stored.SizeBytes, Sha256 = stored.Sha256, StorageKey = stored.StorageKey,
+            FileId = stored.Id, File = stored,
             SortOrder = f.Photos.Count == 0 ? 0 : f.Photos.Max(p => p.SortOrder) + 1, IsCover = f.Photos.Count == 0, UploadedByUserId = uploadedBy,
         };
         db.ListingPhotos.Add(photo);
@@ -529,31 +525,6 @@ public static class SaleRequestEndpoints
         return Results.Ok(new { removed = true });
     }
 
-    /// <summary>The owner (own rows through the applicant filter) or a team member with market.view. Same 404 otherwise.</summary>
-    private static async Task<SaleRequestFile> LoadForFileAccessAsync(RahoonDbContext db, RequestContext rc, string reference)
-    {
-        if (!(rc.IsIndividual || (rc.IsOperator && rc.Has(P.MarketView)))) throw new NotFoundException();
-        var f = await SaleRequestFile.LoadAsync(db, reference) ?? throw new NotFoundException();
-        if (rc.IsIndividual && f.Request.ApplicantUserId != rc.UserId) throw new NotFoundException();
-        return f;
-    }
-
-    private static async Task<IResult> DocumentFile(string reference, Guid id, RahoonDbContext db, RequestContext rc, IDocumentStorage storage, HttpContext http)
-    {
-        var f = await LoadForFileAccessAsync(db, rc, reference);
-        var doc = await db.PrivateDocuments.FirstOrDefaultAsync(d => d.Id == id && d.SaleRequestId == f.Request.Id) ?? throw new NotFoundException();
-        var stream = await storage.OpenReadAsync(doc.StorageKey);
-        http.Response.Headers.ContentDisposition = $"inline; filename*=UTF-8''{Uri.EscapeDataString(doc.FileName)}";
-        return Results.Stream(stream, doc.ContentType);
-    }
-
-    private static async Task<IResult> PhotoFile(string reference, Guid id, RahoonDbContext db, RequestContext rc, IDocumentStorage storage)
-    {
-        var f = await LoadForFileAccessAsync(db, rc, reference);
-        var photo = await db.ListingPhotos.FirstOrDefaultAsync(p => p.Id == id && p.SaleRequestId == f.Request.Id) ?? throw new NotFoundException();
-        return Results.Stream(await storage.OpenReadAsync(photo.StorageKey), photo.ContentType);
-    }
-
     // ── The prepared opportunity: the owner reviews and confirms (or asks for changes); never publishes ──
 
     private static async Task<IResult> OwnerOpportunity(string reference, RahoonDbContext db, RequestContext rc)
@@ -567,7 +538,7 @@ public static class SaleRequestEndpoints
         {
             opp.Reference, status = opp.Status, statusLabel = OpportunityFlow.Labels[opp.Status],
             content = OpportunityProjection.Content(opp),
-            photos = opp.PhotoIds.Select(pid => new { id = pid, url = $"/api/market/sale-requests/{f.Request.Reference}/photos/{pid}/file" }),
+            photos = opp.PhotoIds.Select(pid => f.AllPhotoFileIds.GetValueOrDefault(pid) is { } fid && fid != Guid.Empty ? new { id = pid, url = Files.FileEndpoints.Url(fid) } : null).Where(x => x is not null),
             location = new { precision = opp.LocationPrecision, lat = opp.PublicLatitude, lng = opp.PublicLongitude },
             terms = shown is null ? null : OpportunityProjection.Terms(shown),
             awaitingConfirmation = pending is not null && opp.DraftTermsId == pending.Id,

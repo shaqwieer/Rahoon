@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { useSessionActions } from "@/components/shell/session";
-import { LocaleSwitch } from "@/components/shell/LocaleSwitch";
 import type { ShellUser } from "@/components/shell/types";
 import { Avatar } from "@/components/ui/Avatar";
 import { Drawer } from "@/components/ui/Dialog";
@@ -14,30 +13,24 @@ import { Logo } from "@/components/ui/Logo";
 import { SkipLink } from "@/components/ui/SkipLink";
 import { cn } from "@/lib/cn";
 import { I18nProvider, useI18n } from "@/lib/i18n/client";
-import { teamCopy, type TeamCopy } from "./copy";
 
-export function useTeamCopy(): TeamCopy {
-  const { locale } = useI18n();
-  return teamCopy(locale);
-}
+const c = { brand: "فريق رهون", navLabel: "تنقل فريق رهون", signOut: "تسجيل الخروج" };
 
-type TeamNavKey = "overview" | "sale" | "buyers" | "opportunities" | "interests" | "messages" | "requests" | "verify" | "objections";
-/** Exit/buy workspace (2026-10-01); the legacy mortgage-help queues appear only when RAHOON_LEGACY_MODES=1. */
-const TEAM_NAV: Array<{ key: TeamNavKey; href: string; icon: string; permission: string; label: string; legacy?: boolean }> = [
+type TeamNavKey = "overview" | "sale" | "buyers" | "opportunities" | "interests" | "messages" | "organizations";
+/** Exit/buy workspace. Each entry shows only to members holding its permission; the API checks every call again. */
+const TEAM_NAV: Array<{ key: TeamNavKey; href: string; icon: string; permission: string; label: string }> = [
   { key: "overview", href: "/team", icon: "dashboard", permission: "market.view", label: "مهامي والملخص" },
   { key: "sale", href: "/team/sale", icon: "sell", permission: "market.view", label: "طلبات البيع" },
   { key: "buyers", href: "/team/buyers", icon: "person_search", permission: "market.view", label: "طلبات المشترين" },
   { key: "opportunities", href: "/team/opportunities", icon: "home_work", permission: "market.view", label: "الفرص" },
   { key: "interests", href: "/team/interests", icon: "handshake", permission: "market.view", label: "الاهتمامات" },
   { key: "messages", href: "/team/messages", icon: "mail", permission: "market.view", label: "رسائل التواصل" },
-  { key: "requests", href: "/team/requests", icon: "inbox", permission: "request.view_assigned", label: "طلبات المساعدة (أرشيف)", legacy: true },
-  { key: "verify", href: "/team/verify", icon: "fact_check", permission: "request.offer_verify", label: "التحقق (أرشيف)", legacy: true },
-  { key: "objections", href: "/team/objections", icon: "support_agent", permission: "request.objection_handle", label: "الاعتراضات (أرشيف)", legacy: true },
+  { key: "organizations", href: "/team/organizations", icon: "domain", permission: "directory.manage", label: "دليل الجهات" },
 ];
 
-function useNav(user: ShellUser, legacy: boolean) {
+function useNav(user: ShellUser) {
   const pathname = usePathname();
-  const items = TEAM_NAV.filter((i) => (legacy || !i.legacy) && user.permissions.includes(i.permission));
+  const items = TEAM_NAV.filter((i) => user.permissions.includes(i.permission));
   const current =
     items
       .filter((i) => pathname === i.href || pathname.startsWith(`${i.href}/`))
@@ -47,21 +40,20 @@ function useNav(user: ShellUser, legacy: boolean) {
 
 /**
  * «فريق رهون» workspace (design request D-4 shell): 264px sidebar ≥1280, icon rail 768–1279, top bar + drawer below
- * 768. Based on the lender shell layout with its own navigation; no command palette or bell in the MVP.
+ * 768. Its own navigation; no command palette or bell.
  */
-export function TeamShell({ user, legacy = false, children }: { user: ShellUser; legacy?: boolean; children: ReactNode }) {
+export function TeamShell({ user, children }: { user: ShellUser; children: ReactNode }) {
   const { locale } = useI18n();
   return (
     <I18nProvider locale={locale} numerals={user.numerals}>
-      <TeamShellInner user={user} legacy={legacy}>{children}</TeamShellInner>
+      <TeamShellInner user={user}>{children}</TeamShellInner>
     </I18nProvider>
   );
 }
 
-function TeamShellInner({ user, legacy, children }: { user: ShellUser; legacy: boolean; children: ReactNode }) {
-  const c = useTeamCopy();
+function TeamShellInner({ user, children }: { user: ShellUser; children: ReactNode }) {
   const { t } = useI18n();
-  const { items, current } = useNav(user, legacy);
+  const { items, current } = useNav(user);
   const [open, setOpen] = useState(false);
   const { logout, busy } = useSessionActions();
 
@@ -94,7 +86,7 @@ function TeamShellInner({ user, legacy, children }: { user: ShellUser; legacy: b
   return (
     <div className="flex min-h-dvh">
       <SkipLink />
-      <nav aria-label={c.nav.label} className="sticky top-0 z-40 hidden h-dvh w-[72px] flex-none flex-col border-e border-line bg-white md:flex xl:w-[264px]">
+      <nav aria-label={c.navLabel} className="sticky top-0 z-40 hidden h-dvh w-[72px] flex-none flex-col border-e border-line bg-white md:flex xl:w-[264px]">
         <div className="hidden px-5 pt-5 pb-3 xl:block">
           <Link href="/team" className="inline-block rounded-xs">
             <Logo variant="horizontal" width={172} alt={t.brand.name} priority />
@@ -128,14 +120,13 @@ function TeamShellInner({ user, legacy, children }: { user: ShellUser; legacy: b
               <Icon name="logout" size={18} />
               <span className="max-xl:sr-only">{c.signOut}</span>
             </button>
-            {legacy ? <LocaleSwitch className="px-2 text-13" /> : null}
           </div>
         </div>
       </nav>
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-14 items-center gap-2.5 border-b border-line bg-white ps-2 pe-4 md:hidden">
-          <IconButton label={c.nav.label} icon="menu" size={44} iconSize={22} onClick={() => setOpen(true)} />
+          <IconButton label={c.navLabel} icon="menu" size={44} iconSize={22} onClick={() => setOpen(true)} />
           <Logo variant="symbol" width={26} alt={t.brand.name} priority />
           <span className="min-w-0 flex-1 truncate text-14 font-semibold">
             {c.brand} <span className="font-normal text-muted">· {user.roleName}</span>
@@ -154,7 +145,6 @@ function TeamShellInner({ user, legacy, children }: { user: ShellUser; legacy: b
               <Icon name="logout" size={20} />
               {c.signOut}
             </button>
-            {legacy ? <LocaleSwitch className="px-2 text-13" /> : null}
           </div>
         </div>
       </Drawer>

@@ -1,79 +1,54 @@
-# Redefinition 2026-10-01 — inventory of the old model, what is removed, what is reused
+# Removal of the mortgage-default help model (2026-10-01)
 
 The product changed from the **mortgage-default help platform** to the **Saudi exit/buy platform**
-([`docs/product/product-definition.md`](../product/product-definition.md)). This is a change of business model, not a rename.
+([`docs/product/product-definition.md`](../product/product-definition.md)). After a first step that hid the old model
+behind flags, the owner decided to remove it permanently: all its data was disposable test data, including on staging,
+and deleting it with its schemas was explicitly authorised. No export or backup of it was made.
 
-## How the old model is removed (reversible, no data loss)
+- **Last state of the old model:** git tag `legacy-mortgage-final` (`266541e`). It is the only way back.
+- **Flags removed:** `Features:LegacyMortgage` (API) and `RAHOON_LEGACY_MODES` (web) no longer exist, nor any
+  conditional branch or disabled implementation behind them.
 
-| Step | What was done |
+## What was deleted
+
+### Backend (`server/src/Rahoon.Api`)
+
+| Item | Detail |
 |---|---|
-| Rollback point | Git tag `legacy-mortgage-final` on `266541e` (last commit of the old model). Work happens on the branch `redefine/exit-marketplace` |
-| Feature flag | `Features:LegacyMortgage` (API, default **false**) and `RAHOON_LEGACY_MODES` (web, default off) |
-| API | With the flag off, the old endpoints are **not mapped** (404). The old background jobs don't run. The old demo data isn't seeded. Staff login is refused for every organisation except «فريق رهون» |
-| Web | With the flag off, `src/proxy.ts` answers **404** for every old portal route. The old nav, landing, SEO texts and links are replaced by the new ones |
-| Database | **Nothing is dropped.** The old schemas (`cases`, `solutions`, `agreements`, `requests`, `referral`, `closure`, `sale`, `providers`, `ecosystem`, `complaints`, …) and their rows stay untouched. Every new migration is checked for `Drop*` (none allowed on old schemas). The data is archived in place. Its retention is decision D6 |
-| Files | Uploaded documents under `Storage:Root` stay where they are. New market files use their own key prefixes (`market/docs/…`, `market/photos/…`) |
-| Tests | The existing suite runs with the flag on, as the regression for the archived code. A new test checks that with the flag off the old routes answer 404 and that non-team staff can't sign in |
+| Modules | Administration, Agreements (incl. the breach monitor job), Analytics, Assessment, Cases, Closure, Communications, Complaints, Documents, Ecosystem, Imports, Owner, Providers, Referral, Requests, Sale, Solutions |
+| Identity | individual sign-in by national ID, owner invitation sign-in, staff invitations, organization settings, e-mail domain and password-policy rules, context switch, step-up, teams, invitations, role-change requests; organization kinds Lender, ServiceProvider, JudicialAgent, Platform; account kind Owner; the legacy permissions and role templates |
+| Audit | case-scoped audit endpoints and the case fields of audit events |
+| Infrastructure | feature flags, disk document storage and the signature "scanner", integration registry and the unavailable signing/payment/identity/judicial adapters, the case FK convention |
+| Seed | lenders, providers, agents, platform staff, cases, requests, agreements, referral, closure, analytics, bulk portfolio |
+| Tests | every legacy suite and scenario builder (the old regression suite) |
 
-The old code is kept behind the flag, not deleted, so the change can be reviewed and rolled back. Deleting it is a later, separate decision.
+### Web (`web/src`)
 
-## Inventory
+Routes `(lender)/**`, `/owner/**`, `/my/**`, `/provider/**`, `/agent/**`, `/platform/**`, `/print/**`, `/dev/**`,
+`(auth)/invite`, `(auth)/start`, `/select-context`, `/team/requests`, `/team/verify`, `/team/objections`; components
+`case/`, `owner/`, `individual/`, the lender/owner/platform/portal shells and their navigation, the command palette,
+organization switcher and locale switch; unused UI kit pieces (case table, approval chain, audit timeline, KPI tiles, …);
+the legacy API clients in `lib/api`; `lib/legacy.ts`; the English dictionary and the legacy dictionary sections; the
+legacy E2E specs and helpers. These URLs now answer 404 because the pages no longer exist.
 
-**Legend.**
-- **Removed** = not reachable in the product (flag off). The code is archived, and the data is kept.
-- **Reused** = a generic part kept by the new model.
-- **New** = built for the new model.
+### Database (migration `RemoveLegacyMortgageModel`, then `FilesInDatabase`)
 
-### Backend (`server/src/Rahoon.Api/Modules`)
-
-| Module / item | Old meaning | Action |
-|---|---|---|
-| Cases (case aggregate, debt snapshots, workflow, wizard, import) | Lender's default case | **Removed** |
-| Solutions (rescheduling, settlement offers, approvals, negotiation) | Debt solutions | **Removed** |
-| Agreements (installments, payments maker-checker, breach monitor) | Settlement execution | **Removed** (the BreachMonitor job is off) |
-| Requests (`requests` schema: individual's help request, P1–P4 paths, lender coordination, offers, execution) | Individual in default asks for help | **Removed**. The new sale request is a **new** entity, not a renamed one |
-| Sale (voluntary / consensual sale) | «البيع الرضائي» | **Removed** |
-| Referral, AgentEndpoints | Judicial referral, judicial agent | **Removed** |
-| Closure | Reconciliation and closure of a debt | **Removed** |
-| Owner (invitation portal) | Debtor invited by the lender | **Removed** |
-| Providers, Ecosystem | Valuers, brokers, agents for the lender | **Removed** |
-| Complaints | Lender-tenant complaints | **Removed** |
-| Assessment | Valuation and affordability for a debt case | **Removed** |
-| Analytics, Administration (lender settings, SLA, approval limits, platform admin, temp access, billing, workflow designer) | Lender SaaS administration | **Removed** (the TempAccessExpiry job is off) |
-| Imports | Lender portfolio import | **Removed** |
-| Communications (case messages, notifications, templates) | Case communications | **Removed** from the product. The new market module logs its own notifications |
-| Documents (case documents and rules) | Case documents | **Removed**. `IDocumentStorage` and `IFileScanner` are **reused** |
-| Identity: sessions, CSRF, MFA, OTP, staff login, roles and permissions | Generic | **Reused** |
-| Identity: individual sign-in by national ID + mobile | Debtor self-registration | **Removed** from the product. It's replaced by **mobile-first** sign-in (new). The existing individual accounts are reused when the same mobile signs in |
-| Organisation kinds Lender / ServiceProvider / JudicialAgent / Platform | Tenants of the old model | **Removed** (login refused while the flag is off). Their rows are kept |
-| Organisation kind Operator «فريق رهون» + team roles | Team that handled requests | **Reused** as the Rahoon team. It gets new `market.*` permissions, synced into existing role rows |
-| Audit (hash-chained) | Generic | **Reused** for market events |
-| Integrations registry (SMS sandbox, unavailable adapters) | Generic | **Reused** (SMS only). The lending, judicial and core-banking adapters aren't used |
-| Seed (DevSeeder: lenders, cases, requests, provider data) | Old demo data | **Removed** from the default seed. It's seeded only with the flag on. **New** market demo data, marked as test data |
-| — | — | **New** module `Market` (schema `market`): field catalog, sale requests, obligations, documents and photos, buyer requests, opportunities and terms versions, external approvals, interests, saved opportunities, calculator |
-
-### Web (`web/src/app`)
-
-| Route group | Old meaning | Action |
-|---|---|---|
-| `(public)/page.tsx` landing, header and footer nav, `(public)/layout` SEO | Help for people in default, «4 مسارات», «للجهات الممولة» | **Replaced** by the new home and navigation (الرئيسية، بيع عقارك، الفرص المتاحة، كيف نعمل، الحاسبات، تواصل معنا، حسابي) |
-| `(auth)/start` | Sign-in by national ID + mobile | **Replaced** by mobile-first sign-in |
-| `/my/**` | The individual's mortgage-help requests | **Removed**. Replaced by `/account/**` |
-| `/owner/**`, `(auth)/invite/**` | Lender-invited debtor portal | **Removed** |
-| `(lender)/**` (portfolio, cases, approvals, complaints, reports, settings, …) | Lender workspace | **Removed** |
-| `/provider/**`, `/agent/**`, `/platform/**`, `/print/**`, `/select-context` | Providers, judicial agent, platform admin | **Removed** |
-| `/team/**` (requests queue, verify, objections) | Team handling help requests | **Replaced** by the new team workspace (sale requests, buyer requests, opportunities, interests, my tasks) |
-| `(auth)/login`, `/login/mfa` | Staff login | **Reused** for the Rahoon team |
-| `(public)/privacy`, `(public)/terms` | Legal drafts for the old model | **Rewritten** for the new model (still drafts pending legal review) |
-| `components/ui/*` (buttons, fields, dialogs, status, toast, …), `lib/format.ts`, `lib/api/client.ts`, i18n plumbing | Generic | **Reused** |
-| `components/case`, `components/owner`, `components/individual`, lender shells | Old portals | **Removed** from the product (kept behind the flag) |
-| E2E specs `owner-journey`, `lender-flow`, `lender-execution` | Old journeys | They run only when `RAHOON_LEGACY_MODES=1`. A new market journey spec is added |
-
-### Content, SEO, docs
-
-| Item | Action |
+| Object | Action |
 |---|---|
-| Meta title and description, indexable routes (`next.config.ts`) | Rewritten. The new public pages are indexable, and the old routes aren't |
-| `README.md`, `docs/architecture.md` | Updated to the new model |
-| `docs/product/product-direction.md`, `docs/adr/0001-*`, `docs/adr/0002-*`, design specs B2–B13, phase files 0–4 | Marked **superseded / archived**. Kept for history |
-| Client test guide (`docs/client/*`, untracked) | Left as is (the user's own files) |
+| Schemas `admin`, `agreements`, `analytics`, `assessment`, `cases`, `closure`, `comms`, `complaints`, `documents`, `ecosystem`, `providers`, `referral`, `requests`, `sale`, `solutions` | `DROP SCHEMA … CASCADE` (tables, keys, indexes, sequences) |
+| `admin.idempotency_records`, `cases.reference_counters` | Moved (not dropped) to the new shared schema `app`; only `market:*` counters kept |
+| `identity.teams`, `identity.invitations`, `identity.role_change_requests` | Dropped |
+| Legacy columns | organizations: licence number, city, owner language, MFA flag, e-mail domains; users: English name, MFA method; memberships: team; individual profiles: national ID (encrypted, hash, masked), ID type, identity assurance, awareness opt-in; sessions: owner access, step-up; role permissions: grant; audit events: case id and reference; market files: disk path, name, type, size, checksum (now in `files.stored_files`) |
+| Data | organizations of the removed kinds with their memberships, roles and grants; staff accounts without a Rahoon team membership; owner accounts; their sessions, codes, terms acceptances and replay records; one-time codes of removed purposes; permissions outside the current catalog; the audit history (cleared once: a hash chain cannot lose some events and still verify) |
+| `market.obligation_parties` (fictional demo parties) | Dropped; requests that named one keep the name as typed text |
+| Files on disk | Marketplace files copied into the database and verified, then deleted; the removed model's per-organization folders deleted |
+
+The migration is targeted (no database reset) and not reversible (`Down` throws). A fresh database built from the full
+migration history ends with only `app`, `audit`, `directory`, `files`, `identity`, `market` (checked by
+`CurrentModelTests`); upgrading a database holding the old data is checked by `MigrationTests`.
+
+## What was kept (shared)
+
+Identity (sessions, CSRF, team sign-in with SMS code, roles and permissions, mobile sign-in for owners and buyers, the
+existing individual accounts), the hash-chained audit log, idempotency, reference counters, the SMS sandbox gateway,
+the `market` schema with all its data, the UI kit pieces the current pages use, i18n plumbing (Arabic only), formatting.

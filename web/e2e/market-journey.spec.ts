@@ -6,7 +6,8 @@ import { apiLogin } from "./helpers";
  * an owner sends a request → the team asks for completion → the owner completes and resends → the team approves and
  * prepares the opportunity → the owner confirms the summary → the team publishes → a buyer finds it and sends interest →
  * the team sees the interest. Plus: old routes are gone, and the public pages have no horizontal scroll at 390px.
- * Needs the API (Development, sandbox SMS codes) and the web dev server; the demo seed provides the parties and team.
+ * Needs the API (Development, sandbox SMS codes) and the web dev server; the demo seed provides the team, and the
+ * organization directory must hold at least one developer (`dotnet run -- import-directory`).
  */
 
 const LEAD = "l.alharbi@team.rahoon.example";
@@ -29,11 +30,19 @@ async function phoneSignIn(page: Page, mobile: string, name?: string, submit = "
   await page.getByRole("button", { name: submit }).click();
 }
 
+/** Chooses the first directory match in an OrgPicker combobox. */
+async function pickFirstOrg(page: Page, label: string, query: string) {
+  const box = page.getByRole("combobox", { name: label });
+  await box.fill(query);
+  await page.getByRole("listbox", { name: label }).getByRole("option").first().click();
+  await expect(page.getByRole("button", { name: "تغيير" })).toBeVisible();
+}
+
 async function teamPage(browser: Browser) {
   const ctx = await browser.newContext({ locale: "ar-SA", timezoneId: "Asia/Riyadh", viewport: { width: 1440, height: 900 } });
   const page = await ctx.newPage();
   await page.goto("/");
-  await apiLogin(page, LEAD, "فريق رهون");
+  await apiLogin(page, LEAD);
   return page;
 }
 
@@ -47,7 +56,7 @@ test("sale request → completion → approval → opportunity → owner confirm
   await page.getByLabel("المدينة").selectOption("riyadh");
   await page.getByLabel("الحي").fill("الملقا");
   await page.getByRole("radio", { name: "مطور عقاري" }).click();
-  await page.getByLabel("اسم المطور").selectOption({ index: 1 });
+  await pickFirstOrg(page, "اسم المطور", "شركة");
   await page.getByRole("button", { name: "التالي" }).click();
 
   await page.getByLabel("المدفوع المعتمد من ثمن الوحدة").fill("300000");
@@ -166,16 +175,57 @@ test("sale request → completion → approval → opportunity → owner confirm
   await team.context().close();
 });
 
-test("old portals are gone and staff of withdrawn workspaces cannot sign in", async ({ page }) => {
-  for (const path of ["/my", "/cases", "/owner", "/portfolio", "/provider", "/agent", "/platform", "/team/requests"]) {
+test("old portals are gone and only the Rahoon team signs in at /login", async ({ page }) => {
+  for (const path of ["/my", "/cases", "/owner", "/portfolio", "/provider", "/agent", "/platform", "/team/requests", "/select-context", "/start"]) {
     const res = await page.goto(path);
     expect(res?.status(), path).toBe(404);
   }
   await page.goto("/login");
-  await page.getByLabel("البريد المؤسسي").fill("s.alqahtani@alufuq.example");
+  await page.getByLabel("البريد الإلكتروني").fill("s.alqahtani@alufuq.example");
   await page.getByRole("textbox", { name: "كلمة المرور" }).fill(process.env.E2E_DEMO_PASSWORD ?? "Rahoon-Demo-2026!");
   await page.getByRole("button", { name: "متابعة" }).click();
-  await expect(page.getByText(/لم تعد مساحة عمله مفعّلة/)).toBeVisible();
+  await expect(page.getByText("البريد أو كلمة المرور غير صحيحة.").first()).toBeVisible();
+});
+
+test("team administrator manages the organization directory", async ({ browser }) => {
+  const team = await teamPage(browser);
+  await team.goto("/team/organizations");
+  await expect(team.getByRole("heading", { name: "دليل الجهات" })).toBeVisible();
+  await team.getByRole("link", { name: /بنوك/ }).click();
+  await expect(team.getByRole("table").getByText("مفعّلة").first()).toBeVisible();
+
+  // Add a record manually, edit it, deactivate it with a reason, reactivate it.
+  const name = `جهة اختبار آلي ${Date.now()}`;
+  await team.getByRole("link", { name: "إضافة جهة" }).click();
+  await team.getByLabel("الاسم بالعربية").fill(name);
+  await team.getByRole("checkbox", { name: "شركة تمويل" }).check();
+  await team.getByLabel("الموقع الرسمي").fill("example-finance.sa");
+  await team.getByRole("button", { name: "إضافة الجهة" }).click();
+  await expect(team.getByRole("heading", { name })).toBeVisible();
+  await expect(team.getByText("إضافة يدوية")).toBeVisible();
+  await team.getByLabel("الاسم بالإنجليزية").fill("Automated Test Finance");
+  await team.getByRole("button", { name: "حفظ التعديلات" }).click();
+  await expect(team.getByText("حُفظت التعديلات")).toBeVisible();
+  await expect(team.getByText("محمية من الاستيراد")).toBeVisible();
+  await team.getByRole("button", { name: "إيقاف الجهة" }).click();
+  const dialog = team.getByRole("dialog", { name: "إيقاف الجهة" });
+  await dialog.getByLabel("السبب").fill("اختبار الإيقاف");
+  await dialog.getByRole("button", { name: "إيقاف" }).click();
+  await expect(team.getByText("موقوفة — لا تظهر في النماذج")).toBeVisible();
+  await team.getByRole("button", { name: "تفعيل الجهة" }).click();
+  await expect(team.getByText("مفعّلة — تظهر في النماذج")).toBeVisible();
+
+  // Search and filter find it.
+  await team.goto(`/team/organizations?q=${encodeURIComponent(name)}&origin=manual`);
+  await expect(team.getByRole("link", { name }).first()).toBeVisible();
+  await team.context().close();
+});
+
+test("buyer can name a preferred financier from the directory", async ({ page }) => {
+  await page.goto("/buy/new");
+  await page.getByLabel("المبلغ المتاح لديك الآن").fill("150000");
+  await page.getByRole("radio", { name: "بتمويل من جهة خارجية" }).click();
+  await pickFirstOrg(page, "جهة التمويل التي تفضّلها", "بنك");
 });
 
 test.describe("phone width", () => {
@@ -216,8 +266,8 @@ test.describe("phone width, signed in", () => {
 
   test("team screens", async ({ page }) => {
     await page.goto("/");
-    await apiLogin(page, LEAD, "فريق رهون");
-    for (const path of ["/team", "/team/sale", "/team/sale/SR-2026-00002", "/team/buyers/BR-2026-00002", "/team/opportunities/OP-2026-00001", "/team/interests/IN-2026-00001", "/team/messages"]) {
+    await apiLogin(page, LEAD);
+    for (const path of ["/team", "/team/sale", "/team/sale/SR-2026-00002", "/team/buyers/BR-2026-00002", "/team/opportunities/OP-2026-00001", "/team/interests/IN-2026-00001", "/team/messages", "/team/organizations", "/team/organizations/new"]) {
       await noOverflow(page, path);
     }
   });

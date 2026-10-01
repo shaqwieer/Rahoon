@@ -20,7 +20,7 @@ public sealed class OtpService(RahoonDbContext db, IClock clock, ISmsGateway sms
 
     /// <param name="send">false issues a decoy challenge that is never delivered (anti-enumeration); its code is never echoed.</param>
     public async Task<OtpIssued> IssueAsync(OtpPurpose purpose, string phone, Guid? userId, Guid? sessionId, string? context = null,
-        Guid? orgId = null, Guid? caseId = null, bool send = true)
+        bool send = true)
     {
         var now = clock.UtcNow;
         var recent = await db.OtpChallenges
@@ -40,13 +40,8 @@ public sealed class OtpService(RahoonDbContext db, IClock clock, ISmsGateway sms
             Destination = Mask.Phone(phone), Context = context, CreatedAt = now, ExpiresAt = now.AddMinutes(options.OtpMinutes),
         };
         db.OtpChallenges.Add(challenge);
-        var text = purpose switch
-        {
-            OtpPurpose.Consent => $"رمز تأكيد موافقتك في رهون: {code}. لا تشاركه مع أحد.",
-            OtpPurpose.StepUp => $"رمز تأكيد الإجراء في رهون: {code}. صالح 5 دقائق.",
-            _ => $"رمز الدخول إلى رهون: {code}. صالح 5 دقائق. لا تشاركه مع أحد.",
-        };
-        if (send && options.SmsConfirmation) await sms.SendAsync(phone, text, orgId, caseId);
+        var text = $"رمز الدخول إلى رهون: {code}. صالح 5 دقائق. لا تشاركه مع أحد.";
+        if (send && options.SmsConfirmation) await sms.SendAsync(phone, text);
         await db.SaveChangesAsync();
         // A decoy never returns its code and still asks for one, so it looks like a real challenge that was not delivered.
         var autoConfirm = send && !options.SmsConfirmation;

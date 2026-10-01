@@ -23,35 +23,24 @@ public sealed class RequestContext
     public IReadOnlySet<string> Permissions { get; private set; } = new HashSet<string>();
     public string? PrimaryRoleNameAr { get; private set; }
 
-    /// <summary>Owner (debtor) session: the single case the owner may see.</summary>
-    public Guid? OwnerCaseId { get; private set; }
-    public Guid? OwnerPartyId { get; private set; }
-    public Guid? OwnerAccessId { get; private set; }
-
     /// <summary>Organizations whose rows EF may read in this request (global query filter).</summary>
     public IReadOnlyList<Guid> DataOrganizationIds { get; private set; } = [];
     /// <summary>Only for migrations, seeding and trusted background jobs.</summary>
     public bool SystemBypass { get; private set; }
 
-    public DateTimeOffset? StepUpUntil { get; private set; }
     public string? IpMasked { get; set; }
 
     public bool Has(string permission) => Permissions.Contains(permission);
-    public bool IsLenderStaff => Scope == SessionScope.Organization && OrganizationKind == Modules.Identity.OrganizationKind.Lender;
-    public bool IsProvider => Scope == SessionScope.Organization && OrganizationKind == Modules.Identity.OrganizationKind.ServiceProvider;
-    public bool IsJudicialAgent => Scope == SessionScope.Organization && OrganizationKind == Modules.Identity.OrganizationKind.JudicialAgent;
-    public bool IsPlatform => Scope == SessionScope.Organization && OrganizationKind == Modules.Identity.OrganizationKind.Platform;
-    /// <summary>Rahoon team member (operator tenant, ADR 0001).</summary>
+    /// <summary>Rahoon team member (operator tenant).</summary>
     public bool IsOperator => Scope == SessionScope.Organization && OrganizationKind == Modules.Identity.OrganizationKind.Operator;
-    public bool IsOwner => Scope == SessionScope.Owner;
-    /// <summary>Self-registered individual (ADR 0001): no organization data at all; access to own requests only.</summary>
+    /// <summary>Owner or buyer (mobile sign-in): no organization data at all; access to their own rows only.</summary>
     public bool IsIndividual => Scope == SessionScope.Individual;
 
-    public string ActorType => IsOwner ? "owner" : IsIndividual ? "individual" : IsProvider || IsJudicialAgent ? "provider" : IsPlatform ? "platform" : IsOperator ? "rahoon_team" : "user";
+    public string ActorType => IsIndividual ? "individual" : IsOperator ? "rahoon_team" : "user";
 
     public void SetAnonymous() => IsAuthenticated = false;
 
-    public void SetSession(Guid userId, Guid sessionId, string userName, SessionScope scope, SessionStage stage, DateTimeOffset? stepUpUntil)
+    public void SetSession(Guid userId, Guid sessionId, string userName, SessionScope scope, SessionStage stage)
     {
         IsAuthenticated = true;
         UserId = userId;
@@ -59,7 +48,6 @@ public sealed class RequestContext
         UserName = userName;
         Scope = scope;
         Stage = stage;
-        StepUpUntil = stepUpUntil;
     }
 
     public void SetOrganization(Guid orgId, OrganizationKind kind, string orgName, Guid membershipId,
@@ -75,16 +63,6 @@ public sealed class RequestContext
         DataOrganizationIds = dataOrgIds;
     }
 
-    public void SetOwner(Guid lenderOrgId, string orgName, Guid caseId, Guid partyId, Guid ownerAccessId)
-    {
-        OrganizationId = lenderOrgId;
-        OrganizationName = orgName;
-        OwnerCaseId = caseId;
-        OwnerPartyId = partyId;
-        OwnerAccessId = ownerAccessId;
-        DataOrganizationIds = [lenderOrgId];
-    }
-
     /// <summary>Individual session: no organization, no tenant data (DataOrganizationIds stays empty).</summary>
     public void SetIndividual()
     {
@@ -92,9 +70,6 @@ public sealed class RequestContext
         OrganizationName = null;
         DataOrganizationIds = [];
     }
-
-    public void AddDataOrganizations(IEnumerable<Guid> orgIds) =>
-        DataOrganizationIds = DataOrganizationIds.Concat(orgIds).Distinct().ToList();
 
     /// <summary>Elevate for trusted internal work. Callers must not expose results unfiltered.</summary>
     public IDisposable BeginSystemScope()

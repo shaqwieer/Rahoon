@@ -1,7 +1,7 @@
 # رهون — Product definition (source of truth from 2026-10-01)
 
-_Owner: product owner. Engineering records decisions here; it doesn't make them. This file **replaces**
-[`product-direction.md`](product-direction.md) (the mortgage-default help model, archived at git tag `legacy-mortgage-final`)._
+_Owner: product owner. Engineering records decisions here; it doesn't make them. The earlier mortgage-default help model
+was removed on 2026-10-01 ([removal record](../redefinition/legacy-inventory.md); git tag `legacy-mortgage-final`)._
 
 ## 1. What Rahoon is
 
@@ -197,7 +197,7 @@ While the policy isn't approved, every screen says the commission is «تُحد�
 | D2 | **Commission policy** (rate, basis, timing, VAT, contract) | Not approved. See §8 |
 | D3 | **Map tiles and geocoding provider** for production | Dev uses the public OpenStreetMap tiles and Nominatim within their usage policies. Production needs a provider with suitable terms |
 | D4 | **Advertising and brokerage licensing** (REGA brokerage law, FAL licences) | To verify before public launch: the advertisement requirements for each published opportunity |
-| D5 | **Developer / financier directory** | The seeded lists are fictional demo names. The real list needs approval |
-| D6 | **Retention and archive** of the legacy mortgage-help data | Kept untouched in the database (schemas `cases`, `requests`, …). Its deletion or anonymisation needs a decision |
-| D7 | **Object storage and malware scanning** for documents and photos in production | Local disk + placeholder scanner only |
+| D5 | **Organization directory** | ✅ Decided 2026-10-01: real developers, banks and finance companies imported from official sources (SAMA licensed banks and finance companies; REGA qualified off-plan developers), managed by the team lead at `/team/organizations`. Listing implies no partnership, transfer support or (without a cited source) licensing. Open: the full REGA developer list (REGA throttles automated reads; an official dataset request via REGA open data would complete it) and developers' official websites (REGA doesn't publish them) |
+| D6 | **Retention of the mortgage-help data** | ✅ Decided 2026-10-01: it was test data and was deleted with its schemas |
+| D7 | **Object storage and malware scanning** | Files are stored in the database behind a storage abstraction (`docs/architecture.md` «File storage», with the procedure to add object storage later). Object storage and malware scanning are not provisioned and out of the current scope |
 | D8 | **Phase 2/3 scope** (offers, reservation, completion, fees) | Not started. Starts only when the product owner asks |

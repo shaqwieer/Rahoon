@@ -1,137 +1,23 @@
 namespace Rahoon.Api.Modules.Identity;
 
-/// <summary>Operator = «فريق رهون», the Rahoon team tenant that owns individuals' requests (ADR 0001 §4.1).</summary>
-public enum OrganizationKind { Lender, ServiceProvider, JudicialAgent, Platform, Operator }
+/// <summary>Operator = «فريق رهون», the only organization kind: the Rahoon team that reviews and publishes.</summary>
+public enum OrganizationKind { Operator }
 
-public sealed record RoleTemplate(string Key, string NameAr, string NameEn, OrganizationKind Kind, IReadOnlyList<string> Permissions);
+public sealed record RoleTemplate(string Key, string NameAr, string NameEn, IReadOnlyList<string> Permissions);
 
-/// <summary>
-/// Role templates copied into each organization at onboarding. Institutions may
-/// adjust their copies (A02) subject to platform minima (PA07), but server-side
-/// separation-of-duties guards apply regardless of role configuration.
-/// </summary>
+/// <summary>Role templates of the Rahoon team. Separation of duties is enforced on the server regardless.</summary>
 public static class SystemRoles
 {
-    public const string OrgAdmin = "org_admin";
-    public const string CaseManager = "case_manager";
-    public const string CaseOfficer = "case_officer";
-    public const string CreditAnalyst = "credit_analyst";
-    public const string Approver = "approver";
-    public const string SeniorApprover = "senior_approver";
-    public const string RiskCommittee = "risk_committee";
-    public const string Legal = "legal";
-    public const string Finance = "finance";
-    public const string Compliance = "compliance";
-    public const string Auditor = "auditor";
-
-    public const string ProviderAdmin = "provider_admin";
-    public const string ProviderAgent = "provider_agent";
-    public const string JudicialAgent = "judicial_agent";
-
     public const string TeamCoordinator = "team_coordinator";
     public const string TeamVerifier = "team_verifier";
     public const string TeamLead = "team_lead";
 
-    public const string PlatformOps = "platform_ops";
-    public const string PlatformSupport = "platform_support";
-    public const string PlatformCompliance = "platform_compliance";
-    public const string PlatformAuditor = "platform_auditor";
-
-    private static readonly string[] TeamBase =
-    [
-        P.PortfolioView, P.CaseView, P.DocumentRequest, P.DocumentUpload, P.CommsSend, P.TaskManage, P.AuditView, P.ComplaintView,
-    ];
-
     public static readonly IReadOnlyList<RoleTemplate> Templates =
     [
-        new(OrgAdmin, "مسؤول المنشأة", "Institution admin", OrganizationKind.Lender,
-        [
-            P.PortfolioView, P.CaseView, P.CaseViewAll, P.CaseCreate, P.CaseImport, P.CaseAssign, P.CaseExport,
-            P.OrgSettings, P.UserManage, P.RoleChangeApprove, P.LimitsManage, P.TemplateEdit, P.ReportsView, P.AnalyticsView,
-            P.AuditView, P.ComplaintView, P.CaseCancelApprove, P.InvoiceApprove, P.ProviderAssign, P.OperationsApprove,
-        ]),
-        new(CaseManager, "مدير حالات", "Case manager", OrganizationKind.Lender,
-        [
-            .. TeamBase, P.CaseViewAll, P.CaseCreate, P.CaseEdit, P.CaseImport, P.CaseAssign, P.CaseExport, P.CasePause, P.CaseCancel, P.CaseTransition,
-            P.PiiReveal, P.DocumentReview, P.DocumentDownload, P.ValuationAssign, P.SolutionPrepare, P.SolutionReview, P.OfferSend,
-            P.NegotiationManage, P.AgreementPrepare, P.BreachManage, P.SaleManage, P.ProviderAssign, P.ReportsView,
-        ]),
-        new(CaseOfficer, "موظف حالة", "Case officer", OrganizationKind.Lender,
-        [
-            .. TeamBase, P.CaseEdit, P.DocumentReview, P.NegotiationManage,
-        ]),
-        new(CreditAnalyst, "محلل ائتمان", "Credit analyst", OrganizationKind.Lender,
-        [
-            .. TeamBase, P.PiiReveal, P.DocumentReview, P.DocumentDownload, P.ValuationAssign, P.ValuationReview, P.AnalysisEdit,
-            P.SolutionPrepare, P.CaseTransition, P.AnalyticsView,
-        ]),
-        new(Approver, "معتمد", "Approver", OrganizationKind.Lender,
-        [
-            P.PortfolioView, P.CaseView, P.CaseViewAll, P.AuditView, P.PiiReveal, P.SolutionApprove, P.SaleApprove,
-            P.ReferralApprove, P.ReconciliationApprove, P.DistributionApprove, P.CaseClose, P.CaseCancelApprove, P.ReportsView,
-        ]),
-        new(SeniorApprover, "معتمد أول", "Senior approver", OrganizationKind.Lender,
-        [
-            P.PortfolioView, P.CaseView, P.CaseViewAll, P.AuditView, P.PiiReveal, P.SolutionApprove, P.SaleApprove,
-            P.ReferralApprove, P.ReconciliationApprove, P.DistributionApprove, P.CaseClose, P.CaseCancelApprove, P.ReportsView, P.AnalyticsView,
-        ]),
-        new(RiskCommittee, "لجنة المخاطر", "Risk committee", OrganizationKind.Lender,
-        [
-            P.PortfolioView, P.CaseView, P.CaseViewAll, P.AuditView, P.SolutionApprove, P.SaleApprove, P.ReportsView, P.AnalyticsView,
-        ]),
-        new(Legal, "القانونية", "Legal", OrganizationKind.Lender,
-        [
-            .. TeamBase, P.CaseViewAll, P.PiiReveal, P.DocumentReview, P.DocumentDownload, P.AgreementPrepare, P.AgreementActivate,
-            P.ReferralInitiate, P.ReferralExternalUpdate, P.CaseTransition, P.ProviderAssign,
-        ]),
-        new(Finance, "المالية", "Finance", OrganizationKind.Lender,
-        [
-            .. TeamBase, P.CaseViewAll, P.PaymentRecord, P.PaymentMatch, P.BreachManage, P.ReconciliationPrepare, P.CaseClose, P.DistributionApprove,
-            P.InvoiceApprove, P.ReportsView,
-        ]),
-        new(Compliance, "الامتثال", "Compliance", OrganizationKind.Lender,
-        [
-            P.PortfolioView, P.CaseView, P.CaseViewAll, P.AuditView, P.ComplaintView, P.ComplaintHandle, P.TemplatePublish, P.ReportsView,
-            P.OperationsApprove,
-        ]),
-        new(Auditor, "مدقق", "Auditor", OrganizationKind.Lender,
-        [
-            P.PortfolioView, P.CaseView, P.CaseViewAll, P.AuditView, P.ComplaintView, P.ReportsView,
-        ]),
-
-        new(ProviderAdmin, "مسؤول مقدم الخدمة", "Provider admin", OrganizationKind.ServiceProvider,
-            [P.AssignmentWork, P.InvoiceSubmit, P.UserManage, P.OrgSettings]),
-        new(ProviderAgent, "مقيّم / وسيط", "Valuer / broker", OrganizationKind.ServiceProvider,
-            [P.AssignmentWork]),
-        new(JudicialAgent, "وكيل البيع القضائي", "Judicial sale agent", OrganizationKind.JudicialAgent,
-            [P.AgentWork]),
-
-        // «فريق رهون» (ADR 0001 §4.2). Separation of duties (verifier ≠ recorder) is enforced on the server regardless.
-        // «فريق رهون». The legacy request.* permissions stay on the templates for the archived model (Features:LegacyMortgage).
-        new(TeamCoordinator, "منسق الطلبات", "Request coordinator", OrganizationKind.Operator,
-        [
-            P.MarketView, P.MarketReview, P.MarketPrepare, P.MarketFollow,
-            P.RequestViewAssigned, P.RequestReview, P.RequestRequestInfo, P.RequestCoordinate, P.RequestMessage, P.RequestOfferRecord,
-            P.RequestResponseRelay, P.RequestClose, P.RequestObjectionHandle, P.RequestExecutionRecord,
-        ]),
-        new(TeamVerifier, "مراجِع النشر", "Publication reviewer", OrganizationKind.Operator,
-            [P.MarketView, P.MarketReview, P.MarketPublish, P.RequestViewAssigned, P.RequestOfferVerify, P.RequestExecutionVerify]),
-        new(TeamLead, "قائد الفريق", "Team lead", OrganizationKind.Operator,
-        [
-            P.MarketView, P.MarketAssign, P.MarketReview, P.MarketPrepare, P.MarketPublish, P.MarketFollow,
-            P.RequestViewAssigned, P.RequestViewAll, P.RequestAssign, P.RequestReview, P.RequestRequestInfo, P.RequestCoordinate, P.RequestMessage,
-            P.RequestOfferRecord, P.RequestOfferVerify, P.RequestResponseRelay, P.RequestClose, P.RequestObjectionHandle,
-            P.RequestExecutionRecord, P.RequestExecutionVerify,
-        ]),
-
-        new(PlatformOps, "مسؤول عمليات", "Operations", OrganizationKind.Platform,
-            [P.PlatformOps, P.PlatformInstitutions, P.PlatformUsers, P.PlatformDefaults, P.PlatformBilling, P.PlatformIntegrations]),
-        new(PlatformSupport, "دعم تقني", "Technical support", OrganizationKind.Platform,
-            [P.PlatformOps, P.PlatformTempAccess]),
-        new(PlatformCompliance, "الامتثال", "Compliance", OrganizationKind.Platform,
-            [P.PlatformOps, P.PlatformComplaints, P.PlatformPrivacy, P.PlatformDefaults, P.PlatformAudit]),
-        new(PlatformAuditor, "مدقق", "Auditor", OrganizationKind.Platform,
-            [P.PlatformOps, P.PlatformAudit, P.PlatformTempAccessApprove]),
+        new(TeamCoordinator, "منسق الطلبات", "Request coordinator", [P.MarketView, P.MarketReview, P.MarketPrepare, P.MarketFollow]),
+        new(TeamVerifier, "مراجِع النشر", "Publication reviewer", [P.MarketView, P.MarketReview, P.MarketPublish]),
+        new(TeamLead, "قائد الفريق", "Team lead",
+            [P.MarketView, P.MarketAssign, P.MarketReview, P.MarketPrepare, P.MarketPublish, P.MarketFollow, P.DirectoryManage]),
     ];
 
     public static RoleTemplate? Find(string key) => Templates.FirstOrDefault(t => t.Key == key);

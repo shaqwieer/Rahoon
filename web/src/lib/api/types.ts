@@ -1,17 +1,9 @@
 /** Shapes shared by server and client API helpers. Mirrors server/src/Rahoon.Api (Identity/AuthEndpoints.cs). */
 
-export type OrgKind = "lender" | "serviceprovider" | "judicialagent" | "platform" | "operator";
-export type SessionScope = "none" | "organization" | "owner" | "individual";
+/** «فريق رهون» is the only organization: the Rahoon team. Owners and buyers are individuals. */
+export type OrgKind = "operator";
+export type SessionScope = "none" | "organization" | "individual";
 export type SessionStage = "mfapending" | "active";
-
-export interface MeMembership {
-  id: string;
-  organization: string;
-  initials: string;
-  kind: OrgKind;
-  role: string | null;
-  current: boolean;
-}
 
 export interface MeAuthenticated {
   authenticated: true;
@@ -22,15 +14,11 @@ export interface MeAuthenticated {
   roles: string[];
   roleName: string | null;
   permissions: string[];
-  owner: { caseRef: string; firstName: string; lenderName: string } | null;
-  /** Self-registered individual (ADR 0001); identity is self-declared until verified by the Rahoon team. */
-  individual?: { idMasked: string; phoneMasked: string; identityAssurance: string } | null;
-  memberships: MeMembership[];
-  stepUpActive: boolean;
+  /** An owner or buyer signed in by mobile. */
+  individual?: { phoneMasked: string } | null;
   /** Auth:SmsConfirmation on the API. When false, one-time codes are confirmed automatically and no code step is shown. */
   smsConfirmation?: boolean;
-  unreadNotifications: number;
-  /** Server-computed landing route for the current context (e.g. /portfolio, /provider, /owner, /select-context). */
+  /** Server-computed landing route: /team for the Rahoon team, /account for owners and buyers. */
   home: string;
 }
 

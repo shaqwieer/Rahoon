@@ -15,8 +15,8 @@ public sealed record PhoneVerifyRequest(string? Code, bool AcceptTerms, string? 
 public sealed record AccountNameRequest(string? Name);
 
 /// <summary>
-/// Mobile-first sign-in for owners and buyers (2026-10-01). One account per mobile number: an existing account with the same
-/// mobile — including one created by the withdrawn mortgage-help sign-in — is reused, never duplicated. The same person can be
+/// Mobile-first sign-in for owners and buyers. One account per mobile number: an existing account with the same mobile is
+/// reused, never duplicated. The same person can be
 /// a seller and a buyer. The code goes through the SMS gateway when Auth:SmsConfirmation is on; when it is off (no provider
 /// yet), the response says so (otpRequired = false) and the UI must not present the sign-in as verified.
 /// </summary>
@@ -98,7 +98,7 @@ public static class PhoneAuthEndpoints
         return Results.Ok(new { destination = Mask.Phone(phone!), issued.ResendInSeconds, sandboxCode = issued.SandboxCode, otpRequired = issued.Required });
     }
 
-    /// <summary>Oldest verified account for this mobile, else the oldest pending one (legacy data may hold more than one).</summary>
+    /// <summary>Oldest verified account for this mobile, else the oldest pending one.</summary>
     internal static Task<IndividualProfile?> FindByPhoneAsync(RahoonDbContext db, string phoneHash) =>
         db.IndividualProfiles.Include(p => p.User).Where(p => p.PhoneHash == phoneHash)
             .OrderBy(p => p.PhoneVerifiedAt == null).ThenBy(p => p.CreatedAt).FirstOrDefaultAsync();
@@ -148,15 +148,15 @@ public static class PhoneAuthEndpoints
             profile.PhoneVerifiedAt = now;
         }
         // A name given now replaces only the placeholder; an existing name is changed from the account page.
-        if (name is not null && (firstTime || user.FullName == "عميل رهون" || user.FullName.Contains('•'))) user.FullName = name;
+        if (name is not null && (firstTime || user.FullName == "عميل رهون")) user.FullName = name;
         profile.TermsVersion = TermsVersion;
         profile.TermsAcceptedAt = now;
         db.TermsAcceptances.Add(new TermsAcceptance { UserId = user.Id, Version = TermsVersion, AcceptedAt = now, IpMasked = rc.IpMasked });
         user.LastLoginAt = now;
         user.FailedLoginCount = 0;
         session.MfaVerifiedAt = now;
-        var active = await sessions.RotateAsync(http, session, user, SessionScope.Individual, null, null, null, 30, firstTime ? "individual_registered" : "individual_login");
-        rc.SetSession(user.Id, active.Id, user.FullName, SessionScope.Individual, SessionStage.Active, null);
+        var active = await sessions.RotateAsync(http, session, user, SessionScope.Individual, null, null, 30, firstTime ? "individual_registered" : "individual_login");
+        rc.SetSession(user.Id, active.Id, user.FullName, SessionScope.Individual, SessionStage.Active);
         rc.SetIndividual();
         await audit.RecordAsync(new AuditEntry(firstTime ? "individual.registered" : "individual.login",
             firstTime ? "إنشاء حساب بالجوال" : "دخول بالجوال", Detail: profile.PhoneMasked,

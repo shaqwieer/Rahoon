@@ -19,7 +19,7 @@ export function BuyerAccount({ request: r, events, catalog }: { request: BuyerRe
   const router = useRouter();
   const [v, setV] = useState<BuyerValues>({
     availableNow: str(r.availableNow), installmentComfort: str(r.installmentComfort), installmentFrequency: r.installmentFrequency ?? "monthly", maxPrice: str(r.maxPrice),
-    purchaseMode: r.purchaseMode ?? "", cities: r.cities, areasText: r.areasText ?? "", propertyTypes: r.propertyTypes, areaMin: str(r.areaMin), areaMax: str(r.areaMax),
+    purchaseMode: r.purchaseMode ?? "", financierId: r.preferredFinancierId ?? "", financierName: r.preferredFinancierName ?? "", cities: r.cities, areasText: r.areasText ?? "", propertyTypes: r.propertyTypes, areaMin: str(r.areaMin), areaMax: str(r.areaMax),
     bedroomsMin: str(r.bedroomsMin), readiness: r.readiness ?? "any", deliveryBy: r.deliveryBy ?? "",
   });
   const [editing, setEditing] = useState(false);

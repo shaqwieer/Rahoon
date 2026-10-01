@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using Rahoon.Api.Infrastructure;
 using Rahoon.Api.Infrastructure.Auth;
 using Rahoon.Api.Infrastructure.Http;
 using Rahoon.Api.Infrastructure.Integrations;
@@ -15,7 +14,7 @@ using Rahoon.Api.Infrastructure.Tenancy;
 using Rahoon.Api.Infrastructure.Time;
 using Rahoon.Api.Modules;
 using Rahoon.Api.Modules.Audit;
-using Rahoon.Api.Modules.Cases;
+using Rahoon.Api.Modules.OrgDirectory;
 using Rahoon.Api.Modules.Identity;
 using Rahoon.Api.Seed;
 
@@ -44,7 +43,6 @@ builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 // Resolved lazily so test hosts and environment overrides apply.
 builder.Services.AddSingleton(sp => sp.GetRequiredService<IConfiguration>().GetSection("Auth").Get<AuthOptions>() ?? new AuthOptions());
 builder.Services.AddScoped<SessionService>();
-builder.Services.AddSingleton(sp => FeatureFlags.From(sp.GetRequiredService<IConfiguration>()));
 builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -54,16 +52,17 @@ builder.Services.AddRateLimiter(o =>
 });
 
 // ── Infrastructure services ──
-builder.Services.AddScoped<IDocumentStorage, LocalDocumentStorage>();
-builder.Services.AddScoped<IFileScanner, BasicSignatureScanner>();
-builder.Services.AddScoped<IIntegrationRegistry, IntegrationRegistry>();
+// Files: metadata in the database, bytes behind IFileContentStore providers (database today; object storage can be added
+// as another provider — every file row names the provider that holds it).
+builder.Services.AddScoped<IFileContentStore, DatabaseContentStore>();
+builder.Services.AddScoped<FileStore>();
 builder.Services.AddScoped<ISmsGateway, SandboxSmsGateway>();
-builder.Services.AddSingleton<ILicensedSigningProvider, UnavailableSigningProvider>();
-builder.Services.AddSingleton<ILicensedPaymentProvider, UnavailablePaymentProvider>();
-builder.Services.AddSingleton<INationalIdentityProvider, UnavailableIdentityProvider>();
-builder.Services.AddSingleton<IJudicialChannel, UnavailableJudicialChannel>();
 builder.Services.AddScoped<AuditLog>();
-builder.Services.AddScoped<CaseWorkflow>();
+builder.Services.AddHttpClient(DirectorySources.HttpClientName, c =>
+{
+    c.Timeout = TimeSpan.FromSeconds(30);
+    c.DefaultRequestHeaders.UserAgent.ParseAdd("RahoonDirectoryImporter/1.0 (+https://rahoon.talentfold.net)");
+});
 builder.Services.AddRahoonModules();
 builder.Services.AddScoped<DevSeeder>();
 
@@ -78,8 +77,8 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
-// ── CLI: `dotnet run -- migrate` / `seed` / `reset-demo` ──
-if (args.Length > 0 && args[0] is "migrate" or "seed" or "reset-demo")
+// ── CLI: `dotnet run -- migrate` / `seed` / `reset-demo` / `import-directory` ──
+if (args.Length > 0 && args[0] is "migrate" or "seed" or "reset-demo" or "import-directory")
 {
     // Demo-data commands are refused outside Development/Staging/Testing *before* touching the database.
     if (args[0] is "seed" or "reset-demo" && !DemoDataGuard.IsAllowed(app.Environment))
@@ -92,9 +91,13 @@ if (args.Length > 0 && args[0] is "migrate" or "seed" or "reset-demo")
     var db = scope.ServiceProvider.GetRequiredService<RahoonDbContext>();
     using (db.Request.BeginSystemScope())
     {
+        if (args[0] == "import-directory")
+        {
+            Environment.ExitCode = await DirectoryCli.RunAsync(scope.ServiceProvider, args.Skip(1).ToArray());
+            return;
+        }
         if (args[0] == "reset-demo") await db.Database.EnsureDeletedAsync();
-        await db.Database.MigrateAsync();
-        await SystemRoleSync.SyncAsync(db);
+        await DatabaseMigrator.MigrateAsync(scope.ServiceProvider);
         if (args[0] is "seed" or "reset-demo") await scope.ServiceProvider.GetRequiredService<DevSeeder>().SeedAsync();
     }
     Console.WriteLine($"{args[0]}: done");
@@ -107,8 +110,7 @@ if ((app.Environment.IsDevelopment() || app.Environment.IsStaging()) && config.G
     var db = scope.ServiceProvider.GetRequiredService<RahoonDbContext>();
     using (db.Request.BeginSystemScope())
     {
-        await db.Database.MigrateAsync();
-        await SystemRoleSync.SyncAsync(db);
+        await DatabaseMigrator.MigrateAsync(scope.ServiceProvider);
         if (config.GetValue("Database:SeedOnStartup", false)) await scope.ServiceProvider.GetRequiredService<DevSeeder>().SeedAsync();
     }
 }

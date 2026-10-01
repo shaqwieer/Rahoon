@@ -23,17 +23,6 @@ internal static class Jsonb
         p.HasConversion(Converter, Comparer).HasColumnType("jsonb");
 }
 
-internal sealed class ObligationPartyConfig : IEntityTypeConfiguration<ObligationParty>
-{
-    public void Configure(EntityTypeBuilder<ObligationParty> b)
-    {
-        b.ToTable("obligation_parties", "market");
-        b.Property(x => x.Kind).HasMaxLength(20);
-        b.Property(x => x.NameAr).HasMaxLength(200);
-        b.HasIndex(x => new { x.Kind, x.NameAr }).IsUnique();
-    }
-}
-
 internal sealed class SaleRequestConfig : IEntityTypeConfiguration<SaleRequest>
 {
     public void Configure(EntityTypeBuilder<SaleRequest> b)
@@ -70,10 +59,11 @@ internal sealed class SaleObligationConfig : IEntityTypeConfiguration<SaleObliga
         b.ToTable("sale_obligations", "market");
         b.HasIndex(x => x.SaleRequestId);
         b.Property(x => x.Kind).HasMaxLength(20);
+        b.Property(x => x.PartyName).HasMaxLength(200);
         b.Property(x => x.PartyOtherName).HasMaxLength(200);
         b.Property(x => x.RelationNote).HasMaxLength(500);
         b.Property(x => x.Answers).AsJsonb();
-        b.HasOne(x => x.Party).WithMany().HasForeignKey(x => x.PartyId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<OrgDirectory.DirectoryOrganization>().WithMany().HasForeignKey(x => x.PartyId).OnDelete(DeleteBehavior.Restrict);
         b.Ignore(x => x.PartyDisplayName);
     }
 }
@@ -86,10 +76,8 @@ internal sealed class PrivateDocumentConfig : IEntityTypeConfiguration<PrivateDo
         b.HasIndex(x => x.SaleRequestId);
         b.HasOne<SaleRequest>().WithMany().HasForeignKey(x => x.SaleRequestId).OnDelete(DeleteBehavior.Restrict);
         b.Property(x => x.Kind).HasMaxLength(40);
-        b.Property(x => x.FileName).HasMaxLength(260);
-        b.Property(x => x.ContentType).HasMaxLength(100);
-        b.Property(x => x.Sha256).HasMaxLength(64);
-        b.Property(x => x.StorageKey).HasMaxLength(300);
+        b.HasOne(x => x.File).WithMany().HasForeignKey(x => x.FileId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(x => x.FileId).IsUnique();
         b.Property(x => x.Source).HasMaxLength(20);
         b.Property(x => x.ReviewNote).HasMaxLength(500);
     }
@@ -102,10 +90,8 @@ internal sealed class ListingPhotoConfig : IEntityTypeConfiguration<ListingPhoto
         b.ToTable("listing_photos", "market");
         b.HasIndex(x => x.SaleRequestId);
         b.HasOne<SaleRequest>().WithMany().HasForeignKey(x => x.SaleRequestId).OnDelete(DeleteBehavior.Restrict);
-        b.Property(x => x.FileName).HasMaxLength(260);
-        b.Property(x => x.ContentType).HasMaxLength(100);
-        b.Property(x => x.Sha256).HasMaxLength(64);
-        b.Property(x => x.StorageKey).HasMaxLength(300);
+        b.HasOne(x => x.File).WithMany().HasForeignKey(x => x.FileId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(x => x.FileId).IsUnique();
         b.Property(x => x.ReviewNote).HasMaxLength(500);
     }
 }
@@ -164,6 +150,8 @@ internal sealed class BuyerRequestConfig : IEntityTypeConfiguration<BuyerRequest
         b.Property(x => x.Reference).HasMaxLength(20);
         b.Property(x => x.InstallmentFrequency).HasMaxLength(20);
         b.Property(x => x.PurchaseMode).HasMaxLength(20);
+        b.Property(x => x.PreferredFinancierName).HasMaxLength(200);
+        b.HasOne<OrgDirectory.DirectoryOrganization>().WithMany().HasForeignKey(x => x.PreferredFinancierId).OnDelete(DeleteBehavior.Restrict);
         b.Property(x => x.AreasText).HasMaxLength(500);
         b.Property(x => x.Readiness).HasMaxLength(20);
         b.Property(x => x.DeliveryBy).HasMaxLength(7);

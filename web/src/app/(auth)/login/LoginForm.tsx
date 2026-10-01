@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, type FormEvent } from "react";
-import { LocaleSwitch } from "@/components/shell/LocaleSwitch";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/Field";
@@ -168,9 +167,8 @@ export function LoginForm({ next }: { next: string }) {
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-4 text-13 text-muted">
-        <LocaleSwitch variant="link" className="min-h-0 px-0 text-13 font-normal text-rust underline" />
-        <Link href="#">{L.privacy}</Link>
-        <Link href="#">{L.help}</Link>
+        <Link href="/privacy">{L.privacy}</Link>
+        <Link href="/contact">{L.help}</Link>
       </div>
     </form>
   );

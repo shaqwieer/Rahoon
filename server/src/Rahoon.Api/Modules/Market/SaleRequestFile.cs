@@ -19,6 +19,8 @@ public sealed class SaleRequestFile
     public required List<CompletionRequest> CompletionRequests { get; init; }
     public required List<MarketEvent> Events { get; init; }
     public required List<Opportunity> Opportunities { get; init; }
+    /// <summary>Listing photo id → stored file id, for every photo of the request (removed ones too: an opportunity may still show them).</summary>
+    public required Dictionary<Guid, Guid> AllPhotoFileIds { get; init; }
 
     public static async Task<SaleRequestFile?> LoadAsync(RahoonDbContext db, string reference)
     {
@@ -27,14 +29,15 @@ public sealed class SaleRequestFile
         return new SaleRequestFile
         {
             Request = r,
-            Obligations = await db.SaleObligations.Include(o => o.Party).Where(o => o.SaleRequestId == r.Id && o.RemovedAt == null).OrderBy(o => o.SortOrder).ToListAsync(),
-            Documents = await db.PrivateDocuments.Where(d => d.SaleRequestId == r.Id && d.RemovedAt == null).OrderBy(d => d.CreatedAt).ToListAsync(),
+            Obligations = await db.SaleObligations.Where(o => o.SaleRequestId == r.Id && o.RemovedAt == null).OrderBy(o => o.SortOrder).ToListAsync(),
+            Documents = await db.PrivateDocuments.Include(d => d.File).Where(d => d.SaleRequestId == r.Id && d.RemovedAt == null).OrderBy(d => d.CreatedAt).ToListAsync(),
             Photos = await db.ListingPhotos.Where(p => p.SaleRequestId == r.Id && p.RemovedAt == null).OrderBy(p => p.SortOrder).ThenBy(p => p.CreatedAt).ToListAsync(),
             Verifications = await db.FigureVerifications.Where(v => v.SaleRequestId == r.Id && v.SupersededAt == null).OrderBy(v => v.VerifiedAt).ToListAsync(),
             Approvals = await db.ExternalApprovals.Where(a => a.SaleRequestId == r.Id).OrderBy(a => a.RecordedAt).ToListAsync(),
             CompletionRequests = await db.CompletionRequests.Where(c => c.SubjectId == r.Id).OrderBy(c => c.RequestedAt).ToListAsync(),
             Events = await db.MarketEvents.Where(e => e.SubjectId == r.Id).OrderBy(e => e.At).ToListAsync(),
             Opportunities = await db.Opportunities.Where(o => o.SaleRequestId == r.Id).OrderBy(o => o.CreatedAt).ToListAsync(),
+            AllPhotoFileIds = await db.ListingPhotos.Where(p => p.SaleRequestId == r.Id).ToDictionaryAsync(p => p.Id, p => p.FileId),
         };
     }
 
@@ -185,14 +188,15 @@ public sealed class SaleRequestFile
 
     public object DocumentDto(PrivateDocument d) => new
     {
-        id = d.Id, kind = d.Kind, kindLabel = FieldCatalog.Documents.FirstOrDefault(x => x.Key == d.Kind)?.Label ?? d.Kind, d.ObligationId, d.FileName, d.SizeBytes,
-        d.ContentType, reviewStatus = d.ReviewStatus, d.ReviewNote, uploadedAt = d.CreatedAt, d.Source,
-        url = $"/api/market/sale-requests/{Request.Reference}/documents/{d.Id}/file",
+        id = d.Id, kind = d.Kind, kindLabel = FieldCatalog.Documents.FirstOrDefault(x => x.Key == d.Kind)?.Label ?? d.Kind, d.ObligationId,
+        fileId = d.FileId, fileName = d.File?.FileName ?? "", sizeBytes = d.File?.SizeBytes ?? 0, contentType = d.File?.ContentType ?? "",
+        reviewStatus = d.ReviewStatus, d.ReviewNote, uploadedAt = d.CreatedAt, d.Source,
+        url = Files.FileEndpoints.Url(d.FileId),
     };
 
     public object PhotoDto(ListingPhoto p) => new
     {
-        id = p.Id, url = $"/api/market/sale-requests/{Request.Reference}/photos/{p.Id}/file", p.IsCover, p.SortOrder, reviewStatus = p.ReviewStatus, p.ReviewNote,
+        id = p.Id, fileId = p.FileId, url = Files.FileEndpoints.Url(p.FileId), p.IsCover, p.SortOrder, reviewStatus = p.ReviewStatus, p.ReviewNote,
     };
 
     public object CompletionDto(CompletionRequest c) => new

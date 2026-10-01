@@ -1,6 +1,7 @@
 "use client";
 
 import { Chips } from "@/components/market/DynamicField";
+import { OrgPicker } from "@/components/market/OrgPicker";
 import { toLatinDigits } from "@/lib/market/numbers";
 import type { Catalog } from "@/lib/market/types";
 
@@ -10,6 +11,9 @@ export interface BuyerValues {
   installmentFrequency: string;
   maxPrice: string;
   purchaseMode: string;
+  /** With external finance: the preferred bank or finance company from the directory (optional). */
+  financierId: string;
+  financierName: string;
   cities: string[];
   areasText: string;
   propertyTypes: string[];
@@ -21,7 +25,7 @@ export interface BuyerValues {
 }
 
 export const emptyBuyer: BuyerValues = {
-  availableNow: "", installmentComfort: "", installmentFrequency: "monthly", maxPrice: "", purchaseMode: "", cities: [], areasText: "",
+  availableNow: "", installmentComfort: "", installmentFrequency: "monthly", maxPrice: "", purchaseMode: "", financierId: "", financierName: "", cities: [], areasText: "",
   propertyTypes: [], areaMin: "", areaMax: "", bedroomsMin: "", readiness: "any", deliveryBy: "",
 };
 
@@ -35,7 +39,8 @@ export function buyerBody(v: BuyerValues, extra?: Record<string, unknown>) {
     availableNow: num(v.availableNow), installmentComfort: num(v.installmentComfort), installmentFrequency: v.installmentComfort ? v.installmentFrequency : null,
     maxPrice: num(v.maxPrice), purchaseMode: v.purchaseMode || null, cities: v.cities, areasText: v.areasText.trim() || null, propertyTypes: v.propertyTypes,
     areaMin: num(v.areaMin), areaMax: num(v.areaMax), bedroomsMin: residential ? num(v.bedroomsMin) : null, readiness: v.readiness || null,
-    deliveryBy: v.readiness === "ready" ? null : v.deliveryBy || null, ...extra,
+    deliveryBy: v.readiness === "ready" ? null : v.deliveryBy || null,
+    preferredFinancierId: v.purchaseMode === "external_finance" && v.financierId ? v.financierId : null, ...extra,
   };
 }
 
@@ -97,6 +102,16 @@ export function CapacityFields({ v, set, errors, catalog }: { v: BuyerValues; se
         <Chips name="purchaseMode" value={v.purchaseMode} invalid={Boolean(errors.purchaseMode)} onChange={(x) => set({ purchaseMode: x })}
           options={[{ value: "cash", label: "نقدًا" }, { value: "external_finance", label: "بتمويل من جهة خارجية" }, { value: "undecided", label: "لم أقرر بعد" }]} />
         {v.purchaseMode === "external_finance" ? <span className="text-13 text-muted">موافقة التمويل تصدر من جهة التمويل نفسها، ولا يغني عنها اعتماد رهون لملفك.</span> : null}
+        {v.purchaseMode === "external_finance" ? (
+          <OrgPicker
+            kind="financier"
+            label="جهة التمويل التي تفضّلها"
+            optional
+            allowOther={false}
+            value={v.financierId ? { id: v.financierId, name: v.financierName } : null}
+            onChange={(x, other) => set(other || !x?.id ? { financierId: "", financierName: "" } : { financierId: x.id, financierName: x.name })}
+          />
+        ) : null}
         {errors.purchaseMode ? <span className="text-13 text-err">{errors.purchaseMode}</span> : null}
       </fieldset>
     </div>

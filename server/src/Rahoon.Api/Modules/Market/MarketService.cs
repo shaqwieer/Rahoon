@@ -11,7 +11,7 @@ using Rahoon.Api.Modules.Identity;
 namespace Rahoon.Api.Modules.Market;
 
 /// <summary>Shared pieces of the market module: the operator tenant, references, the event log and honest notifications.</summary>
-public sealed class MarketService(RahoonDbContext db, RequestContext rc, IClock clock, ISmsGateway sms, PiiProtector pii, IServiceScopeFactory scopes,
+public sealed class MarketService(RahoonDbContext db, RequestContext rc, IClock clock, PiiProtector pii, IServiceScopeFactory scopes,
     ILogger<MarketService> log)
 {
     private Guid? _operatorOrgId;
@@ -32,8 +32,8 @@ public sealed class MarketService(RahoonDbContext db, RequestContext rc, IClock 
         var year = clock.TodayRiyadh.Year;
         var key = $"market:{prefix}:{year}";
         var value = await db.Database.SqlQuery<long>($"""
-            INSERT INTO cases.reference_counters (key, value) VALUES ({key}, 1)
-            ON CONFLICT (key) DO UPDATE SET value = cases.reference_counters.value + 1
+            INSERT INTO app.reference_counters (key, value) VALUES ({key}, 1)
+            ON CONFLICT (key) DO UPDATE SET value = app.reference_counters.value + 1
             RETURNING value AS "Value"
             """).ToListAsync();
         return $"{prefix}-{year}-{value[0]:D5}";
@@ -77,7 +77,7 @@ public sealed class MarketService(RahoonDbContext db, RequestContext rc, IClock 
             try
             {
                 var phone = pii.Unprotect(profile.PhoneEnc);
-                var sent = await gateway.SendAsync(phone, body, org);
+                var sent = await gateway.SendAsync(phone, body);
                 result = sent.Delivered ? "sent" : sent.State == IntegrationState.Simulated ? "simulated" : "unavailable";
             }
             catch (Exception ex)

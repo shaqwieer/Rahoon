@@ -11,8 +11,6 @@ namespace Rahoon.Api.Modules.Audit;
 public sealed record AuditEntry(
     string Type,
     string Title,
-    Guid? CaseId = null,
-    string? CaseReference = null,
     string? FromState = null,
     string? ToState = null,
     string? Reason = null,
@@ -32,7 +30,7 @@ public sealed record AuditEntry(
 public sealed class AuditLog(RahoonDbContext db, RequestContext rc, IClock clock, IServiceScopeFactory scopes)
 {
     public const string Genesis = "sha256:genesis";
-    public const int CurrentHashVersion = 2;
+    public const int CurrentHashVersion = 3;
 
     /// <summary>Adds the event to the current unit of work (committed with the business change).</summary>
     public async Task RecordAsync(AuditEntry e)
@@ -67,8 +65,6 @@ public sealed class AuditLog(RahoonDbContext db, RequestContext rc, IClock clock
     private AuditEvent Build(AuditEntry e, RequestContext ctx) => new()
     {
         OrganizationId = e.OrganizationId ?? ctx.OrganizationId,
-        CaseId = e.CaseId,
-        CaseReference = e.CaseReference,
         Type = e.Type,
         Title = e.Title,
         FromState = e.FromState,
@@ -76,7 +72,7 @@ public sealed class AuditLog(RahoonDbContext db, RequestContext rc, IClock clock
         ActorType = ctx.IsAuthenticated ? ctx.ActorType : "system",
         ActorUserId = ctx.IsAuthenticated ? ctx.UserId : null,
         ActorLabel = ctx.IsAuthenticated ? ctx.UserName : "النظام",
-        ActorRole = ctx.IsOwner ? "المالك" : ctx.PrimaryRoleNameAr,
+        ActorRole = ctx.PrimaryRoleNameAr,
         Reason = e.Reason,
         Detail = e.Detail,
         Blocked = e.Blocked,
@@ -113,11 +109,9 @@ public sealed class AuditLog(RahoonDbContext db, RequestContext rc, IClock clock
 
     public static string ComputeHash(AuditEvent e)
     {
-        var canonical = string.Join('|', e.PrevHash, e.Id, e.OrganizationId, e.CaseId, e.Type, e.Title, e.FromState, e.ToState,
+        var canonical = string.Join('|', e.HashVersion, e.PrevHash, e.Id, e.OrganizationId, e.Type, e.Title, e.FromState, e.ToState,
             e.ActorUserId, e.Reason, e.Detail, e.Blocked, string.Join(',', e.Evidence), e.DataJson,
-            e.OccurredAt.UtcDateTime.ToString("O"));
-        // Version 2 appends the non-case subject; version-1 events keep their original canonical form and still verify.
-        if (e.HashVersion >= 2) canonical += "|" + e.SubjectType + "|" + e.SubjectReference;
+            e.OccurredAt.UtcDateTime.ToString("O"), e.SubjectType, e.SubjectReference);
         return "sha256:" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
     }
 

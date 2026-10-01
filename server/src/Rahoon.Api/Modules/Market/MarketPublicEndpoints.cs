@@ -34,17 +34,14 @@ public static class MarketPublicEndpoints
         g.MapGet("/sitemap", Sitemap);
     }
 
-    private static async Task<IResult> Catalog(RahoonDbContext db, RequestContext rc, IConfiguration config)
+    private static IResult Catalog(IConfiguration config)
     {
-        using var _ = rc.BeginSystemScope();
-        var parties = await db.ObligationParties.Where(p => p.Active).OrderBy(p => p.Kind).ThenBy(p => p.SortOrder).ThenBy(p => p.NameAr)
-            .Select(p => new { p.Id, p.Kind, name = p.NameAr, p.IsDemo }).ToListAsync();
         var policy = CommissionPolicy.From(config);
         return Results.Ok(new
         {
             propertyTypes = FieldCatalog.PropertyTypes, obligationModes = FieldCatalog.ObligationModes, obligationKinds = FieldCatalog.ObligationKinds,
             frequencies = FieldCatalog.Frequencies, fields = FieldCatalog.Fields, documents = FieldCatalog.Documents, cities = FieldCatalog.Cities,
-            unknown = FieldCatalog.Unknown, parties,
+            unknown = FieldCatalog.Unknown,
             commission = new { policy.Approved, text = policy.Approved && policy.Rate is { } rate ? $"{rate * 100:0.##}%" : "تُحدد وفق السياسة والعقد المعتمدين (لم تُعتمد بعد)" },
         });
     }
@@ -217,7 +214,7 @@ public static class MarketPublicEndpoints
         using var _ = rc.BeginSystemScope();
         var opp = await db.Opportunities.FirstAsync(o => o.Id == oppId);
         var terms = await db.OpportunityTerms.FirstAsync(t => t.Id == opp.PublishedTermsId);
-        var obligations = await db.SaleObligations.Include(o => o.Party).Where(o => o.SaleRequestId == opp.SaleRequestId && o.RemovedAt == null).ToListAsync();
+        var obligations = await db.SaleObligations.Where(o => o.SaleRequestId == opp.SaleRequestId && o.RemovedAt == null).ToListAsync();
         var approvals = await db.ExternalApprovals.Where(a => a.SaleRequestId == opp.SaleRequestId).OrderBy(a => a.RecordedAt).ToListAsync();
         // Public-safe approval summary: the party's own decision on a transfer, separate from Rahoon's review. No documents.
         var approvalSummary = obligations.Select(o =>
@@ -252,7 +249,7 @@ public static class MarketPublicEndpoints
     }
 
     /// <summary>A listing photo is public only while it is approved and shown in a published opportunity. Private documents are never served here.</summary>
-    private static async Task<IResult> PublicPhoto(Guid id, RahoonDbContext db, RequestContext rc, IDocumentStorage storage, HttpContext http)
+    private static async Task<IResult> PublicPhoto(Guid id, RahoonDbContext db, RequestContext rc, FileStore files, HttpContext http)
     {
         ListingPhoto? photo;
         using (rc.BeginSystemScope())
@@ -261,9 +258,10 @@ public static class MarketPublicEndpoints
             photo = shown ? await db.ListingPhotos.FirstOrDefaultAsync(p => p.Id == id && p.RemovedAt == null && p.ReviewStatus == FileReviewStatus.Accepted) : null;
         }
         if (photo is null) throw new NotFoundException();
+        var read = await files.ReadAsync(photo.FileId) ?? throw new NotFoundException();
         http.Response.Headers.CacheControl = "public, max-age=600";
         http.Response.Headers.Remove("X-Robots-Tag");
-        return Results.Stream(await storage.OpenReadAsync(photo.StorageKey), photo.ContentType);
+        return Results.Bytes(read.Content, read.File.ContentType);
     }
 
     private static async Task<IResult> Sitemap(RahoonDbContext db, RequestContext rc)

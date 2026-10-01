@@ -1,4 +1,5 @@
 using Rahoon.Api.Infrastructure.Persistence;
+using Rahoon.Api.Infrastructure.Storage;
 
 namespace Rahoon.Api.Modules.Market;
 
@@ -9,18 +10,6 @@ namespace Rahoon.Api.Modules.Market;
  * Answers are stored as catalog keys → invariant strings (FieldCatalog decides which apply; inactive branches are dropped).
  * None of these entities reuses a mortgage-help entity: a sale request is not a renamed help request.
  */
-
-/// <summary>Directory of developers and financing parties an owner can name, plus «غير موجودة بالقائمة» free text. Not tenant data.</summary>
-public sealed class ObligationParty : Entity
-{
-    /// <summary>developer | financier</summary>
-    public required string Kind { get; set; }
-    public required string NameAr { get; set; }
-    public bool Active { get; set; } = true;
-    public int SortOrder { get; set; }
-    /// <summary>True for the fictional demo directory (D5: the real list needs approval).</summary>
-    public bool IsDemo { get; set; }
-}
 
 public enum SaleRequestStatus { Draft, Submitted, UnderReview, NeedsCompletion, ApprovedForListing, Rejected, Withdrawn }
 
@@ -85,8 +74,10 @@ public sealed class SaleObligation : OrgEntity, IApplicantOwned
     public int SortOrder { get; set; }
     /// <summary>developer | financier</summary>
     public required string Kind { get; set; }
+    /// <summary>The directory organization the owner chose (null when they typed a name not in the directory).</summary>
     public Guid? PartyId { get; set; }
-    public ObligationParty? Party { get; set; }
+    /// <summary>The directory name at the time of choosing — kept so later directory edits never rewrite a request.</summary>
+    public string? PartyName { get; set; }
     public string? PartyOtherName { get; set; }
     /// <summary>For several obligations: how this one relates to the others, in the owner's words.</summary>
     public string? RelationNote { get; set; }
@@ -94,7 +85,7 @@ public sealed class SaleObligation : OrgEntity, IApplicantOwned
     /// <summary>Removed when the owner switches the obligation party (rows are kept for the record, never deleted).</summary>
     public DateTimeOffset? RemovedAt { get; set; }
 
-    public string PartyDisplayName => Party?.NameAr ?? PartyOtherName ?? "";
+    public string PartyDisplayName => PartyName ?? PartyOtherName ?? "";
 }
 
 public enum FileReviewStatus { Pending, Accepted, Rejected }
@@ -107,11 +98,9 @@ public sealed class PrivateDocument : OrgEntity, IApplicantOwned
     public Guid? ObligationId { get; set; }
     /// <summary>FieldCatalog document key (developer_contract, payment_proof, payoff_letter, ownership_proof, other, …).</summary>
     public required string Kind { get; set; }
-    public required string FileName { get; set; }
-    public required string ContentType { get; set; }
-    public long SizeBytes { get; set; }
-    public required string Sha256 { get; set; }
-    public required string StorageKey { get; set; }
+    /// <summary>The stored file (metadata in files.stored_files, bytes behind the storage provider).</summary>
+    public Guid FileId { get; set; }
+    public StoredFile? File { get; set; }
     /// <summary>applicant | team</summary>
     public string Source { get; set; } = "applicant";
     public Guid UploadedByUserId { get; set; }
@@ -128,11 +117,9 @@ public sealed class ListingPhoto : OrgEntity, IApplicantOwned
 {
     public Guid SaleRequestId { get; set; }
     public Guid ApplicantUserId { get; set; }
-    public required string FileName { get; set; }
-    public required string ContentType { get; set; }
-    public long SizeBytes { get; set; }
-    public required string Sha256 { get; set; }
-    public required string StorageKey { get; set; }
+    /// <summary>The stored file, metadata already stripped (EXIF/XMP/IPTC, so no GPS position).</summary>
+    public Guid FileId { get; set; }
+    public StoredFile? File { get; set; }
     public int SortOrder { get; set; }
     public bool IsCover { get; set; }
     public FileReviewStatus ReviewStatus { get; set; }
@@ -225,6 +212,9 @@ public sealed class BuyerRequest : OrgEntity, IApplicantOwned, IConcurrencyVersi
     public decimal? MaxPrice { get; set; }
     /// <summary>cash | external_finance | undecided</summary>
     public string? PurchaseMode { get; set; }
+    /// <summary>With external finance: the bank or finance company the buyer prefers (directory id + the name when chosen), optional.</summary>
+    public Guid? PreferredFinancierId { get; set; }
+    public string? PreferredFinancierName { get; set; }
 
     // Step 2 — preferences
     public List<string> Cities { get; set; } = [];

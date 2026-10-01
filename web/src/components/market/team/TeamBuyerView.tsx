@@ -56,6 +56,7 @@ export function TeamBuyerView({ d, catalog }: { d: TeamBuyer; catalog: Catalog }
               <span className="block text-13 font-semibold text-muted">ما صرّح به المشتري</span>
               المتاح الآن <Amount value={r.availableNow} strong /> · القسط <Amount value={r.installmentComfort} size="sm" unknown="—" /> {r.installmentFrequency ? label(catalog.frequencies, r.installmentFrequency) : ""} · الحد الأقصى <Amount value={r.maxPrice} size="sm" unknown="—" />
               <span className="block text-13">طريقة الشراء: {r.purchaseMode === "cash" ? "نقدًا" : r.purchaseMode === "external_finance" ? "تمويل خارجي" : "لم يقرر"}</span>
+              {r.preferredFinancierName ? <span className="block text-13">جهة التمويل المفضلة: {r.preferredFinancierName}</span> : null}
             </div>
             <div className="rounded-md bg-subtle p-3">
               <span className="block text-13 font-semibold text-muted">ما راجعه الفريق</span>

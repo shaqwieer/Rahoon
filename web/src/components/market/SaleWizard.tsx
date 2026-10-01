@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DynamicField, Chips } from "@/components/market/DynamicField";
+import { OrgPicker } from "@/components/market/OrgPicker";
 import { PhoneSignIn } from "@/components/market/PhoneSignIn";
 import { Amount, Badge, SaveState } from "@/components/market/ui";
 import { Alert } from "@/components/ui/Alert";
@@ -22,6 +23,8 @@ interface ObDraft {
   id?: string;
   kind: Kind;
   partyId: string | null;
+  /** Directory name shown for partyId (the API records its own copy). */
+  partyName?: string;
   partyOther: string;
   notInList: boolean;
   relationNote: string;
@@ -198,14 +201,13 @@ export function SaleWizard({ catalog, signedIn: signedInInitially, userName }: {
   }, [d.step, d.obligations]);
 
   const city = catalog.cities.find((c) => c.key === d.city);
-  const partiesOf = (k: Kind) => catalog.parties.filter((p) => p.kind === k);
 
   const setMode = (mode: SellDraft["obligationMode"]) =>
     update((x) => {
       let obs = x.obligations;
       if (mode === "developer" || mode === "financier") {
         const keep = obs[0];
-        obs = [keep ? { ...keep, kind: mode, partyId: keep.kind === mode ? keep.partyId : null, answers: prune(catalog, "obligation", keep.answers, null, mode) } : newOb(mode)];
+        obs = [keep ? { ...keep, kind: mode, partyId: keep.kind === mode ? keep.partyId : null, partyName: keep.kind === mode ? keep.partyName : undefined, answers: prune(catalog, "obligation", keep.answers, null, mode) } : newOb(mode)];
       } else if (mode === "multiple") {
         obs = obs.length >= 2 ? obs : [...obs, ...[newOb("developer"), newOb("financier")].slice(obs.length)];
         if (obs.length === 1) obs = [...obs, newOb(obs[0].kind === "developer" ? "financier" : "developer")];
@@ -234,7 +236,7 @@ export function SaleWizard({ catalog, signedIn: signedInInitially, userName }: {
       if (!d.district?.trim()) e.district = "اكتب الحي أو اختره.";
       if (!d.obligationMode) e.obligationMode = "اختر جهة الالتزام.";
       d.obligations.forEach((o, i) => {
-        if (!o.notInList && !o.partyId) e[`o${i}.party`] = o.kind === "developer" ? "اختر المطور أو «غير موجود بالقائمة»." : "اختر جهة التمويل أو «غير موجودة بالقائمة».";
+        if (!o.notInList && !o.partyId) e[`o${i}.party`] = o.kind === "developer" ? "اختر المطور من الدليل أو «غير موجود في الدليل»." : "اختر الجهة من الدليل أو «غير موجودة في الدليل».";
         if (o.notInList && o.partyOther.trim().length < 2) e[`o${i}.party`] = "اكتب اسم الجهة.";
       });
     }
@@ -429,28 +431,20 @@ export function SaleWizard({ catalog, signedIn: signedInInitially, userName }: {
               {d.obligationMode === "multiple" ? (
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <strong className="text-15">الالتزام {i + 1}</strong>
-                  <Chips name={`kind-${o.key}`} options={catalog.obligationKinds} value={o.kind} onChange={(v) => setOb(o.key, { kind: v as Kind, partyId: null })} />
+                  <Chips name={`kind-${o.key}`} options={catalog.obligationKinds} value={o.kind} onChange={(v) => setOb(o.key, { kind: v as Kind, partyId: null, partyName: undefined })} />
                 </div>
               ) : null}
-              <div className="flex flex-col gap-1.5" id={`sw-o${i}-party`}>
-                <label htmlFor={`party-${o.key}`} className="text-15 font-semibold">
-                  {o.kind === "developer" ? "اسم المطور" : "اسم البنك أو جهة التمويل"}
-                </label>
-                <select id={`party-${o.key}`} value={o.notInList ? "__other" : (o.partyId ?? "")} aria-invalid={Boolean(errors[`o${i}.party`]) || undefined}
-                  onChange={(e) => setOb(o.key, e.target.value === "__other" ? { notInList: true, partyId: null } : { notInList: false, partyId: e.target.value || null })}
-                  className="min-h-12 rounded-sm border border-line-strong bg-white px-3 text-16 aria-[invalid=true]:border-err">
-                  <option value="">اختر</option>
-                  {partiesOf(o.kind).map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                  <option value="__other">{o.kind === "developer" ? "غير موجود بالقائمة" : "غير موجودة بالقائمة"}</option>
-                </select>
-                {o.notInList ? (
-                  <TextField label="اكتب الاسم" value={o.partyOther} onChange={(e) => setOb(o.key, { partyOther: e.target.value })} />
-                ) : null}
-                {errors[`o${i}.party`] ? <span className="text-13 text-err">{errors[`o${i}.party`]}</span> : null}
+              <div id={`sw-o${i}-party`}>
+                <OrgPicker
+                  kind={o.kind}
+                  label={o.kind === "developer" ? "اسم المطور" : "اسم البنك أو جهة التمويل"}
+                  value={o.notInList ? { id: null, name: o.partyOther } : o.partyId ? { id: o.partyId, name: o.partyName ?? "" } : null}
+                  notInList={o.notInList}
+                  onChange={(v, other) =>
+                    setOb(o.key, other ? { notInList: true, partyId: null, partyName: undefined, partyOther: v?.name ?? "" } : { notInList: false, partyId: v?.id ?? null, partyName: v?.name })
+                  }
+                  error={errors[`o${i}.party`]}
+                />
               </div>
               {d.obligationMode === "multiple" ? (
                 <TextField label="علاقة هذا الالتزام بالآخر (اختياري)" help="مثال: البنك موّل جزءًا من ثمن الوحدة لدى المطور." value={o.relationNote}
@@ -484,7 +478,7 @@ export function SaleWizard({ catalog, signedIn: signedInInitially, userName }: {
             <section key={o.key} aria-labelledby={`ob-h-${o.key}`} className="flex flex-col gap-4 rounded-md border border-line bg-white p-4 md:p-5">
               <h3 id={`ob-h-${o.key}`} className="m-0 flex flex-wrap items-center gap-2 text-17 font-bold">
                 {o.kind === "developer" ? "التزامك لدى المطور" : "تمويلك لدى البنك أو الجهة"}
-                <Badge tone="neutral">{o.notInList ? o.partyOther : (catalog.parties.find((p) => p.id === o.partyId)?.name ?? "")}</Badge>
+                <Badge tone="neutral">{o.notInList ? o.partyOther : (o.partyName ?? "")}</Badge>
               </h3>
               {o.kind === "financier" ? (
                 <Alert tone="info" compact>
@@ -565,7 +559,7 @@ export function SaleWizard({ catalog, signedIn: signedInInitially, userName }: {
                 </div>
                 <dl className="m-0 grid gap-2 text-15 sm:grid-cols-2">
                   <div><dt className="text-13 text-muted">العقار</dt><dd className="m-0 font-semibold">{label(catalog.propertyTypes, d.propertyType)} · {cityLabel(catalog, d.city)}، {d.district}</dd></div>
-                  <div><dt className="text-13 text-muted">الالتزام</dt><dd className="m-0 font-semibold">{d.obligations.map((o) => (o.notInList ? o.partyOther : catalog.parties.find((p) => p.id === o.partyId)?.name)).join("، ")}</dd></div>
+                  <div><dt className="text-13 text-muted">الالتزام</dt><dd className="m-0 font-semibold">{d.obligations.map((o) => (o.notInList ? o.partyOther : o.partyName)).join("، ")}</dd></div>
                   {d.obligations.flatMap((o) =>
                     obligationFields(catalog, o.kind, o.answers)
                       .filter((f) => f.initial && isAnswered(o.answers, f.key) && (f.type === "money"))

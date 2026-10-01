@@ -1,21 +1,10 @@
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using Rahoon.Api.Infrastructure.Storage;
 using Rahoon.Api.Infrastructure.Tenancy;
-using Rahoon.Api.Modules.Administration;
-using Rahoon.Api.Modules.Agreements;
-using Rahoon.Api.Modules.Assessment;
 using Rahoon.Api.Modules.Audit;
-using Rahoon.Api.Modules.Cases;
-using Rahoon.Api.Modules.Closure;
-using Rahoon.Api.Modules.Communications;
-using Rahoon.Api.Modules.Complaints;
-using Rahoon.Api.Modules.Documents;
 using Rahoon.Api.Modules.Identity;
-using Rahoon.Api.Modules.Imports;
-using Rahoon.Api.Modules.Providers;
-using Rahoon.Api.Modules.Referral;
-using Rahoon.Api.Modules.Requests;
-using Rahoon.Api.Modules.Solutions;
+using Rahoon.Api.Modules.Market;
 
 namespace Rahoon.Api.Infrastructure.Persistence;
 
@@ -25,127 +14,46 @@ public sealed class RahoonDbContext(DbContextOptions<RahoonDbContext> options, R
 
     public RequestContext Request => _rc;
 
-    // Identity & tenants
+    // Identity: the Rahoon team (staff) and owners/buyers (individuals)
     public DbSet<Organization> Organizations => Set<Organization>();
     public DbSet<User> Users => Set<User>();
     public DbSet<IndividualProfile> IndividualProfiles => Set<IndividualProfile>();
     public DbSet<TermsAcceptance> TermsAcceptances => Set<TermsAcceptance>();
     public DbSet<Membership> Memberships => Set<Membership>();
-    public DbSet<Team> Teams => Set<Team>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<MembershipRole> MembershipRoles => Set<MembershipRole>();
     public DbSet<Session> Sessions => Set<Session>();
     public DbSet<OtpChallenge> OtpChallenges => Set<OtpChallenge>();
-    public DbSet<Invitation> Invitations => Set<Invitation>();
-    public DbSet<RoleChangeRequest> RoleChangeRequests => Set<RoleChangeRequest>();
 
-    // Cases
-    public DbSet<Case> Cases => Set<Case>();
-    public DbSet<CaseParty> Parties => Set<CaseParty>();
-    public DbSet<OwnerAccess> OwnerAccesses => Set<OwnerAccess>();
-    public DbSet<FinancingContract> FinancingContracts => Set<FinancingContract>();
-    public DbSet<DebtSnapshot> DebtSnapshots => Set<DebtSnapshot>();
-    public DbSet<InstallmentHistoryEntry> InstallmentHistory => Set<InstallmentHistoryEntry>();
-    public DbSet<Property> Properties => Set<Property>();
-    public DbSet<Mortgage> Mortgages => Set<Mortgage>();
-    public DbSet<PiiRevealLog> PiiRevealLogs => Set<PiiRevealLog>();
-    public DbSet<SavedView> SavedViews => Set<SavedView>();
-    public DbSet<ReferenceCounter> ReferenceCounters => Set<ReferenceCounter>();
+    // Exit/buy marketplace: operator tenant + the person (seller or buyer)
+    public DbSet<SaleRequest> SaleRequests => Set<SaleRequest>();
+    public DbSet<SaleObligation> SaleObligations => Set<SaleObligation>();
+    public DbSet<PrivateDocument> PrivateDocuments => Set<PrivateDocument>();
+    public DbSet<ListingPhoto> ListingPhotos => Set<ListingPhoto>();
+    public DbSet<FigureVerification> FigureVerifications => Set<FigureVerification>();
+    public DbSet<ExternalApproval> ExternalApprovals => Set<ExternalApproval>();
+    public DbSet<CompletionRequest> CompletionRequests => Set<CompletionRequest>();
+    public DbSet<BuyerRequest> BuyerRequests => Set<BuyerRequest>();
+    public DbSet<Opportunity> Opportunities => Set<Opportunity>();
+    public DbSet<OpportunityTerms> OpportunityTerms => Set<OpportunityTerms>();
+    public DbSet<Interest> Interests => Set<Interest>();
+    public DbSet<SavedOpportunity> SavedOpportunities => Set<SavedOpportunity>();
+    public DbSet<MarketEvent> MarketEvents => Set<MarketEvent>();
+    public DbSet<MarketNotification> MarketNotifications => Set<MarketNotification>();
+    public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
 
-    // Documents
-    public DbSet<DocumentType> DocumentTypes => Set<DocumentType>();
-    public DbSet<DocumentRule> DocumentRules => Set<DocumentRule>();
-    public DbSet<CaseDocument> Documents => Set<CaseDocument>();
-    public DbSet<DocumentVersion> DocumentVersions => Set<DocumentVersion>();
-    public DbSet<DocumentRequest> DocumentRequests => Set<DocumentRequest>();
-    public DbSet<DownloadLog> DownloadLogs => Set<DownloadLog>();
+    // Saudi organization directory (developers, banks, finance companies)
+    public DbSet<Modules.OrgDirectory.DirectoryOrganization> DirectoryOrganizations => Set<Modules.OrgDirectory.DirectoryOrganization>();
 
-    // Assessment
-    public DbSet<ValuationReport> ValuationReports => Set<ValuationReport>();
-    public DbSet<AffordabilityAnalysis> Analyses => Set<AffordabilityAnalysis>();
+    // Files (metadata separate from payload)
+    public DbSet<StoredFile> StoredFiles => Set<StoredFile>();
+    public DbSet<FileBlob> FileBlobs => Set<FileBlob>();
 
-    // Solutions & approvals
-    public DbSet<SolutionVersion> Solutions => Set<SolutionVersion>();
-    public DbSet<ApprovalRequest> ApprovalRequests => Set<ApprovalRequest>();
-    public DbSet<ApprovalLimitPolicy> ApprovalLimitPolicies => Set<ApprovalLimitPolicy>();
-    public DbSet<ApprovalLimitTier> ApprovalLimitTiers => Set<ApprovalLimitTier>();
-    public DbSet<ComplianceNotice> ComplianceNotices => Set<ComplianceNotice>();
-    public DbSet<Offer> Offers => Set<Offer>();
-    public DbSet<NegotiationEntry> NegotiationEntries => Set<NegotiationEntry>();
-    public DbSet<ConsentRecord> ConsentRecords => Set<ConsentRecord>();
-
-    // Agreements & payments
-    public DbSet<Agreement> Agreements => Set<Agreement>();
-    public DbSet<Installment> Installments => Set<Installment>();
-    public DbSet<PaymentRecord> Payments => Set<PaymentRecord>();
-    public DbSet<BreachReview> BreachReviews => Set<BreachReview>();
-
-    // Communications & complaints
-    public DbSet<CaseMessage> Messages => Set<CaseMessage>();
-    public DbSet<CaseTask> Tasks => Set<CaseTask>();
-    public DbSet<Appointment> Appointments => Set<Appointment>();
-    public DbSet<Notification> Notifications => Set<Notification>();
-    public DbSet<CommunicationTemplate> Templates => Set<CommunicationTemplate>();
-    public DbSet<OutboundMessage> OutboundMessages => Set<OutboundMessage>();
-    public DbSet<Complaint> Complaints => Set<Complaint>();
-    public DbSet<HardshipRequest> HardshipRequests => Set<HardshipRequest>();
-    public DbSet<PaymentNotice> PaymentNotices => Set<PaymentNotice>();
-
-    // Referral & closure
-    public DbSet<JudicialReferral> Referrals => Set<JudicialReferral>();
-    public DbSet<ExternalStatusEntry> ExternalStatusEntries => Set<ExternalStatusEntry>();
-    public DbSet<Reconciliation> Reconciliations => Set<Reconciliation>();
-    public DbSet<ReconciliationLine> ReconciliationLines => Set<ReconciliationLine>();
-    public DbSet<ClosureDocument> ClosureDocuments => Set<ClosureDocument>();
-
-    // Individuals' requests (ADR 0001): operator tenant + applicant
-    public DbSet<FinancingInstitution> FinancingInstitutions => Set<FinancingInstitution>();
-    public DbSet<Request> Requests => Set<Request>();
-    public DbSet<RequestConsent> RequestConsents => Set<RequestConsent>();
-    public DbSet<RequestDocument> RequestDocuments => Set<RequestDocument>();
-    public DbSet<RequestDocumentVersion> RequestDocumentVersions => Set<RequestDocumentVersion>();
-    public DbSet<RequestUpdate> RequestUpdates => Set<RequestUpdate>();
-    public DbSet<CoordinationEntry> CoordinationEntries => Set<CoordinationEntry>();
-    public DbSet<RequestMessage> RequestMessages => Set<RequestMessage>();
-    public DbSet<RequestOffer> RequestOffers => Set<RequestOffer>();
-    public DbSet<RequestResponse> RequestResponses => Set<RequestResponse>();
-    public DbSet<RequestConcern> RequestConcerns => Set<RequestConcern>();
-    public DbSet<SpecialistReferral> SpecialistReferrals => Set<SpecialistReferral>();
-    public DbSet<RequestExecutionRecord> RequestExecutionRecords => Set<RequestExecutionRecord>();
-    public DbSet<RequestScheduleItem> RequestScheduleItems => Set<RequestScheduleItem>();
-    public DbSet<RequestPaymentReport> RequestPaymentReports => Set<RequestPaymentReport>();
-
-    // Exit/buy platform (2026-10-01): operator tenant + the person (seller or buyer)
-    public DbSet<Modules.Market.ObligationParty> ObligationParties => Set<Modules.Market.ObligationParty>();
-    public DbSet<Modules.Market.SaleRequest> SaleRequests => Set<Modules.Market.SaleRequest>();
-    public DbSet<Modules.Market.SaleObligation> SaleObligations => Set<Modules.Market.SaleObligation>();
-    public DbSet<Modules.Market.PrivateDocument> PrivateDocuments => Set<Modules.Market.PrivateDocument>();
-    public DbSet<Modules.Market.ListingPhoto> ListingPhotos => Set<Modules.Market.ListingPhoto>();
-    public DbSet<Modules.Market.FigureVerification> FigureVerifications => Set<Modules.Market.FigureVerification>();
-    public DbSet<Modules.Market.ExternalApproval> ExternalApprovals => Set<Modules.Market.ExternalApproval>();
-    public DbSet<Modules.Market.CompletionRequest> CompletionRequests => Set<Modules.Market.CompletionRequest>();
-    public DbSet<Modules.Market.BuyerRequest> BuyerRequests => Set<Modules.Market.BuyerRequest>();
-    public DbSet<Modules.Market.Opportunity> Opportunities => Set<Modules.Market.Opportunity>();
-    public DbSet<Modules.Market.OpportunityTerms> OpportunityTerms => Set<Modules.Market.OpportunityTerms>();
-    public DbSet<Modules.Market.Interest> Interests => Set<Modules.Market.Interest>();
-    public DbSet<Modules.Market.SavedOpportunity> SavedOpportunities => Set<Modules.Market.SavedOpportunity>();
-    public DbSet<Modules.Market.MarketEvent> MarketEvents => Set<Modules.Market.MarketEvent>();
-    public DbSet<Modules.Market.MarketNotification> MarketNotifications => Set<Modules.Market.MarketNotification>();
-    public DbSet<Modules.Market.ContactMessage> ContactMessages => Set<Modules.Market.ContactMessage>();
-
-    // Providers, imports, administration, audit
-    public DbSet<ProviderAssignment> Assignments => Set<ProviderAssignment>();
-    public DbSet<AssignmentMessage> AssignmentMessages => Set<AssignmentMessage>();
-    public DbSet<AssignmentSubmission> AssignmentSubmissions => Set<AssignmentSubmission>();
-    public DbSet<ImportBatch> ImportBatches => Set<ImportBatch>();
-    public DbSet<ImportRow> ImportRows => Set<ImportRow>();
-    public DbSet<SlaRule> SlaRules => Set<SlaRule>();
-    public DbSet<IntegrationSetting> IntegrationSettings => Set<IntegrationSetting>();
-    public DbSet<TempAccessRequest> TempAccessRequests => Set<TempAccessRequest>();
-    public DbSet<InstitutionApplication> InstitutionApplications => Set<InstitutionApplication>();
-    public DbSet<RetentionPolicy> RetentionPolicies => Set<RetentionPolicy>();
+    // Platform plumbing and audit
     public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
+    public DbSet<ReferenceCounter> ReferenceCounters => Set<ReferenceCounter>();
+    public DbSet<OutboundSms> OutboundSms => Set<OutboundSms>();
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder b)
@@ -174,13 +82,7 @@ public sealed class RahoonDbContext(DbContextOptions<RahoonDbContext> options, R
             else if (typeof(IOrgOwned).IsAssignableFrom(clr))
                 ApplyTenantFilterMethod.MakeGenericMethod(clr).Invoke(this, [mb]);
 
-            // Referential integrity for the two ubiquitous foreign keys.
-            if (clr != typeof(Case) && et.FindProperty("CaseId") is { } caseProp && !HasForeignKeyOn(et, "CaseId"))
-            {
-                mb.Entity(clr).HasOne(typeof(Case)).WithMany().HasForeignKey("CaseId").OnDelete(DeleteBehavior.Restrict)
-                    .IsRequired(!caseProp.IsNullable);
-                mb.Entity(clr).HasIndex("CaseId");
-            }
+            // Referential integrity for the tenant key.
             if (clr != typeof(Organization) && et.FindProperty("OrganizationId") is { } orgProp && !HasForeignKeyOn(et, "OrganizationId"))
             {
                 mb.Entity(clr).HasOne(typeof(Organization)).WithMany().HasForeignKey("OrganizationId").OnDelete(DeleteBehavior.Restrict)

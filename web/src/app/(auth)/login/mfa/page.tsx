@@ -19,7 +19,7 @@ export default async function MfaPage({ searchParams }: PageProps<"/login/mfa">)
 
   const me = await getMe().catch(() => null);
   if (me && !me.authenticated) redirect(next ? `/login?next=${encodeURIComponent(next)}` : "/login");
-  if (me?.authenticated && me.stage === "active") redirect(me.scope === "none" ? "/select-context" : next || me.home);
+  if (me?.authenticated && me.stage === "active") redirect(me.scope === "none" ? "/access-denied" : next || me.home);
 
   return (
     <AuthSplit quote={t.auth.login.asideQuote} note={t.auth.login.asideNote}>

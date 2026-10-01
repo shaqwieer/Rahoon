@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Rahoon.Api.Infrastructure.Http;
 using Rahoon.Api.Infrastructure.Security;
+using Rahoon.Api.Infrastructure.Storage;
 using Rahoon.Api.Modules.Identity;
 using Rahoon.Api.Modules.Market;
 
@@ -9,8 +10,8 @@ namespace Rahoon.Api.Seed;
 
 /// <summary>
 /// Demo data of the exit/buy platform. Test data only: every person, party, project, amount and photo is invented, the
-/// requests and opportunities carry IsDemo (shown «تجريبي»), the parties' names end with «(تجريبي)», and the photos are
-/// drawn illustrations. Runs once per database (skipped when any sale request exists), also on databases seeded before.
+/// requests and opportunities carry IsDemo (shown «تجريبي»), the parties are typed names ending with «(تجريبي)» — never
+/// directory records, which hold real organizations only — and the photos are drawn illustrations. Runs once per database.
 /// </summary>
 public sealed partial class DevSeeder
 {
@@ -29,14 +30,9 @@ public sealed partial class DevSeeder
         var policy = CommissionPolicy.From(config);
         var t0 = DemoToday;
 
-        // ── Directory (fictional) ──
+        // Obligation parties: fictional names typed as «not in the directory» (the directory lists real organizations only).
         string[] developers = ["شركة المسار للتطوير العقاري (تجريبي)", "دار الجنوب للتطوير (تجريبي)", "مطور الواحة السكني (تجريبي)", "شركة أفق الشرقية العقارية (تجريبي)"];
         string[] financiers = ["مصرف الأفق (تجريبي)", "بنك الريادة (تجريبي)", "شركة المسكن للتمويل العقاري (تجريبي)", "مصرف الواحة (تجريبي)"];
-        var parties = new Dictionary<string, ObligationParty>();
-        for (var i = 0; i < developers.Length; i++) parties[developers[i]] = new ObligationParty { Kind = "developer", NameAr = developers[i], SortOrder = i, IsDemo = true };
-        for (var i = 0; i < financiers.Length; i++) parties[financiers[i]] = new ObligationParty { Kind = "financier", NameAr = financiers[i], SortOrder = i, IsDemo = true };
-        db.ObligationParties.AddRange(parties.Values);
-        await db.SaveChangesAsync();
 
         // ── People (fictional; mobiles 0561110xxx) ──
         DemoPerson Person(string name, string phone, int daysAgo)
@@ -90,7 +86,7 @@ public sealed partial class DevSeeder
         {
             var o = new SaleObligation
             {
-                OrganizationId = org, SaleRequestId = r.Id, ApplicantUserId = r.ApplicantUserId, Kind = kind, PartyId = parties[party].Id, Answers = answers,
+                OrganizationId = org, SaleRequestId = r.Id, ApplicantUserId = r.ApplicantUserId, Kind = kind, PartyOtherName = party, Answers = answers,
                 SortOrder = r.Obligations.Count,
             };
             r.Obligations.Add(o);
@@ -114,13 +110,12 @@ public sealed partial class DevSeeder
             for (var i = 0; i < count; i++)
             {
                 var bytes = DemoImages.Building(variant, i + shade);
-                using var ms = new MemoryStream(bytes);
-                var stored = await storage.SaveAsync(ms, $"demo-{r.Reference}-{i + 1}.png", org, area: "market-photos", allowedTypes: ["image/png"]);
+                var stored = await files.AddAsync(new FileUpload(bytes, $"صورة تجريبية {i + 1}.png", FileVisibility.ListingPhoto, r.ApplicantUserId,
+                    r.ApplicantUserId, "sale_request", r.Id), "image/png");
                 var p = new ListingPhoto
                 {
-                    OrganizationId = org, SaleRequestId = r.Id, ApplicantUserId = r.ApplicantUserId, FileName = $"صورة تجريبية {i + 1}.png", ContentType = stored.ContentType,
-                    SizeBytes = stored.SizeBytes, Sha256 = stored.Sha256, StorageKey = stored.StorageKey, SortOrder = i, IsCover = i == 0, ReviewStatus = review,
-                    UploadedByUserId = r.ApplicantUserId,
+                    OrganizationId = org, SaleRequestId = r.Id, ApplicantUserId = r.ApplicantUserId, FileId = stored.Id, File = stored,
+                    SortOrder = i, IsCover = i == 0, ReviewStatus = review, UploadedByUserId = r.ApplicantUserId,
                 };
                 db.ListingPhotos.Add(p);
                 list.Add(p);
@@ -130,13 +125,12 @@ public sealed partial class DevSeeder
 
         async Task<PrivateDocument> Doc(SaleRequest r, string kind, FileReviewStatus review, Guid? obligationId = null)
         {
-            using var ms = new MemoryStream(DemoImages.Pdf(kind));
-            var stored = await storage.SaveAsync(ms, kind + ".pdf", org, area: "market-docs");
+            var stored = await files.AddAsync(new FileUpload(DemoImages.Pdf(kind), $"{FieldCatalog.Documents.First(x => x.Key == kind).Label} (تجريبي).pdf",
+                FileVisibility.Private, r.ApplicantUserId, r.ApplicantUserId, "sale_request", r.Id), "application/pdf");
             var d = new PrivateDocument
             {
                 OrganizationId = org, SaleRequestId = r.Id, ApplicantUserId = r.ApplicantUserId, ObligationId = obligationId, Kind = kind,
-                FileName = $"{FieldCatalog.Documents.First(x => x.Key == kind).Label} (تجريبي).pdf", ContentType = stored.ContentType, SizeBytes = stored.SizeBytes,
-                Sha256 = stored.Sha256, StorageKey = stored.StorageKey, UploadedByUserId = r.ApplicantUserId, ReviewStatus = review,
+                FileId = stored.Id, File = stored, UploadedByUserId = r.ApplicantUserId, ReviewStatus = review,
                 ReviewedAt = review == FileReviewStatus.Pending ? null : t0, ReviewedByUserId = review == FileReviewStatus.Pending ? null : nayef?.Id,
             };
             db.PrivateDocuments.Add(d);
@@ -406,7 +400,7 @@ public sealed partial class DevSeeder
         foreach (var (prefix, value) in new[] { ("SR", no), ("OP", oppNo), ("BR", 2), ("IN", 1), ("CM", 1) })
         {
             var key = $"market:{prefix}:2026";
-            await db.Database.ExecuteSqlAsync($"INSERT INTO cases.reference_counters (key, value) VALUES ({key}, {(long)value}) ON CONFLICT (key) DO UPDATE SET value = GREATEST(cases.reference_counters.value, {(long)value})");
+            await db.Database.ExecuteSqlAsync($"INSERT INTO app.reference_counters (key, value) VALUES ({key}, {(long)value}) ON CONFLICT (key) DO UPDATE SET value = GREATEST(app.reference_counters.value, {(long)value})");
         }
         log.LogInformation("Market demo data seeded (test data, labelled تجريبي).");
     }

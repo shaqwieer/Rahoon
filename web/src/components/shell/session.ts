@@ -1,19 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { apiSend, isApiError } from "@/lib/api/client";
-import { useToast } from "@/components/ui/Toast";
-import { useI18n } from "@/lib/i18n/client";
+import { apiSend } from "@/lib/api/client";
 import { hardNavigate } from "@/lib/navigation";
 
 /**
- * Session actions used by every shell. Both end with a full document load (`hardNavigate`) so no
- * client cache, router cache or in-memory data survives a sign-out or an organization switch (C12).
+ * Sign-out for the shells. Ends with a full document load (`hardNavigate`) so no client cache, router cache or
+ * in-memory data survives it.
  */
 export function useSessionActions() {
-  const { t } = useI18n();
-  const { toast } = useToast();
-  const [busy, setBusy] = useState<"logout" | "switch" | null>(null);
+  const [busy, setBusy] = useState<"logout" | null>(null);
 
   const logout = async () => {
     setBusy("logout");
@@ -26,16 +22,5 @@ export function useSessionActions() {
     }
   };
 
-  const switchContext = async (membershipId: string) => {
-    setBusy("switch");
-    try {
-      const res = await apiSend<{ next: string }>("POST", "/auth/context", { membershipId });
-      hardNavigate(res.next, "/");
-    } catch (e) {
-      setBusy(null);
-      toast({ tone: "err", message: isApiError(e) && e.title ? e.title : t.auth.login.network });
-    }
-  };
-
-  return { logout, switchContext, busy };
+  return { logout, busy };
 }

@@ -111,20 +111,14 @@ public sealed class TestClient(HttpClient http)
         return PostMultipartAsync(path, form);
     }
 
-    public async Task LoginAsync(string email, string password, string? orgName = null)
+    /// <summary>Rahoon team sign-in: e-mail, password, then the (sandbox) SMS code.</summary>
+    public async Task LoginAsync(string email, string password)
     {
         var (s1, login) = await PostAsync("/api/auth/login", new { email, password });
         if (s1 != HttpStatusCode.OK) throw new InvalidOperationException($"login failed {s1}: {login}");
         var code = login!["sandboxCode"]!.GetValue<string>();
         var (s2, verify) = await PostAsync("/api/auth/mfa/verify", new { code });
         if (s2 != HttpStatusCode.OK) throw new InvalidOperationException($"mfa failed {s2}: {verify}");
-        if (verify!["next"]!.GetValue<string>() == "/select-context")
-        {
-            var (_, me) = await GetAsync("/api/auth/me");
-            var membership = me!["memberships"]!.AsArray().First(m => orgName is null || m!["organization"]!.GetValue<string>() == orgName)!;
-            var (s3, ctx) = await PostAsync("/api/auth/context", new { membershipId = membership["id"]!.GetValue<string>() });
-            if (s3 != HttpStatusCode.OK) throw new InvalidOperationException($"context failed {s3}: {ctx}");
-        }
     }
 
     /// <summary>Mobile-first sign-in of an owner or buyer (sandbox code); returns the verify response.</summary>
@@ -135,14 +129,6 @@ public sealed class TestClient(HttpClient http)
         var (s2, verify) = await PostAsync("/api/auth/phone/verify", new { code = start!["sandboxCode"]!.GetValue<string>(), acceptTerms = true, name });
         if (s2 != HttpStatusCode.OK) throw new InvalidOperationException($"phone verify failed {s2}: {verify}");
         return verify;
-    }
-
-    /// <summary>Completes an MFA step-up (sandbox OTP) for sensitive decisions.</summary>
-    public async Task StepUpAsync()
-    {
-        var (_, start) = await PostAsync("/api/auth/step-up/start");
-        var (s, _) = await PostAsync("/api/auth/step-up/verify", new { code = start!["sandboxCode"]!.GetValue<string>() });
-        if (s != HttpStatusCode.OK) throw new InvalidOperationException("step-up failed");
     }
 
     public static string Str(JsonNode? n, string key) => n?[key]?.GetValue<string>() ?? "";

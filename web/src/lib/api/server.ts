@@ -91,7 +91,7 @@ export async function requireMe(): Promise<MeAuthenticated> {
   const me = await getMe();
   if (!me.authenticated) redirect(loginUrl(await currentPath()));
   if (me.stage === "mfapending") redirect(`/login/mfa?next=${encodeURIComponent(await currentPath())}`);
-  if (me.scope === "none") redirect("/select-context");
+  if (me.scope === "none") redirect("/access-denied");
   return me;
 }
 

@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using Rahoon.Api.Infrastructure.Persistence;
 using Rahoon.Api.Infrastructure.Tenancy;
 using Rahoon.Api.Infrastructure.Time;
-using Rahoon.Api.Modules.Administration;
 using Rahoon.Api.Modules.Identity;
 
 namespace Rahoon.Api.Infrastructure.Http;
@@ -50,7 +49,7 @@ public static class EndpointAccess
             return await next(ctx);
         });
 
-    /// <summary>Self-registered individual (ADR 0001). Staff, owners and anonymous callers are refused.</summary>
+    /// <summary>Owner or buyer signed in by mobile. Staff and anonymous callers are refused.</summary>
     public static TBuilder RequireIndividual<TBuilder>(this TBuilder b) where TBuilder : IEndpointConventionBuilder =>
         b.RequireSession().AddEndpointFilter(async (ctx, next) =>
         {
@@ -58,23 +57,6 @@ public static class EndpointAccess
             if (!rc.IsIndividual) throw new ForbiddenException();
             return await next(ctx);
         });
-
-    public static TBuilder RequireOwner<TBuilder>(this TBuilder b) where TBuilder : IEndpointConventionBuilder =>
-        b.RequireSession().AddEndpointFilter(async (ctx, next) =>
-        {
-            var rc = ctx.HttpContext.RequestServices.GetRequiredService<RequestContext>();
-            if (!rc.IsOwner || rc.OwnerCaseId is null) throw new ForbiddenException();
-            return await next(ctx);
-        });
-
-    /// <summary>
-    /// Requires a recent MFA step-up (sensitive decisions: approvals, cancellation, referral, closure).
-    /// </summary>
-    public static void EnsureStepUp(RequestContext rc, IClock clock)
-    {
-        if (rc.StepUpUntil is not { } until || until < clock.UtcNow)
-            throw new DomainException("step_up_required", "هذا الإجراء يتطلب إعادة إدخال رمز التحقق.", StatusCodes.Status403Forbidden);
-    }
 
     /// <summary>
     /// Replays the stored response when the same Idempotency-Key is sent again by the same user,

@@ -3,11 +3,11 @@
 **رهون** is a platform for **Saudi Arabia** that helps the owner of a property tied to obligations with a **developer** or a **bank / financing institution** submit a request to exit the contract or sell the property, and helps a **buyer** find an opportunity that fits what they can pay **now** and what they can commit to **later**. The **Rahoon team** reviews requests, documents and figures, prepares opportunities, gets the owner's confirmation, publishes them and follows each interest. Rahoon is not a lender, a judicial agent, a consensual-sale or debt-settlement service; it holds no funds and promises no sale, price, recovery or approval.
 
 - Product source of truth: `docs/product/product-definition.md` (2026-10-01).
-- What the earlier mortgage-default model was and how it was removed: `docs/redefinition/legacy-inventory.md` (rollback tag `legacy-mortgage-final`; the old code runs only with `Features:LegacyMortgage=true` on the API and `RAHOON_LEGACY_MODES=1` on the web).
+- The earlier mortgage-default model was removed permanently on 2026-10-01 (code, routes, schemas and data): `docs/redefinition/legacy-inventory.md`. Its last state is the git tag `legacy-mortgage-final`.
 - Work plan and status: `docs/phases/README.md` → `docs/phases/phase-m-exit-marketplace.md`.
 - Architecture: `docs/architecture.md`.
 
-- Staging for the client: **https://rahoon.talentfold.net** (Docker on the VPS; `deploy/README.md`). It still runs the previous model until the new branch is deployed.
+- Staging for the client: **https://rahoon.talentfold.net** (Docker on the VPS; `deploy/README.md`).
 - `server/`: ASP.NET Core 10 API + EF Core, on **http://localhost:5080**
 - `web/`: Next.js 16 app, on **http://localhost:3000** (forwards `/api/*` to the API — always open the app through :3000).
 - PostgreSQL 16 in Docker, on **localhost:55432**
@@ -46,9 +46,18 @@ docker compose up -d
 bash scripts/dev-api.sh            # build + start on :5080 (log: %TEMP%/rahoon-api.log)
 bash scripts/dev-api.sh --reset    # drop, migrate and reseed the demo data first (local demo DB only)
 ```
-An existing database keeps its data: `dotnet run -- seed` (in `server/src/Rahoon.Api`) adds the market demo data and the new
-team permissions without touching anything else. `--reset` and `reset-demo` drop the database and are refused outside
-Development/Staging/Testing.
+An existing database keeps its data: `dotnet run -- migrate` (in `server/src/Rahoon.Api`) applies migrations and moves any
+file still on disk into the database; `dotnet run -- seed` adds missing demo data. `--reset` and `reset-demo` drop the
+database (and empty the organization directory) and are refused outside Development/Staging/Testing.
+
+**Organization directory** (real developers, banks and finance companies from official sources; never demo data):
+```bash
+cd server/src/Rahoon.Api
+dotnet run -- import-directory                      # all sources: SAMA banks, SAMA finance companies, REGA developers
+dotnet run -- import-directory --source banks       # or finance | developers; --pages 21-40 resumes REGA; --dry-run
+dotnet run -- import-directory --file list.csv      # a verified official dataset (columns in DirectoryImporter.cs)
+```
+Reruns never duplicate and never change records an administrator edited; see `docs/architecture.md`.
 Or in PowerShell:
 ```powershell
 cd server/src/Rahoon.Api
@@ -66,7 +75,7 @@ Stop: press Ctrl+C in the web and API terminals. Run `docker compose stop` to st
 
 ## Demo logins
 
-All data is fictional test data, shown as «تجريبي» in the app (people, parties, projects, amounts and the drawn photos). Team password: `Rahoon-Demo-2026!`.
+The marketplace demo is fictional test data, shown as «تجريبي» in the app (people, parties, projects, amounts and the drawn photos). The organization directory is not demo data: it holds real organizations imported from official sources. Team password: `Rahoon-Demo-2026!`.
 
 **SMS confirmation flag, `Auth:SmsConfirmation`** (env `Auth__SmsConfirmation`, default **false**): off → no SMS is sent and the code is confirmed automatically, and the app says plainly that the mobile was **not verified**. Local development turns it on (the sandbox code is shown on screen). No SMS provider is contracted yet (decision D1).
 
@@ -91,12 +100,10 @@ One account per mobile; the same account can sell and buy. Any new `05…` mobil
 
 | Name | Email | Role |
 |---|---|---|
-| لمى الحربي | `l.alharbi@team.rahoon.example` | Team lead: everything, incl. assigning others and publishing |
+| لمى الحربي | `l.alharbi@team.rahoon.example` | Team lead: everything, incl. assigning, publishing and the organization directory (`/team/organizations`) |
 | نايف اليامي | `n.alyami@team.rahoon.example` | Request coordinator: review, completion, figures, prepare opportunities, interests |
 | تركي الشهري | `t.alshehri@team.rahoon.example` | Request coordinator |
 | عبير القحطاني | `a.alqahtani@team.rahoon.example` | Publication reviewer: review and publish/pause |
-
-Staff of the withdrawn lender/provider/agent/platform workspaces are refused at sign-in while the legacy flag is off.
 
 ## Open the database in pgAdmin
 
@@ -112,10 +119,10 @@ Staff of the withdrawn lender/provider/agent/platform workspaces are refused at 
      | Maintenance database | `rahoon` |
      | Username | `rahoon` |
      | Password | the `POSTGRES_PASSWORD` value in your `.env` file |
-3. Tables are under **Databases › rahoon › Schemas**. The current model lives in `market` (plus `identity` and `audit`); the other schemas (`cases`, `solutions`, `agreements`, `requests`, …) hold the archived mortgage-help data, kept untouched.
+3. Tables are under **Databases › rahoon › Schemas**: `market` (requests, opportunities, interests), `directory` (organizations), `files` (uploaded files: metadata in `stored_files`, bytes in `file_blobs`), `identity`, `audit`, `app`.
 
 Notes:
-- Personal data (national ID, phone, deed number) is stored **encrypted** (`*_enc` columns). The masked value sits next to it.
+- Mobile numbers are stored **encrypted** (`*_enc` columns). The masked value sits next to it.
 - `audit` tables are append-only. A database trigger rejects UPDATE and DELETE; that's intended.
 - Prefer changing data through the app. `reset-demo` rebuilds everything from the seed.
 
@@ -123,7 +130,7 @@ Notes:
 
 A phone-sized window for the owner/buyer and a desktop window for the team. Steps 1–9 are also automated in `web/e2e/market-journey.spec.ts`.
 
-1. **Owner:** `/` → «ابدأ طلب بيع». Step 1: type, city, district, «مطور عقاري», the developer. Step 2: the figures you know (try «لا أعرف»), see «نتيجة أولية تقديرية». Step 3: sign in with a new mobile and the code, confirm, «إرسال الطلب» → reference, status, next step.
+1. **Owner:** `/` → «ابدأ طلب بيع». Step 1: type, city, district, «مطور عقاري», the developer (search the directory, or «غير موجود في الدليل»). Step 2: the figures you know (try «لا أعرف»), see «نتيجة أولية تقديرية». Step 3: sign in with a new mobile and the code, confirm, «إرسال الطلب» → reference, status, next step.
 2. **Owner:** «استكمل ملفك الآن» → the four groups; place the pin on the map, add a photo and a document; saving is automatic.
 3. **Team (لمى):** `/team/sale` → the request → «بدء المراجعة» → «طلب استكمال» (tick what is missing, write a note).
 4. **Owner:** sees the request, completes it and «إرسال الملف للمراجعة».
@@ -132,7 +139,8 @@ A phone-sized window for the owner/buyer and a desktop window for the team. Step
 7. **Owner:** «مراجعة الملخص» → confirm (or ask for changes). Confirming does not publish.
 8. **Team:** tick the checklist → «نشر الفرصة». Changing a published figure creates a new version that needs the owner again.
 9. **Buyer:** `/opportunities` → filter by what you can pay now and the installment; open a card; «مهتم بالفرصة». The team sees it in `/team/interests` and follows it up; nothing is reserved.
-10. **Buyer:** «سجّل قدرتك الشرائية» (`/buy/new`) → suggestions with why they fit; `/calculators` for the three calculators.
+10. **Buyer:** «سجّل قدرتك الشرائية» (`/buy/new`; with external finance, optionally name the bank or finance company) → suggestions with why they fit; `/calculators` for the three calculators.
+11. **Team lead:** `/team/organizations` → search and filter, add an organization, edit it (it becomes protected from imports), deactivate it with a reason.
 
 ## Tests
 
@@ -140,6 +148,6 @@ A phone-sized window for the owner/buyer and a desktop window for the team. Step
 cd server && dotnet test              # needs Docker (it starts a throwaway PostgreSQL)
 cd web && npx tsc --noEmit && npx eslint . && npm run build
 cd web && npx playwright test         # API and web must be running; E2E_RESET=1 reseeds first
-                                      # market-journey.spec.ts = the full exit/buy journey + 390px checks
-                                      # the archived specs run only with RAHOON_LEGACY_MODES=1
+                                      # market-journey.spec.ts = the full exit/buy journey, directory administration,
+                                      # directory pickers and 390px checks (needs the directory imported)
 ```

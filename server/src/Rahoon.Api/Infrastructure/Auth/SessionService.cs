@@ -21,7 +21,6 @@ public sealed class AuthOptions
     public int MaxFailedLogins { get; set; } = 5;
     public int LockoutMinutes { get; set; } = 15;
     public int OtpMinutes { get; set; } = 5;
-    public int StepUpMinutes { get; set; } = 5;
     /// <summary>Development only: echo sandbox OTP codes in API responses so demos and E2E tests can proceed.</summary>
     public bool ExposeSandboxOtp { get; set; }
     /// <summary>
@@ -36,7 +35,7 @@ public sealed class AuthOptions
 public sealed class SessionService(RahoonDbContext db, IClock clock, AuthOptions options)
 {
     public async Task<Session> CreateAsync(HttpContext http, User user, SessionStage stage, SessionScope scope,
-        Guid? orgId = null, Guid? membershipId = null, Guid? ownerAccessId = null, int? idleMinutes = null)
+        Guid? orgId = null, Guid? membershipId = null, int? idleMinutes = null)
     {
         var token = Tokens.NewToken();
         var csrf = Tokens.NewToken(24);
@@ -51,7 +50,6 @@ public sealed class SessionService(RahoonDbContext db, IClock clock, AuthOptions
             Scope = scope,
             OrganizationId = orgId,
             MembershipId = membershipId,
-            OwnerAccessId = ownerAccessId,
             CreatedAt = now,
             LastSeenAt = now,
             IdleExpiresAt = now.AddMinutes(stage == SessionStage.MfaPending ? 10 : idle),
@@ -66,13 +64,13 @@ public sealed class SessionService(RahoonDbContext db, IClock clock, AuthOptions
         return session;
     }
 
-    /// <summary>Organization switch or privilege change: revoke and issue a fresh session (C12).</summary>
+    /// <summary>Sign-in completed or privilege change: revoke and issue a fresh session.</summary>
     public async Task<Session> RotateAsync(HttpContext http, Session current, User user, SessionScope scope,
-        Guid? orgId, Guid? membershipId, Guid? ownerAccessId, int? idleMinutes, string reason)
+        Guid? orgId, Guid? membershipId, int? idleMinutes, string reason)
     {
         current.RevokedAt = clock.UtcNow;
         current.RevokedReason = reason;
-        var next = await CreateAsync(http, user, SessionStage.Active, scope, orgId, membershipId, ownerAccessId, idleMinutes);
+        var next = await CreateAsync(http, user, SessionStage.Active, scope, orgId, membershipId, idleMinutes);
         next.MfaVerifiedAt = current.MfaVerifiedAt ?? clock.UtcNow;
         await db.SaveChangesAsync();
         return next;

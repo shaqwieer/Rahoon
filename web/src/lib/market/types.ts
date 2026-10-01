@@ -43,13 +43,6 @@ export interface CityDef {
   districts: string[];
 }
 
-export interface Party {
-  id: string;
-  kind: "developer" | "financier";
-  name: string;
-  isDemo: boolean;
-}
-
 export interface Catalog {
   propertyTypes: FieldOption[];
   obligationModes: FieldOption[];
@@ -59,7 +52,6 @@ export interface Catalog {
   documents: DocumentDef[];
   cities: CityDef[];
   unknown: string;
-  parties: Party[];
   commission: { approved: boolean; text: string };
 }
 
@@ -139,6 +131,7 @@ export type FileReview = "pending" | "accepted" | "rejected";
 
 export interface PrivateDoc {
   id: string;
+  fileId: string;
   kind: string;
   kindLabel: string;
   obligationId: string | null;
@@ -154,6 +147,7 @@ export interface PrivateDoc {
 
 export interface Photo {
   id: string;
+  fileId: string;
   url: string;
   isCover: boolean;
   sortOrder: number;
@@ -319,6 +313,8 @@ export interface BuyerRequestView {
   installmentFrequency: string | null;
   maxPrice: number | null;
   purchaseMode: string | null;
+  preferredFinancierId: string | null;
+  preferredFinancierName: string | null;
   cities: string[];
   areasText: string | null;
   propertyTypes: string[];

@@ -9,7 +9,7 @@ namespace Rahoon.Api.Modules.Market;
 public sealed record BuyerSave(
     Guid? ClientDraftId, decimal? AvailableNow, decimal? InstallmentComfort, string? InstallmentFrequency, decimal? MaxPrice, string? PurchaseMode,
     List<string>? Cities, string? AreasText, List<string>? PropertyTypes, decimal? AreaMin, decimal? AreaMax, int? BedroomsMin, string? Readiness,
-    string? DeliveryBy, string? ContactName);
+    string? DeliveryBy, string? ContactName, Guid? PreferredFinancierId = null);
 public sealed record BuyerSubmit(string? ContactName, bool AcceptDeclarations);
 public sealed record InterestInput(string? Message, string? ContactPreference, string? ContactName);
 
@@ -53,7 +53,7 @@ public static class BuyerEndpoints
     {
         r.Reference, status = r.Status, statusLabel = BuyerRequestFlow.Labels[r.Status], nextStep = BuyerRequestFlow.NextStep(r.Status),
         editable = r.Status is not (BuyerRequestStatus.Rejected or BuyerRequestStatus.Withdrawn),
-        r.AvailableNow, r.InstallmentComfort, r.InstallmentFrequency, r.MaxPrice, r.PurchaseMode, r.Cities, r.AreasText, r.PropertyTypes, r.AreaMin, r.AreaMax,
+        r.AvailableNow, r.InstallmentComfort, r.InstallmentFrequency, r.MaxPrice, r.PurchaseMode, r.PreferredFinancierId, r.PreferredFinancierName, r.Cities, r.AreasText, r.PropertyTypes, r.AreaMin, r.AreaMax,
         r.BedroomsMin, r.Readiness, r.DeliveryBy, r.ContactName, r.SubmittedAt, r.CreatedAt, r.UpdatedAt, r.DecisionReason, isDemo = r.IsDemo,
         installmentMonthlyEquivalent = MarketCalculator.MonthlyEquivalent(r.InstallmentComfort, r.InstallmentFrequency),
         capacity = new
@@ -138,6 +138,26 @@ public static class BuyerEndpoints
         return v;
     }
 
+    /// <summary>
+    /// The preferred bank or finance company (optional, only with external finance). A new choice must be an active directory
+    /// bank or finance company; the name is recorded with it so later directory edits never rewrite the request.
+    /// </summary>
+    private static async Task ApplyFinancierAsync(RahoonDbContext db, BuyerRequest r, BuyerSave req)
+    {
+        if (req.PurchaseMode != "external_finance" || req.PreferredFinancierId is not { } id)
+        {
+            r.PreferredFinancierId = null;
+            r.PreferredFinancierName = null;
+            return;
+        }
+        if (id == r.PreferredFinancierId) return;
+        var org = await db.DirectoryOrganizations.FirstOrDefaultAsync(d => d.Id == id && d.Active
+            && (d.Types.Contains(OrgDirectory.OrgTypes.Bank) || d.Types.Contains(OrgDirectory.OrgTypes.FinanceCompany)));
+        if (org is null) Validate.Throw("preferredFinancierId", "اختر جهة التمويل من الدليل.");
+        r.PreferredFinancierId = org!.Id;
+        r.PreferredFinancierName = org.NameAr;
+    }
+
     private static bool Apply(BuyerRequest r, BuyerSave req)
     {
         var capacityChanged = r.AvailableNow != req.AvailableNow || r.InstallmentComfort != req.InstallmentComfort || r.InstallmentFrequency != req.InstallmentFrequency
@@ -173,6 +193,7 @@ public static class BuyerEndpoints
         {
             OrganizationId = org, ApplicantUserId = rc.UserId, ClientDraftId = req.ClientDraftId, Reference = await market.NextReferenceAsync("BR"), StatusChangedAt = clock.UtcNow,
         };
+        await ApplyFinancierAsync(db, r, req);
         Apply(r, req);
         db.BuyerRequests.Add(r);
         market.Event(org, "buyer_request", r.Id, rc.UserId, "created", "بدأت طلب شراء", visible: false);
@@ -194,6 +215,7 @@ public static class BuyerEndpoints
         var r = await LoadOwnAsync(db, rc, reference);
         if (r.Status is BuyerRequestStatus.Rejected or BuyerRequestStatus.Withdrawn) throw new ConflictException("locked", "هذا الطلب مغلق. ابدأ طلبًا جديدًا.");
         ValidateSave(req).ThrowIfInvalid();
+        await ApplyFinancierAsync(db, r, req);
         var capacityChanged = Apply(r, req);
         if (r.Status == BuyerRequestStatus.ApprovedForMatching && capacityChanged)
         {

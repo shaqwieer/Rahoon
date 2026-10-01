@@ -10,11 +10,11 @@ using Testcontainers.PostgreSql;
 namespace Rahoon.Api.Tests.Infrastructure;
 
 /// <summary>
-/// Boots the real API against a throwaway PostgreSQL container, applies the EF migrations
-/// (not EnsureCreated — migrations are part of what we test) and seeds the fictional demo
-/// data without the bulk synthetic portfolio.
+/// Boots the real API against a throwaway PostgreSQL container, applies the EF migrations through the same
+/// <see cref="DatabaseMigrator"/> as production (not EnsureCreated — the migration history is part of what we test)
+/// and seeds the fictional demo data (the Rahoon team and the marketplace demo).
 /// </summary>
-public class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
+public sealed class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
 {
     public const string Password = "Test-Password-2026!";
 
@@ -34,10 +34,7 @@ public class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
         var db = scope.ServiceProvider.GetRequiredService<RahoonDbContext>();
         using (db.Request.BeginSystemScope())
         {
-            // Parallel feature branches may add entities before the consolidated migration exists;
-            // RAHOON_TEST_ENSURE_CREATED=1 lets them test against the model. CI always uses migrations.
-            if (Environment.GetEnvironmentVariable("RAHOON_TEST_ENSURE_CREATED") == "1") await db.Database.EnsureCreatedAsync();
-            else await db.Database.MigrateAsync();
+            await DatabaseMigrator.MigrateAsync(scope.ServiceProvider);
             await scope.ServiceProvider.GetRequiredService<DevSeeder>().SeedAsync();
         }
     }
@@ -53,28 +50,20 @@ public class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
             ["Auth:ExposeSandboxOtp"] = "true",
             ["Auth:SmsConfirmation"] = "true",
             ["Seed:DemoPassword"] = Password,
-            ["Seed:Bulk"] = "false",
             ["Storage:Root"] = Path.Combine(_storage, "documents"),
             ["DataProtection:KeysPath"] = Path.Combine(_storage, "keys"),
             ["Security:PiiLookupKey"] = "test-lookup-key",
             ["Database:MigrateOnStartup"] = "false",
             ["Auth:RateLimitPerMinute"] = "10000",
-            ["Jobs:BreachMonitor"] = "false",
-            ["Jobs:TempAccessExpiry"] = "false",
-            // The archived mortgage-help suite runs against the legacy model; CurrentModelFixture runs the default (off).
-            ["Features:LegacyMortgage"] = LegacyMortgage ? "true" : "false",
         }));
     }
 
-    /// <summary>On for the archived suite; <see cref="CurrentModelFixture"/> turns it off (the product default).</summary>
-    protected virtual bool LegacyMortgage => true;
-
     public TestClient Client() => new(CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false, AllowAutoRedirect = false }));
 
-    public async Task<TestClient> LoginAsync(string email, string? orgName = null)
+    public async Task<TestClient> LoginAsync(string email)
     {
         var c = Client();
-        await c.LoginAsync(email, Password, orgName);
+        await c.LoginAsync(email, Password);
         return c;
     }
 
@@ -86,7 +75,7 @@ public class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
         using (db.Request.BeginSystemScope()) return await action(db);
     }
 
-    public new virtual async Task DisposeAsync()
+    public new async Task DisposeAsync()
     {
         await base.DisposeAsync();
         await _pg.DisposeAsync();
@@ -98,26 +87,4 @@ public class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
 public sealed class ApiCollection : ICollectionFixture<ApiFixture>
 {
     public const string Name = "api";
-}
-
-/// <summary>Own database (a second fixture instance) for suites that assert exact seeded aggregates.</summary>
-[CollectionDefinition(Name)]
-public sealed class IsolatedApiCollection : ICollectionFixture<ApiFixture>
-{
-    public const string Name = "api-isolated";
-}
-
-/// <summary>
-/// The product as deployed: Features:LegacyMortgage off on a fresh database, so the core seed (team only), the role sync and
-/// the market seed run exactly as on a reset or a new environment.
-/// </summary>
-public sealed class CurrentModelFixture : ApiFixture
-{
-    protected override bool LegacyMortgage => false;
-}
-
-[CollectionDefinition(Name)]
-public sealed class CurrentModelCollection : ICollectionFixture<CurrentModelFixture>
-{
-    public const string Name = "api-current-model";
 }
