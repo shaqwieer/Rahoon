@@ -6,7 +6,7 @@ in [`docs/phases/`](../../phases/README.md)) are done. The next phases come from
 
 | Order | Phase | Outcome | Prerequisite | Plan | Status |
 |---|---|---|---|---|---|
-| 1 | 1.5 | Team membership, invitations, custom roles, permission catalog, effective access, resource scopes | Phase 1 | [phase-1.5-admin-access.md](phase-1.5-admin-access.md) | ✅ Completed 2026-10-01 — [handoff](handoffs/phase-1.5-handoff.md) (not deployed) |
+| 1 | 1.5 | Team membership, invitations, custom roles, permission catalog, effective access, resource scopes | Phase 1 | [phase-1.5-admin-access.md](phase-1.5-admin-access.md) | ✅ Completed 2026-10-01, deployed to staging — [handoff](handoffs/phase-1.5-handoff.md) |
 | 2 | 2 | Search & map discovery, explained matching, comparison, saved searches/alerts, calculators | 1.5 | brief `Rahoon_Phase_2_Discovery_Matching.md` → plan written by its session | ▶ **NEXT** |
 | 3 | 3A | Versioned offers, negotiation, owner acceptance, exclusive provisional reservation | 2 | brief `Rahoon_Phase_3A_Offers_Reservations.md` | ⬜ |
 | 4 | 3B | Closing cases, external approvals, payment evidence, transfer confirmation | 3A | brief `Rahoon_Phase_3B_Transfer_Completion.md` | ⬜ |

@@ -1,6 +1,6 @@
 # Phase 1.5 — Rahoon administration, team members, roles and permissions
 
-**Status:** ✅ Completed on 2026-10-01 (see [handoff](handoffs/phase-1.5-handoff.md)). Not deployed.
+**Status:** ✅ Completed on 2026-10-01 and deployed to staging (see [handoff](handoffs/phase-1.5-handoff.md)).
 **Brief:** `Rahoon_Next_Phases/Rahoon_Phase_1_5_Admin_Access.md` (owner's phase pack). This file is how that brief maps onto the code.
 
 ## Business context (stable)

@@ -2,7 +2,8 @@
 
 **Status:** Completed · **Date:** 2026-10-01 · **Commits on `master`:** `4c19cec` (API, migration, tests), `9adae0c`
 (web console, docs) and a follow-up fix (overview needs `dashboard.view`; landing; e2e picker wait; this handoff).
-**Push / deployment:** not pushed, not deployed. Staging (`rahoon.talentfold.net`) still runs `0c942dc`.
+**Push / deployment:** `master` pushed to origin at `c9b028c` (includes the phase pack) and deployed to staging
+(`rahoon.talentfold.net`) on 2026-10-01. The database was backed up first: `/root/rahoon-backups/before-phase-1.5-20261001-2240.dump`.
 
 ## Verified prerequisites
 
@@ -56,10 +57,11 @@ Web (`web/src`): `components/team/TeamShell.tsx`, `components/team/admin/*`, `li
 renames and grants are applied by `SystemRoleSync` on every `migrate`.
 - Test databases: applied (Testcontainers, every run).
 - Local development database: applied with `dotnet run -- seed` (non-destructive; added the five new demo members).
-- Staging and production: **not applied** (not deployed). On deploy, migrate-on-startup applies it and renames
-  lama's `team_lead` role to `platform_owner`; existing coordinators become case managers (assigned scope), so the
-  owner or an operations manager must **assign open work** to them. New demo members appear on staging only after
-  `seed` there.
+- Staging: **applied** 2026-10-01 by migrate-on-startup; seed-on-startup added the five new demo members (9 members,
+  one or two per system role). Checked live: لمى signs in as `platform_owner` (scope all, 9 sale requests, 7 unassigned);
+  نايف as `case_manager` (scope assigned, sees his 2 assigned requests, `/api/team/admin/members` → 403).
+  **Unassigned work must be assigned** for case managers to see it.
+- Production: none exists yet; the first owner will come from `bootstrap-owner`.
 
 ## Permissions
 
