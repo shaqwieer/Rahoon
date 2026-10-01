@@ -53,6 +53,19 @@ public sealed class DirectoryTests(ApiFixture api)
     }
 
     [Fact]
+    public async Task An_item_listed_twice_by_its_source_is_counted_once_and_reruns_stay_stable()
+    {
+        var key = Guid.NewGuid().ToString("N");
+        var first = Candidate("test-dev", key, Unique("شركة مكررة العقارية"), null, OrgTypes.Developer) with { SourceUrl = "https://example.gov.sa/list?page=4" };
+        var again = first with { SourceUrl = "https://example.gov.sa/list?page=9" };
+        var run1 = await ImportAsync(first, again);
+        Assert.Equal(1, run1.Created);
+        var run2 = await ImportAsync(first, again);
+        Assert.Equal(0, run2.Updated);
+        Assert.Equal("https://example.gov.sa/list?page=4", (await FindAsync(first.NameAr)).SourceUrl);
+    }
+
+    [Fact]
     public async Task Names_are_normalized_and_types_merge_into_one_record()
     {
         var name = Unique("شركة الأفق للتطوير");

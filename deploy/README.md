@@ -60,7 +60,8 @@ $C run --rm api import-directory --source banks        # SAMA licensed banks
 $C run --rm api import-directory --source finance      # SAMA licensed finance companies
 $C run --rm api import-directory --source developers   # REGA qualified off-plan developers (paced, ~15 s per page)
 $C run --rm api import-directory --source developers --pages 40-92   # resume where REGA stopped answering
-$C run --rm api import-directory --file /data/import/list.csv --dry-run   # a verified official dataset file
+$C run --rm -T api import-directory --file Seed/Data/rega-developers-2026-10-01.csv   # bundled REGA developer list (1,176 rows)
+$C run --rm api import-directory --file /data/import/list.csv --dry-run   # another verified dataset file
 ```
 
 Each run prints `discovered / created / updated / skipped / failed` and why items failed. REGA rate-limits requests

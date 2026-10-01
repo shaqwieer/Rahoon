@@ -55,6 +55,7 @@ database (and empty the organization directory) and are refused outside Developm
 cd server/src/Rahoon.Api
 dotnet run -- import-directory                      # all sources: SAMA banks, SAMA finance companies, REGA developers
 dotnet run -- import-directory --source banks       # or finance | developers; --pages 21-40 resumes REGA; --dry-run
+dotnet run -- import-directory --file Seed/Data/rega-developers-2026-10-01.csv   # bundled REGA developer list
 dotnet run -- import-directory --file list.csv      # a verified official dataset (columns in DirectoryImporter.cs)
 ```
 Reruns never duplicate and never change records an administrator edited; see `docs/architecture.md`.

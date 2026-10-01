@@ -47,6 +47,9 @@ public sealed class DirectoryImporter(RahoonDbContext db, IClock clock, ILogger<
         var report = new ImportReport();
         var existing = await db.DirectoryOrganizations.ToListAsync(ct);
         var now = clock.UtcNow;
+        // A source may list the same item twice (e.g. on two pages): the first occurrence wins, so reruns are stable.
+        var seenKeys = new HashSet<string>();
+        var repeated = 0;
 
         foreach (var result in results)
         {
@@ -66,6 +69,12 @@ public sealed class DirectoryImporter(RahoonDbContext db, IClock clock, ILogger<
                     continue;
                 }
                 var importKey = $"{c.SourceKey}:{c.ItemKey}";
+                if (!seenKeys.Add(importKey))
+                {
+                    repeated++;
+                    report.Unchanged++;
+                    continue;
+                }
                 var normAr = DirectoryNames.Normalize(c.NameAr);
                 var normEn = string.IsNullOrWhiteSpace(c.NameEn) ? null : DirectoryNames.NormalizeEnglish(c.NameEn);
                 var types = OrgTypes.All.Where(c.Types.Contains).ToList();
@@ -150,6 +159,7 @@ public sealed class DirectoryImporter(RahoonDbContext db, IClock clock, ILogger<
             }
         }
 
+        if (repeated > 0) report.Notes.Add($"{repeated} items listed more than once by their source were counted once");
         if (dryRun)
         {
             db.ChangeTracker.Clear();

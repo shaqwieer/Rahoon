@@ -8,7 +8,7 @@ import { PublicFooter, PublicHeader } from "@/components/shell/Public";
 import { buttonClasses } from "@/components/ui/buttonStyles";
 import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/cn";
-import heroImage from "../../../public/images/rahoon-homeowner-hero.png";
+import heroImage from "../../../public/images/rahoon-marketplace-hero-v2.png";
 
 export const metadata: Metadata = { title: { absolute: M.home.metaTitle }, description: M.meta.description };
 
@@ -87,7 +87,7 @@ export default function HomePage() {
             </div>
             <div className="relative min-h-[300px] lg:min-h-[500px]">
               <div className="absolute inset-0 overflow-hidden rounded-[22px] bg-subtle shadow-3">
-                <Image src={heroImage} alt={H.imageAlt} fill priority sizes="(max-width: 1023px) 100vw, 50vw" className="object-cover object-[64%_center]" />
+                <Image src={heroImage} alt={H.imageAlt} fill priority sizes="(max-width: 1023px) 100vw, 50vw" className="object-cover object-center" />
                 <div className="absolute inset-0 bg-gradient-to-t from-ink/35 via-transparent to-transparent" />
               </div>
               <div className="absolute inset-x-4 bottom-4 flex items-start gap-3 rounded-md border border-white/40 bg-white/95 p-4 shadow-2 backdrop-blur md:inset-x-auto md:bottom-6 md:start-6 md:max-w-[340px]">

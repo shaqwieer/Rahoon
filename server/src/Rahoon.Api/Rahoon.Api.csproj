@@ -24,4 +24,8 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Verified directory datasets, imported with the import-directory command (option: file Seed/Data/name.csv). -->
+    <None Include="Seed\Data\*.csv" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

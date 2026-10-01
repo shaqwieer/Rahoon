@@ -64,7 +64,9 @@ cited source) licensing.
 - **Importer** (`DirectoryImporter`, CLI `dotnet Rahoon.Api.dll import-directory`): sources in `DirectorySources.Catalog.cs`
   — SAMA licensed banks and licensed finance companies (SAMA's JSON list handler) and REGA's qualified off-plan
   developers (Wafi results pages, paced, stops when REGA throttles and says where to resume). A verified CSV/JSON
-  dataset goes through the same pipeline (`--file`). Matching: the source's own key, then the normalized Arabic name,
+  dataset goes through the same pipeline (`--file`). The REGA developer list collected on 2026-10-01 (1,176 qualified
+  developers from 86 of REGA's 92 pages; pages 1–3 come from the live import) is bundled as
+  `Seed/Data/rega-developers-2026-10-01.csv`, generated from the workbook by `scripts/rega_xlsx_to_csv.py`. Matching: the source's own key, then the normalized Arabic name,
   then the normalized English name; types merge. The source item that created a record owns its fields; other items only
   fill gaps. Records an administrator edited (`AdminEditedAt`) are never changed again. Nothing is ever deleted or
   deactivated by an import; a failed source changes nothing. Report: discovered, created, updated, skipped, failed.

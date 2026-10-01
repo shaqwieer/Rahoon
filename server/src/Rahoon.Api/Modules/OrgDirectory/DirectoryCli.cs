@@ -41,6 +41,9 @@ public static class DirectoryCli
         var results = new List<SourceResult>();
         if (file is not null)
         {
+            // Bundled datasets (Seed/Data) also resolve next to the application, e.g. inside the container.
+            if (!File.Exists(file) && !Path.IsPathRooted(file) && File.Exists(Path.Combine(AppContext.BaseDirectory, file)))
+                file = Path.Combine(AppContext.BaseDirectory, file);
             if (!File.Exists(file)) { Console.Error.WriteLine($"import-directory: file not found: {file}"); return 1; }
             results.Add(DirectoryImporter.ReadDatasetFile(file, today));
         }
