@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Rahoon.Api.Infrastructure;
 using Rahoon.Api.Infrastructure.Integrations;
 using Rahoon.Api.Infrastructure.Persistence;
 using Rahoon.Api.Infrastructure.Storage;
@@ -39,8 +40,39 @@ public sealed partial class DevSeeder(
     {
         DemoDataGuard.EnsureAllowed(env, "seed");
         using var _ = db.Request.BeginSystemScope();
-        if (await db.Organizations.AnyAsync()) { log.LogInformation("Seed skipped: data already present."); return; }
+        var legacy = FeatureFlags.From(config).LegacyMortgage;
+        if (!await db.Organizations.AnyAsync())
+        {
+            if (legacy) await SeedLegacyMortgageAsync();
+            else await SeedCoreAsync();
+        }
+        else log.LogInformation("Core seed skipped: organizations already present.");
 
+        // Runs on every seed, also on databases seeded before the 2026-10-01 redefinition.
+        await SyncSystemRolesAsync();
+        await SeedMarketAsync();
+        log.LogInformation("Seed complete.");
+    }
+
+    /// <summary>The current model: integration states, «فريق رهون» and its members. No lenders, providers or cases.</summary>
+    private async Task SeedCoreAsync()
+    {
+        SeedIntegrationStates();
+        await db.SaveChangesAsync();
+        Org("rahoon-team", "فريق رهون", "Rahoon Team", "فر", OrganizationKind.Operator, "الرياض", ["team.rahoon.example"]);
+        await db.SaveChangesAsync();
+        SeedRoles();
+        await db.SaveChangesAsync();
+        SeedRahoonTeamUsers();
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// The withdrawn mortgage-default help model (Features:LegacyMortgage=true only): lenders, providers, cases, requests.
+    /// Kept as the fixture of the archived regression suite.
+    /// </summary>
+    private async Task SeedLegacyMortgageAsync()
+    {
         await SeedPlatformCatalogAsync();
         SeedOrganizations();
         await db.SaveChangesAsync();
@@ -67,7 +99,28 @@ public sealed partial class DevSeeder(
         await SeedProviderAdminAsync();
         await SeedRequestsAsync(pii);
         await FlushAuditAsync();
-        log.LogInformation("Seed complete.");
+    }
+
+    /// <summary>
+    /// Brings the role rows of every organization up to its system templates (names and permissions). Role rows are copied
+    /// per organization, so permissions added later (e.g. market.* on 2026-10-01) would otherwise never reach existing tenants.
+    /// Adds missing permissions only; never removes a grant an organization changed.
+    /// </summary>
+    private async Task SyncSystemRolesAsync()
+    {
+        var roles = await db.Roles.IgnoreQueryFilters().Include(r => r.Permissions).ToListAsync();
+        var orgKinds = await db.Organizations.IgnoreQueryFilters().ToDictionaryAsync(o => o.Id, o => o.Kind);
+        foreach (var role in roles)
+        {
+            var t = SystemRoles.Find(role.Key);
+            if (t is null || !orgKinds.TryGetValue(role.OrganizationId, out var kind) || kind != t.Kind) continue;
+            role.NameAr = t.NameAr;
+            role.NameEn = t.NameEn;
+            var have = role.Permissions.Select(p => p.PermissionKey).ToHashSet();
+            foreach (var key in t.Permissions.Distinct().Where(k => !have.Contains(k)))
+                role.Permissions.Add(new RolePermission { RoleId = role.Id, PermissionKey = key, Grant = PermissionGrant.Allow });
+        }
+        await db.SaveChangesAsync();
     }
 
     private string DemoPassword => config["Seed:DemoPassword"] is { Length: >= 10 } p ? p : "Rahoon-Demo-2026!";
@@ -98,17 +151,7 @@ public sealed partial class DevSeeder(
         foreach (var t in types)
             db.DocumentTypes.Add(new DocumentType { Key = t.key, NameAr = t.ar, Icon = t.icon, ValidityDays = t.validity, Sensitive = t.sensitive });
 
-        (string key, string ar, string state, string note)[] integrations =
-        [
-            (IntegrationKeys.Sms, "بوابة الرسائل النصية", IntegrationState.Simulated, "بيئة تجريبية: تُسجَّل الرسائل ولا تُرسل. لا يوجد عقد مع مزوّد."),
-            (IntegrationKeys.Email, "البريد الإلكتروني", IntegrationState.Simulated, "بيئة تجريبية: تُسجَّل الرسائل ولا تُرسل."),
-            (IntegrationKeys.NationalIdentity, "مزوّد الهوية الوطنية الرقمية", IntegrationState.Unavailable, "نمط محجوز يتطلب تأكيد التكامل. التحقق الحالي: الدعوة + آخر 4 أرقام + رمز جوال."),
-            (IntegrationKeys.LicensedSigning, "التوقيع الإلكتروني المرخّص", IntegrationState.Unavailable, "لا مزوّد مرخّص متعاقد. القبول داخل المنصة سجل موافقة وليس توقيعاً ملزماً."),
-            (IntegrationKeys.LicensedPayment, "الدفع المرخّص", IntegrationState.Unavailable, "لا بوابة دفع. المدفوعات تُسجَّل يدوياً مع صانع ومدقق."),
-            (IntegrationKeys.CoreBanking, "نظام التمويل الأساسي", IntegrationState.Unavailable, "لا اتصال مباشر. الأرقام تُدخل يدوياً أو باستيراد ملف مع ذكر المصدر والوقت."),
-            (IntegrationKeys.JudicialChannel, "القناة القضائية الرسمية", IntegrationState.Unavailable, "لا قناة معتمدة. تُدخل الإحالة والمرجع والحالة الرسمية يدوياً وحرفياً."),
-            (IntegrationKeys.RealEstateRegistry, "السجل العقاري", IntegrationState.Unavailable, "لا تكامل. مطابقة الصك يدوية من القانونية."),
-        ];
+        SeedIntegrationStates();
         // V6 interim: a directory of (fictional) financing institutions + «أخرى» free text. None is linked to a tenant.
         (string ar, string en, string kind)[] institutions =
         [
@@ -121,10 +164,6 @@ public sealed partial class DevSeeder(
         ];
         for (var n = 0; n < institutions.Length; n++)
             db.FinancingInstitutions.Add(new Modules.Requests.FinancingInstitution { NameAr = institutions[n].ar, NameEn = institutions[n].en, Kind = institutions[n].kind, SortOrder = n });
-
-        foreach (var i in integrations)
-            db.IntegrationSettings.Add(new IntegrationSetting { Key = i.key, NameAr = i.ar, State = i.state, Note = i.note, UpdatedAt = DemoToday });
-
         (string cat, string period, string basis, string state)[] retention =
         [
             ("ملف الحالة والمستندات", "10 سنوات بعد الإغلاق", "افتراض — يتطلب تأكيداً قانونياً", "pending_legal"),
@@ -156,6 +195,24 @@ public sealed partial class DevSeeder(
             Variables = ["{المستند}", "{السبب}", "{المهلة}"], UpdatedAt = DemoToday.AddDays(-30),
         });
         await db.SaveChangesAsync();
+    }
+
+    /// <summary>States of the integrations the product shows (SMS is simulated until a provider is contracted).</summary>
+    private void SeedIntegrationStates()
+    {
+        (string key, string ar, string state, string note)[] integrations =
+        [
+            (IntegrationKeys.Sms, "بوابة الرسائل النصية", IntegrationState.Simulated, "بيئة تجريبية: تُسجَّل الرسائل ولا تُرسل. لا يوجد عقد مع مزوّد."),
+            (IntegrationKeys.Email, "البريد الإلكتروني", IntegrationState.Simulated, "بيئة تجريبية: تُسجَّل الرسائل ولا تُرسل."),
+            (IntegrationKeys.NationalIdentity, "مزوّد الهوية الوطنية الرقمية", IntegrationState.Unavailable, "نمط محجوز يتطلب تأكيد التكامل. التحقق الحالي: الدعوة + آخر 4 أرقام + رمز جوال."),
+            (IntegrationKeys.LicensedSigning, "التوقيع الإلكتروني المرخّص", IntegrationState.Unavailable, "لا مزوّد مرخّص متعاقد. القبول داخل المنصة سجل موافقة وليس توقيعاً ملزماً."),
+            (IntegrationKeys.LicensedPayment, "الدفع المرخّص", IntegrationState.Unavailable, "لا بوابة دفع. المدفوعات تُسجَّل يدوياً مع صانع ومدقق."),
+            (IntegrationKeys.CoreBanking, "نظام التمويل الأساسي", IntegrationState.Unavailable, "لا اتصال مباشر. الأرقام تُدخل يدوياً أو باستيراد ملف مع ذكر المصدر والوقت."),
+            (IntegrationKeys.JudicialChannel, "القناة القضائية الرسمية", IntegrationState.Unavailable, "لا قناة معتمدة. تُدخل الإحالة والمرجع والحالة الرسمية يدوياً وحرفياً."),
+            (IntegrationKeys.RealEstateRegistry, "السجل العقاري", IntegrationState.Unavailable, "لا تكامل. مطابقة الصك يدوية من القانونية."),
+        ];
+        foreach (var i in integrations)
+            db.IntegrationSettings.Add(new IntegrationSetting { Key = i.key, NameAr = i.ar, State = i.state, Note = i.note, UpdatedAt = DemoToday });
     }
 
     // ───────── Organizations, roles, users ─────────

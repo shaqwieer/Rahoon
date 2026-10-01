@@ -7,79 +7,94 @@ import { buttonClasses } from "@/components/ui/buttonStyles";
 import { Logo } from "@/components/ui/Logo";
 import { Menu } from "@/components/ui/Menu";
 import { SkipLink } from "@/components/ui/SkipLink";
+import { usePathname } from "next/navigation";
+import { M } from "@/components/market/copy";
+import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/cn";
 import { useI18n } from "@/lib/i18n/client";
-import { LocaleSwitch } from "./LocaleSwitch";
 import staffLoginImage from "../../../public/images/rahoon-staff-login.png";
 
 export interface PublicHeaderProps {
-  /** `full` landing header · `back` minimal with «العودة للرئيسية» (S02) · `logo` logo only (S05/S12). */
+  /** `full` site header · `back` minimal with «العودة للرئيسية» · `logo` logo only. */
   variant?: "full" | "back" | "logo";
 }
 
-/** B2 public header: 80px desktop (padding 0 80), 60px mobile with a menu popover. */
+const NAV = [
+  { key: "home", label: M.nav.home, href: "/" },
+  { key: "sell", label: M.nav.sell, href: "/sell" },
+  { key: "opportunities", label: M.nav.opportunities, href: "/opportunities" },
+  { key: "how", label: M.nav.how, href: "/how-it-works" },
+  { key: "calculators", label: M.nav.calculators, href: "/calculators" },
+  { key: "contact", label: M.nav.contact, href: "/contact" },
+];
+
+function isActive(pathname: string, href: string) {
+  return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
+}
+
+/** Public site header (2026-10-01 model): 64px mobile with a menu, 76px desktop with the full navigation. */
 export function PublicHeader({ variant = "full" }: PublicHeaderProps) {
-  const { t } = useI18n();
-  // Individual-first (B13): the person in default is the audience; institutions get a secondary link.
-  const N = t.individual.nav;
-  const links = [
-    { key: "how", label: N.how, href: "/#how" },
-    { key: "paths", label: N.paths, href: "/#paths" },
-    { key: "rights", label: N.rights, href: "/privacy" },
-    { key: "lenders", label: N.lenders, href: "/#lenders" },
-  ];
+  const pathname = usePathname() ?? "/";
   return (
     <>
       <SkipLink />
-      <header className="flex h-[60px] items-center gap-8 border-b border-line bg-white ps-4 pe-2 md:h-20 md:px-8 xl:px-20">
+      <header className="sticky top-0 z-30 flex h-16 items-center gap-6 border-b border-line bg-white/95 ps-4 pe-2 backdrop-blur md:h-[76px] md:px-8 xl:px-14">
         <Link href="/" className="inline-flex flex-none rounded-xs">
-          <Logo variant="horizontal" width={176} alt={t.brand.homeAlt} priority className="max-md:!h-auto max-md:!w-[172px]" />
+          <Logo variant="horizontal" width={170} alt={M.brand} priority className="max-md:!h-auto max-md:!w-[150px]" />
         </Link>
         {variant === "full" ? (
           <>
-            <nav aria-label={t.public.nav} className="hidden lg:block">
-              <ul className="m-0 flex list-none gap-7 p-0 text-15 font-medium">
-                {links.map((l) => (
-                  <li key={l.key}>
-                    <Link href={l.href} className="text-ink no-underline hover:underline">
-                      {l.label}
-                    </Link>
-                  </li>
-                ))}
+            <nav aria-label={M.nav.label} className="hidden xl:block">
+              <ul className="m-0 flex list-none gap-1 p-0 text-15 font-medium">
+                {NAV.map((l) => {
+                  const active = isActive(pathname, l.href);
+                  return (
+                    <li key={l.key}>
+                      <Link
+                        href={l.href}
+                        aria-current={active ? "page" : undefined}
+                        className={cn(
+                          "inline-flex min-h-11 items-center rounded-sm px-3 text-ink no-underline transition-colors duration-150 hover:bg-subtle",
+                          active && "bg-rust-50 font-semibold text-rust hover:bg-rust-50",
+                        )}
+                      >
+                        {l.label}
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </nav>
-            <div className="ms-auto hidden items-center gap-2.5 md:flex">
-              <LocaleSwitch variant="link" />
-              <Link href="/start?mode=signin" className={buttonClasses({ variant: "secondary", size: "lg", className: "min-h-11 text-15" })}>
-                {N.signIn}
+            <div className="ms-auto hidden items-center gap-2 md:flex">
+              <Link href="/account" className={buttonClasses({ variant: "secondary", size: "lg", className: "min-h-11 text-15" })}>
+                <Icon name="person" size={20} />
+                {M.nav.account}
               </Link>
-              <Link href="/start" className={buttonClasses({ variant: "primary", size: "lg", className: "min-h-11 px-[18px] text-15" })}>
-                {N.start}
+              <Link href="/sell/new" className={buttonClasses({ variant: "primary", size: "lg", className: "min-h-11 px-[18px] text-15" })}>
+                {M.nav.startSell}
               </Link>
             </div>
-            <div className="ms-auto flex items-center gap-1 md:hidden">
-              {/* B13 mobile header: «دخول» beside the menu. */}
-              <Link href="/start?mode=signin" className="flex min-h-11 items-center px-2 text-15 font-semibold">
-                {N.signInShort}
+            <div className="ms-auto flex items-center gap-1 xl:hidden md:ms-0">
+              <Link href="/account" className="flex min-h-11 items-center px-2 text-15 font-semibold md:hidden">
+                {M.nav.account}
               </Link>
               <Menu
-                label={t.common.menu}
+                label={M.nav.menu}
                 align="end"
-                triggerLabel={t.common.menu}
+                triggerLabel={M.nav.menu}
                 triggerClassName="inline-flex size-11 items-center justify-center rounded-sm hover:bg-subtle"
                 trigger={<span className="ms text-[24px]" aria-hidden="true">menu</span>}
                 items={[
-                  ...links.map((l) => ({ key: l.key, label: l.label, href: l.href })),
-                  { key: "signin", label: N.signIn, href: "/start?mode=signin", icon: "login" },
-                  { key: "start", label: N.start, href: "/start", icon: "arrow_back" },
+                  ...NAV.map((l) => ({ key: l.key, label: l.label, href: l.href })),
+                  { key: "account", label: M.nav.account, href: "/account", icon: "person" },
+                  { key: "start", label: M.nav.startSell, href: "/sell/new", icon: "arrow_back" },
                 ]}
-                footer={<LocaleSwitch variant="link" className="px-0" />}
               />
             </div>
           </>
         ) : variant === "back" ? (
           <Link href="/" className="ms-auto text-15 font-semibold">
-            {t.public.backHome}
+            العودة للرئيسية
           </Link>
         ) : null}
       </header>
@@ -87,30 +102,28 @@ export function PublicHeader({ variant = "full" }: PublicHeaderProps) {
   );
 }
 
-/** B2 dark footer: dark logo, legal links, copyright. */
+/** Dark footer: logo, statement (no promises), site and legal links, team sign-in. */
 export function PublicFooter() {
-  const { t } = useI18n();
   return (
-    <footer className="surface-dark flex flex-col gap-6 bg-inv px-5 py-10 text-white md:flex-row md:items-center md:gap-10 xl:px-20">
-      <Logo variant="horizontal-dark" width={176} alt={t.brand.name} />
-      <nav aria-label={t.public.footerNav}>
-        <ul className="m-0 flex list-none flex-wrap gap-x-6 gap-y-2 p-0 text-14">
-          {[
-            { k: "privacy", l: t.public.privacy, href: "/privacy" },
-            { k: "terms", l: t.public.terms, href: "/terms" },
-            { k: "staff", l: t.individual.landing.staffLogin, href: "/login" },
-          ].map((x) => (
-            <li key={x.k}>
-              <Link href={x.href} className="text-white hover:text-white">
-                {x.l}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-      <span className="text-13 text-inv-2 md:ms-auto">
-        {t.individual.landing.footerStatement} {t.public.copyright}
-      </span>
+    <footer className="surface-dark bg-inv px-5 py-10 text-white md:px-10 xl:px-20">
+      <div className="mx-auto flex max-w-[1440px] flex-col gap-8 md:flex-row md:items-start md:justify-between">
+        <div className="flex max-w-[30em] flex-col gap-4">
+          <Logo variant="horizontal-dark" width={170} alt={M.brand} />
+          <p className="m-0 text-14 leading-6 text-inv-2">{M.footer.statement}</p>
+        </div>
+        <nav aria-label={M.footer.nav}>
+          <ul className="m-0 grid list-none grid-cols-2 gap-x-10 gap-y-2.5 p-0 text-14">
+            {[...NAV, { key: "privacy", label: M.footer.privacy, href: "/privacy" }, { key: "terms", label: M.footer.terms, href: "/terms" }, { key: "team", label: M.footer.team, href: "/login" }].map((x) => (
+              <li key={x.key}>
+                <Link href={x.href} className="text-white hover:text-white">
+                  {x.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
+      <div className="mx-auto mt-8 max-w-[1440px] border-t border-inv-line pt-5 text-13 text-inv-2">{M.footer.copyright}</div>
     </footer>
   );
 }

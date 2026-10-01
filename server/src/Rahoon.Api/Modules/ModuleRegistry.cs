@@ -1,3 +1,4 @@
+using Rahoon.Api.Infrastructure;
 using Rahoon.Api.Modules.Administration;
 using Rahoon.Api.Modules.Agreements;
 using Rahoon.Api.Modules.Analytics;
@@ -53,7 +54,19 @@ public static class ModuleRegistry
 
     public static IEndpointRouteBuilder MapRahoonEndpoints(this IEndpointRouteBuilder app)
     {
-        AuthEndpoints.Map(app);
+        var features = app.ServiceProvider.GetRequiredService<FeatureFlags>();
+        // Shared by every model: staff sessions, MFA, step-up, sign-out.
+        AuthEndpoints.Map(app, features.LegacyMortgage);
+        if (features.LegacyMortgage) MapLegacyMortgage(app);
+        return app;
+    }
+
+    /// <summary>
+    /// The mortgage-default help model (withdrawn 2026-10-01, docs/redefinition/legacy-inventory.md). Mapped only with
+    /// Features:LegacyMortgage=true; otherwise every route below answers 404. The data stays in the database.
+    /// </summary>
+    private static void MapLegacyMortgage(IEndpointRouteBuilder app)
+    {
         IndividualAuthEndpoints.Map(app);
         MyRequestEndpoints.Map(app);
         TeamRequestEndpoints.Map(app);
@@ -105,6 +118,5 @@ public static class ModuleRegistry
         ReportingEndpoints.Map(app);
         BillingEndpoints.Map(app);
         ConditionalIntegrationEndpoints.Map(app);
-        return app;
     }
 }

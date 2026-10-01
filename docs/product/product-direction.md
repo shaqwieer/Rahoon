@@ -1,3 +1,5 @@
+> **⬛ ARCHIVED 2026-10-01.** This described the mortgage-default help model, which was **withdrawn**. The source of truth is now [`product-definition.md`](product-definition.md). Kept for history only (rollback tag `legacy-mortgage-final`).
+
 # منصة رهون — Product direction (source of truth)
 
 _Last updated: 2026-09-27 (Q16–Q18 added by the Phase 1A-2 re-plan and answered; V13 added; second revision 2026-09-25: product-owner answers to Q1–Q15) · Owner: product owner. Engineering records decisions here; it doesn't make them._

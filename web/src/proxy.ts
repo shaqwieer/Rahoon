@@ -2,11 +2,15 @@ import { NextResponse, type NextRequest } from "next/server";
 
 /**
  * Optimistic UX gate only — the API enforces authorization on every call.
- * 1. Protected prefixes without a `rahoon_sid` cookie → /login?next=… (owner pages → /access-denied?reason=owner;
- *    individual pages /my → /start?mode=signin&next=…).
- * 2. Every page request gets an `x-pathname` header so Server Components can build `?next=` redirects.
+ * 1. Routes of the withdrawn mortgage-default model answer 404 unless RAHOON_LEGACY_MODES=1
+ *    (docs/redefinition/legacy-inventory.md). Their code is archived behind the flag; the API does the same.
+ * 2. Protected prefixes without a `rahoon_sid` cookie → sign-in with `?next=` (the account → /signin, the team → /login).
+ * 3. Every page request gets an `x-pathname` header so Server Components can build `?next=` redirects.
  */
-const PROTECTED = [
+const LEGACY_ENABLED = process.env.RAHOON_LEGACY_MODES === "1";
+
+/** Old portals: lender workspace, owner invitation portal, mortgage-help requests, providers, judicial agent, platform admin. */
+const LEGACY = [
   "/portfolio",
   "/cases",
   "/tasks",
@@ -20,12 +24,24 @@ const PROTECTED = [
   "/profile",
   "/help",
   "/owner",
+  "/invite",
   "/my",
   "/provider",
   "/agent",
   "/platform",
-  "/team",
+  "/print",
   "/select-context",
+  "/team/requests",
+  "/team/verify",
+  "/team/objections",
+  "/dev",
+];
+
+const PROTECTED: { prefix: string; signIn: string }[] = [
+  { prefix: "/account", signIn: "/signin" },
+  { prefix: "/team", signIn: "/login" },
+  // Legacy portals keep their old gate when the flag is on.
+  ...(LEGACY_ENABLED ? LEGACY.map((prefix) => ({ prefix, signIn: prefix === "/my" ? "/start" : "/login" })) : []),
 ];
 
 function matches(pathname: string, prefix: string) {
@@ -34,21 +50,30 @@ function matches(pathname: string, prefix: string) {
 
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
-  const hasSession = Boolean(request.cookies.get("rahoon_sid")?.value);
-  const prefix = PROTECTED.find((p) => matches(pathname, p));
 
-  if (prefix && !hasSession) {
+  if (!LEGACY_ENABLED) {
+    if (LEGACY.some((p) => matches(pathname, p))) {
+      // Rendered by app/not-found.tsx with a 404 status; nothing of the old model is served.
+      return NextResponse.rewrite(new URL("/__withdrawn", request.url));
+    }
+    // The old individual sign-in moved to the mobile-first sign-in.
+    if (pathname === "/start") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/signin";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  const hasSession = Boolean(request.cookies.get("rahoon_sid")?.value);
+  const gate = PROTECTED.find((p) => matches(pathname, p.prefix));
+  if (gate && !hasSession) {
     const url = request.nextUrl.clone();
     url.search = "";
-    if (prefix === "/owner") {
+    if (gate.prefix === "/owner") {
       url.pathname = "/access-denied";
       url.searchParams.set("reason", "owner");
-    } else if (prefix === "/my") {
-      url.pathname = "/start";
-      url.searchParams.set("mode", "signin");
-      url.searchParams.set("next", `${pathname}${search}`);
     } else {
-      url.pathname = "/login";
+      url.pathname = gate.signIn;
       url.searchParams.set("next", `${pathname}${search}`);
     }
     return NextResponse.redirect(url);

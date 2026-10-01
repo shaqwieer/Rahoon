@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans, IBM_Plex_Sans_Arabic } from "next/font/google";
+import { M } from "@/components/market/copy";
 import { ToastProvider } from "@/components/ui/Toast";
+import { LEGACY_MODES } from "@/lib/legacy";
 import { I18nProvider } from "@/lib/i18n/client";
 import { dirFor, getDictionary } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
@@ -33,9 +35,10 @@ const MATERIAL_SYMBOLS =
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = getDictionary(await getLocale());
+  const meta = LEGACY_MODES ? t.meta : M.meta;
   return {
-    title: { default: t.meta.title, template: `%s · ${t.meta.title}` },
-    description: t.meta.description,
+    title: { default: meta.title, template: `%s · ${meta.title}` },
+    description: meta.description,
     // App pages are private; public pages override this (and X-Robots-Tag is set in next.config.ts).
     robots: { index: false, follow: false },
   };

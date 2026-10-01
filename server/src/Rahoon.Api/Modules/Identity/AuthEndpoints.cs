@@ -1,3 +1,4 @@
+using Rahoon.Api.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Rahoon.Api.Infrastructure.Auth;
@@ -21,7 +22,7 @@ public static class AuthEndpoints
 {
     private const string GenericLoginError = "البريد أو كلمة المرور غير صحيحة.";
 
-    public static void Map(IEndpointRouteBuilder app)
+    public static void Map(IEndpointRouteBuilder app, bool legacyMortgage)
     {
         var g = app.MapGroup("/api/auth");
 
@@ -37,14 +38,15 @@ public static class AuthEndpoints
         g.MapPost("/sessions/{id:guid}/revoke", RevokeSession).RequireSession();
         g.MapPost("/sessions/revoke-others", RevokeOthers).RequireSession();
 
-        // Owner (debtor) sign-in: invitation link + last 4 of national ID + SMS code. No passwords.
+        // Owner (debtor) sign-in: invitation link + last 4 of national ID + SMS code. No passwords. Legacy model only.
+        if (!legacyMortgage) return;
         app.MapGet("/api/public/invitations/{token}", GetOwnerInvitation);
         g.MapPost("/owner/verify-id", OwnerVerifyId).RequireRateLimiting("auth");
         g.MapPost("/owner/verify-otp", OwnerVerifyOtp).RequireRateLimiting("auth");
     }
 
     private static async Task<IResult> Login(LoginRequest req, HttpContext http, RahoonDbContext db, IPasswordHasher<User> hasher,
-        SessionService sessions, OtpService otp, AuthOptions options, IClock clock, AuditLog audit, RequestContext rc)
+        SessionService sessions, OtpService otp, AuthOptions options, IClock clock, AuditLog audit, RequestContext rc, FeatureFlags features)
     {
         var email = (req.Email ?? "").Trim().ToLowerInvariant();
         var now = clock.UtcNow;
@@ -80,6 +82,14 @@ public static class AuthEndpoints
         }
 
         user!.FailedLoginCount = 0;
+        // Only «فريق رهون» works in the current model; the lender/provider/agent/platform workspaces were withdrawn (2026-10-01).
+        if (!features.LegacyMortgage && (await ActiveMembershipsAsync(db, user.Id, legacyMortgage: false)).Count == 0)
+        {
+            await audit.RecordAsync(new AuditEntry("auth.login_withdrawn_workspace", "دخول لحساب جهة لم تعد مفعّلة في رهون", Detail: Mask.Email(user.Email)));
+            await db.SaveChangesAsync();
+            return Results.Problem(title: "هذا الحساب لا يتبع فريق رهون، ولم تعد مساحة عمله مفعّلة في رهون. للاستفسار تواصل مع فريق رهون.",
+                statusCode: 403, extensions: new Dictionary<string, object?> { ["code"] = "workspace_withdrawn" });
+        }
         var session = await sessions.CreateAsync(http, user, SessionStage.MfaPending, SessionScope.None);
         var issued = await otp.IssueAsync(OtpPurpose.Login, user.Phone ?? "", user.Id, session.Id);
         return Results.Ok(new { mfaRequired = true, factor = "sms", destination = issued.DestinationMasked, issued.ResendInSeconds, sandboxCode = issued.SandboxCode, otpRequired = issued.Required });
@@ -97,7 +107,7 @@ public static class AuthEndpoints
     }
 
     private static async Task<IResult> VerifyMfa(CodeRequest req, HttpContext http, RahoonDbContext db, SessionService sessions,
-        OtpService otp, AuthOptions options, IClock clock, RequestContext rc, AuditLog audit)
+        OtpService otp, AuthOptions options, IClock clock, RequestContext rc, AuditLog audit, FeatureFlags features)
     {
         var session = await CurrentSessionAsync(http, sessions, rc);
         if (session is null || session.Stage != SessionStage.MfaPending)
@@ -122,7 +132,7 @@ public static class AuthEndpoints
         user.LastLoginAt = clock.UtcNow;
         user.MfaEnrolled = true;
 
-        var memberships = await ActiveMembershipsAsync(db, user.Id);
+        var memberships = await ActiveMembershipsAsync(db, user.Id, features.LegacyMortgage);
         await db.SaveChangesAsync();
         if (memberships.Count == 1)
         {
@@ -146,10 +156,12 @@ public static class AuthEndpoints
         return Results.Ok(new { destination = issued.DestinationMasked, issued.ResendInSeconds, sandboxCode = issued.SandboxCode, otpRequired = issued.Required });
     }
 
-    internal static async Task<List<Membership>> ActiveMembershipsAsync(RahoonDbContext db, Guid userId) =>
+    /// <param name="legacyMortgage">Off (the current model): only «فريق رهون» (Operator) memberships count.</param>
+    internal static async Task<List<Membership>> ActiveMembershipsAsync(RahoonDbContext db, Guid userId, bool legacyMortgage = true) =>
         await db.Memberships.IgnoreQueryFilters().Include(m => m.Organization)
             .Include(m => m.Roles).ThenInclude(r => r.Role)
             .Where(m => m.UserId == userId && m.Status == MembershipStatus.Active && m.Organization!.Status == OrganizationStatus.Active)
+            .Where(m => legacyMortgage || m.Organization!.Kind == OrganizationKind.Operator)
             .OrderBy(m => m.CreatedAt).ToListAsync();
 
     internal static string HomeFor(Membership m)
@@ -166,12 +178,12 @@ public static class AuthEndpoints
         };
     }
 
-    private static async Task<IResult> Me(RequestContext rc, RahoonDbContext db, IClock clock, AuthOptions options)
+    private static async Task<IResult> Me(RequestContext rc, RahoonDbContext db, IClock clock, AuthOptions options, FeatureFlags features)
     {
         if (!rc.IsAuthenticated) return Results.Ok(new { authenticated = false, smsConfirmation = options.SmsConfirmation });
         using var _ = rc.BeginSystemScope();
         var user = await db.Users.AsNoTracking().FirstAsync(u => u.Id == rc.UserId);
-        var memberships = rc.IsOwner || rc.IsIndividual ? [] : await ActiveMembershipsAsync(db, rc.UserId);
+        var memberships = rc.IsOwner || rc.IsIndividual ? [] : await ActiveMembershipsAsync(db, rc.UserId, features.LegacyMortgage);
         object? owner = null;
         if (rc.IsOwner)
         {
@@ -206,7 +218,7 @@ public static class AuthEndpoints
             stepUpActive = rc.StepUpUntil > clock.UtcNow,
             smsConfirmation = options.SmsConfirmation,
             unreadNotifications = unread,
-            home = memberships.FirstOrDefault(m => m.Id == rc.MembershipId) is { } cur ? HomeFor(cur) : rc.IsOwner ? "/owner" : rc.IsIndividual ? "/my" : "/select-context",
+            home = memberships.FirstOrDefault(m => m.Id == rc.MembershipId) is { } cur ? HomeFor(cur) : rc.IsOwner ? "/owner" : rc.IsIndividual ? (features.LegacyMortgage ? "/my" : "/account") : "/select-context",
         });
     }
 
@@ -233,10 +245,10 @@ public static class AuthEndpoints
     }
 
     /// <summary>Organization switch rotates the session so no cached data crosses tenants (C12).</summary>
-    private static async Task<IResult> SwitchContext(ContextRequest req, HttpContext http, RahoonDbContext db, SessionService sessions, RequestContext rc, AuditLog audit)
+    private static async Task<IResult> SwitchContext(ContextRequest req, HttpContext http, RahoonDbContext db, SessionService sessions, RequestContext rc, AuditLog audit, FeatureFlags features)
     {
         using var _ = rc.BeginSystemScope();
-        var memberships = await ActiveMembershipsAsync(db, rc.UserId);
+        var memberships = await ActiveMembershipsAsync(db, rc.UserId, features.LegacyMortgage);
         var m = memberships.FirstOrDefault(x => x.Id == req.MembershipId) ?? throw new NotFoundException();
         var session = await db.Sessions.FirstAsync(s => s.Id == rc.SessionId);
         var user = await db.Users.FirstAsync(u => u.Id == rc.UserId);

@@ -1,3 +1,4 @@
+using Rahoon.Api.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Rahoon.Api.Infrastructure.Persistence;
 using Rahoon.Api.Infrastructure.Time;
@@ -79,7 +80,8 @@ public sealed class BreachMonitorService(IServiceScopeFactory scopes, IConfigura
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (!config.GetValue("Jobs:BreachMonitor", true)) return;
+        // Legacy mortgage-help model only (Features:LegacyMortgage, 2026-10-01).
+        if (!FeatureFlags.From(config).LegacyMortgage || !config.GetValue("Jobs:BreachMonitor", true)) return;
         await Task.Delay(TimeSpan.FromSeconds(20), stoppingToken);
         while (!stoppingToken.IsCancellationRequested)
         {

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Rahoon.Api.Infrastructure;
 using Rahoon.Api.Infrastructure.Auth;
 using Rahoon.Api.Infrastructure.Http;
 using Rahoon.Api.Infrastructure.Integrations;
@@ -43,6 +44,7 @@ builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 // Resolved lazily so test hosts and environment overrides apply.
 builder.Services.AddSingleton(sp => sp.GetRequiredService<IConfiguration>().GetSection("Auth").Get<AuthOptions>() ?? new AuthOptions());
 builder.Services.AddScoped<SessionService>();
+builder.Services.AddSingleton(sp => FeatureFlags.From(sp.GetRequiredService<IConfiguration>()));
 builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;

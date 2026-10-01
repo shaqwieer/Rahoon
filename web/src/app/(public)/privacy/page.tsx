@@ -1,15 +1,10 @@
 import type { Metadata } from "next";
+import { M } from "@/components/market/copy";
 import { LegalDraft } from "../LegalDraft";
-import { getServerDictionary } from "@/lib/i18n/server";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const { t } = await getServerDictionary();
-  return { title: t.individual.legal.privacyTitle };
-}
+export const metadata: Metadata = { title: M.legal.privacyTitle };
 
-/** Privacy policy — placeholder until approved; lists only what the platform actually enforces today. */
-export default async function PrivacyPage() {
-  const { t } = await getServerDictionary();
-  const L = t.individual.legal;
-  return <LegalDraft title={L.privacyTitle} body={L.privacyBody} facts={L.privacyFacts} />;
+/** Privacy policy — draft until legal approval; lists only what the platform actually enforces today. */
+export default function PrivacyPage() {
+  return <LegalDraft title={M.legal.privacyTitle} body={M.legal.privacyBody} facts={M.legal.privacyFacts} />;
 }

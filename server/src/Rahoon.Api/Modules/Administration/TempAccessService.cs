@@ -1,3 +1,4 @@
+using Rahoon.Api.Infrastructure;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
@@ -250,7 +251,8 @@ public sealed class TempAccessExpiryService(IServiceScopeFactory scopes, IConfig
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (!config.GetValue("Jobs:TempAccessExpiry", true)) return;
+        // Legacy mortgage-help model only (Features:LegacyMortgage, 2026-10-01).
+        if (!FeatureFlags.From(config).LegacyMortgage || !config.GetValue("Jobs:TempAccessExpiry", true)) return;
         await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken);
         while (!stoppingToken.IsCancellationRequested)
         {

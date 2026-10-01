@@ -7,7 +7,7 @@ const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "same-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self)" },
 ];
 
 const nextConfig: NextConfig = {
@@ -26,8 +26,9 @@ const nextConfig: NextConfig = {
           { key: "X-Robots-Tag", value: "noindex, nofollow" },
         ],
       },
-      // Public marketing pages are indexable. Later rules override earlier ones for the same key.
-      ...["/", "/demo", "/login"].map((source) => ({
+      // Public pages are indexable (not the account, the team workspace or the withdrawn legacy portals).
+      // Later rules override earlier ones for the same key.
+      ...["/", "/sell", "/opportunities", "/opportunities/:ref", "/how-it-works", "/calculators", "/contact", "/privacy", "/terms"].map((source) => ({
         source,
         headers: [{ key: "X-Robots-Tag", value: "index, follow" }],
       })),

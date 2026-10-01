@@ -1,10 +1,15 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { cache } from "react";
+import { LEGACY_MODES } from "@/lib/legacy";
 import { defaultLocale, getDictionary, isLocale, LOCALE_COOKIE, type Locale } from "./index";
 
-/** Reads the `rahoon_locale` cookie (Arabic by default). Cached per request. */
+/**
+ * Reads the `rahoon_locale` cookie (Arabic by default). Cached per request. The current model is Arabic-first and its
+ * content exists in Arabic only, so the English switch applies to the archived legacy portals alone.
+ */
 export const getLocale = cache(async (): Promise<Locale> => {
+  if (!LEGACY_MODES) return defaultLocale;
   const value = (await cookies()).get(LOCALE_COOKIE)?.value;
   return isLocale(value) ? value : defaultLocale;
 });

@@ -1,5 +1,22 @@
 # رهون — Phase plan (work one phase at a time)
 
+> **Redefinition, 2026-10-01:** Rahoon is now a **Saudi platform to exit property obligations (developer / bank) and to buy**:
+> owners submit exit/sale requests, buyers state their capacity, and the Rahoon team reviews, prepares opportunities and follows them.
+> - Product source of truth: [`docs/product/product-definition.md`](../product/product-definition.md).
+> - What the old mortgage-default model was and how it is removed: [`docs/redefinition/legacy-inventory.md`](../redefinition/legacy-inventory.md).
+> - The old phases 0–4 below are **archived** (rollback tag `legacy-mortgage-final`); their code runs only with `Features:LegacyMortgage=true`.
+
+| # | Phase file | Goal | Status |
+|---|---|---|---|
+| M0+M1 | [phase-m-exit-marketplace.md](phase-m-exit-marketplace.md) | Correct the model; full slice: sale request → team review → opportunity → owner confirmation → publish → buyer search → interest | ▶ **CURRENT** |
+| M2 | — | Advanced search & matching: map-area search, explained matching, compare, saved searches and alerts | ⬜ (starts only when the product owner asks) |
+| M3 | — | Offers, negotiation, provisional reservation, external approvals, transfer checklists, closing and fees per an approved policy | ⬜ (starts only when the product owner asks) |
+
+---
+
+## Archived plan (mortgage-default model, superseded 2026-10-01)
+
+
 > **Product direction, confirmed 2026-09-25:** Rahoon primarily serves **individuals struggling to repay an existing mortgage**. **The individual starts the request**, and the financing institution joins later. Rahoon isn't a bank-facing product first and doesn't originate mortgages.
 > - The product source of truth is [`docs/product/product-direction.md`](../product/product-direction.md). Read it before any phase work.
 > - Its open decisions (Q1–Q18) gate several steps.
@@ -16,7 +33,7 @@
 | 0 | [phase-0-foundation.md](phase-0-foundation.md) | Platform skeleton + five anchor screens | ✅ Done (direction review added) |
 | 1A | [phase-1a-mvp-settlement.md](phase-1a-mvp-settlement.md) | **MVP**: the individual enters Rahoon → submits a request → knows what Rahoon will do for them → follows the case study and communication (the Rahoon team leads and coordinates with the lender manually) → sees an approved offer if one exists → responds | ✅ Done 2026-09-26 (tag `mvp-1`) |
 | 1A-2 | [phase-1a2-settlement-execution.md](phase-1a2-settlement-execution.md) | After the response: tracking of the agreement, installments, payment confirmations and closure (Rahoon never holds funds). Not in the first MVP (Q13) | ✅ Done 2026-09-27 — manual-coordination mode ([ADR 0002](../adr/0002-request-execution-tracking.md)) and lender-on-platform mode (L19–L21, L26, D10, D14); B10/B11 backend merged |
-| 1B | [phase-1b-shared-and-lender-ops.md](phase-1b-shared-and-lender-ops.md) | Account/search/help, institutions' secondary page (S02), rework of secondary entry routes (D01/L03/L04), complaints and objections, referral package (L25) | ▶ **CURRENT** (not started) |
+| 1B | [phase-1b-shared-and-lender-ops.md](phase-1b-shared-and-lender-ops.md) | Account/search/help, institutions' secondary page (S02), rework of secondary entry routes (D01/L03/L04), complaints and objections, referral package (L25) | ⬛ Archived (never started) |
 | 1C | [phase-1c-providers-admin-platform.md](phase-1c-providers-admin-platform.md) | Provider portal, institution admin, platform admin (B7) | ⬜ (backend on master) |
 | 2 | [phase-2-sale-ecosystem.md](phase-2-sale-ecosystem.md) | Consensual sale, help path P3 (B8 re-planned for team-led coordination), + service ecosystem (B9) | ⬜ (backend on master) |
 | 3 | [phase-3-judicial-financial.md](phase-3-judicial-financial.md) | Judicial referral, agent portal, full reconciliation and closure (B10). **On hold (V10)**: not among the confirmed help paths | ⬜ (backend on a branch) |

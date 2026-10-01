@@ -61,6 +61,8 @@ public sealed class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
             ["Auth:RateLimitPerMinute"] = "10000",
             ["Jobs:BreachMonitor"] = "false",
             ["Jobs:TempAccessExpiry"] = "false",
+            // The archived mortgage-help suite runs against the legacy model; market tests don't depend on it.
+            ["Features:LegacyMortgage"] = "true",
         }));
     }
 
