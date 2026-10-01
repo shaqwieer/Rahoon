@@ -30,6 +30,7 @@ public static class MarketPublicEndpoints
         g.MapGet("/opportunities", Search);
         g.MapGet("/opportunities/{reference}", Detail);
         g.MapGet("/photos/{id:guid}", PublicPhoto);
+        g.MapPost("/calc/opportunities/{reference}/fit", FitOne).RequireRateLimiting("auth");
         g.MapGet("/sitemap", Sitemap);
     }
 
@@ -232,6 +233,22 @@ public static class MarketPublicEndpoints
         }).ToList();
         var fit = cap is null ? null : MarketCalculator.Fit(cap, terms.DueNow, terms.PurchaseTotal, terms.InstallmentMonthlyEquivalent, terms.LargestExtraPayment, terms.NeedsNewFinancing);
         return Results.Ok(OpportunityProjection.Detail(opp, terms, saved, approvalSummary, fit is null ? null : new { fit, hasBuyerRequest = myBuyer is not null }, myInterest));
+    }
+
+    /// <summary>The opportunity calculator: the visitor's own figures against the published terms (same rules as search).</summary>
+    private static async Task<IResult> FitOne(string reference, CalcCapacityInput req, RahoonDbContext db, RequestContext rc)
+    {
+        new Validator()
+            .Require(req.AvailableNow is null or >= 0, "availableNow", "أدخل مبلغًا صحيحًا.")
+            .Require(req.InstallmentComfort is null or >= 0, "installmentComfort", "أدخل مبلغًا صحيحًا.")
+            .ThrowIfInvalid();
+        using var _ = rc.BeginSystemScope();
+        var t = await db.Opportunities.Where(o => o.Reference == reference && o.Status == OpportunityStatus.Published)
+            .Join(db.OpportunityTerms, o => o.PublishedTermsId, x => x.Id, (o, x) => x).FirstOrDefaultAsync() ?? throw new NotFoundException();
+        var fit = MarketCalculator.Fit(new CapacityInput(req.AvailableNow, req.InstallmentComfort, req.InstallmentFrequency ?? "monthly", req.MaxPrice),
+            t.DueNow, t.PurchaseTotal, t.InstallmentMonthlyEquivalent, t.LargestExtraPayment, t.NeedsNewFinancing);
+        decimal? left = req.AvailableNow is { } a && t.DueNow is { } d ? a - d : null;
+        return Results.Ok(new { fit, leftAfterNow = left, monthlyEquivalent = t.InstallmentMonthlyEquivalent });
     }
 
     /// <summary>A listing photo is public only while it is approved and shown in a published opportunity. Private documents are never served here.</summary>

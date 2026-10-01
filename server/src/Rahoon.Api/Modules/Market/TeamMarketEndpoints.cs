@@ -221,7 +221,9 @@ public static class TeamMarketEndpoints
         }
         keys.AddRange(FieldCatalog.DocumentsFor(f.ActiveKinds).Select(d => "doc:" + d.Key));
         keys.Add("other");
-        return keys.Distinct().ToList();
+        // What the file is still missing comes first, so the usual completion request is a few ticks at the top.
+        var missing = f.Completeness().SelectMany(g => g.Missing).Select(m => m.Key).Where(keys.Contains).ToList();
+        return missing.Concat(keys).Distinct().ToList();
     }
 
     private static IEnumerable<object> VerifiableKeys(SaleRequestFile f)

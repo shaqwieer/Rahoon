@@ -2,6 +2,9 @@ import { expect, test, type Page } from "@playwright/test";
 import { api } from "./helpers";
 import { registerIndividual, signInIndividual, submitRequest, teamPage } from "./journey";
 
+// Archived mortgage-help model (docs/redefinition/legacy-inventory.md): runs only with RAHOON_LEGACY_MODES=1 on web and API.
+test.skip(process.env.RAHOON_LEGACY_MODES !== "1", "legacy model archived");
+
 /**
  * Phase 1A step 9 — responsive and accessibility sweep of the MVP screens (individual at 390/768/1440, team at
  * 390/768/1440) plus 200% zoom. Automatic checks: no horizontal page scroll, and WCAG AA contrast of every visible

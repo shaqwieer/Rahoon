@@ -71,7 +71,7 @@ export function TeamRequestView({ detail }: { detail: TeamRequestDetail }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <Link href="/team" className="inline-flex min-h-10 items-center gap-1 self-start text-14 font-semibold">
+      <Link href="/team/requests" className="inline-flex min-h-10 items-center gap-1 self-start text-14 font-semibold">
         <Icon name="arrow_forward" size={18} mirror />
         {R.back}
       </Link>

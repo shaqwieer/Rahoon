@@ -108,12 +108,12 @@ public sealed partial class DevSeeder
             });
         }
 
-        async Task<List<ListingPhoto>> Photos(SaleRequest r, int count, int variant, FileReviewStatus review)
+        async Task<List<ListingPhoto>> Photos(SaleRequest r, int count, int variant, FileReviewStatus review, int shade = 0)
         {
             var list = new List<ListingPhoto>();
             for (var i = 0; i < count; i++)
             {
-                var bytes = DemoImages.Building(variant + i);
+                var bytes = DemoImages.Building(variant, i + shade);
                 using var ms = new MemoryStream(bytes);
                 var stored = await storage.SaveAsync(ms, $"demo-{r.Reference}-{i + 1}.png", org, area: "market-photos", allowedTypes: ["image/png"]);
                 var p = new ListingPhoto
@@ -284,7 +284,7 @@ public sealed partial class DevSeeder
         await Doc(r5, "financier_statement", FileReviewStatus.Accepted, o5.Id);
         await Doc(r5, "ownership_proof", FileReviewStatus.Accepted);
         Verify(r5, o5, "payoff_amount", "1650000", "payoff_letter", pl5, 19);
-        var p5 = await Photos(r5, 3, 1, FileReviewStatus.Accepted);
+        var p5 = await Photos(r5, 3, 1, FileReviewStatus.Accepted, shade: 2);
         db.ExternalApprovals.Add(new ExternalApproval
         {
             OrganizationId = org, SaleRequestId = r5.Id, ApplicantUserId = s5.Id, ObligationId = o5.Id, Status = ExternalApprovalStatus.Conditional,
@@ -311,7 +311,7 @@ public sealed partial class DevSeeder
             ("installment_frequency", "monthly"), ("remaining_installments", "58"), ("extra_payments", "none"), ("arrears_state", "none")));
         await Doc(r6, "developer_contract", FileReviewStatus.Accepted, o6.Id);
         await Doc(r6, "payment_proof", FileReviewStatus.Accepted, o6.Id);
-        var p6 = await Photos(r6, 3, 2, FileReviewStatus.Accepted);
+        var p6 = await Photos(r6, 3, 0, FileReviewStatus.Accepted, shade: 2);
         var op6 = Opp(r6, OpportunityStatus.AwaitingOwnerConfirmation, "شقة غرفتين قرب الكورنيش في حي الشاطئ، الدمام",
             "شقة جاهزة بإطلالة جزئية على البحر، الدور الخامس مع مصعد. (فرصة تجريبية)", "developer", p6, "approximate", 2);
         var tm6 = Terms(op6, 1, TermsStatus.SentToOwner, new TermsInput

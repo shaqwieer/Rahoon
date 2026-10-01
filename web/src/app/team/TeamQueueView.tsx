@@ -55,10 +55,10 @@ export function TeamQueueView({ queue }: { queue: TeamQueue }) {
   const Q = c.queue;
   const { numerals } = useI18n();
   const tabs = [
-    { key: "mine", label: Q.tabs.mine, count: queue.counts.mine, href: "/team?tab=mine" },
-    { key: "unassigned", label: Q.tabs.unassigned, count: queue.counts.unassigned, href: "/team?tab=unassigned" },
-    ...(queue.canViewAll ? [{ key: "all", label: Q.tabs.all, count: queue.counts.all, href: "/team?tab=all" }] : []),
-    { key: "closed", label: Q.tabs.closed, href: "/team?tab=closed" },
+    { key: "mine", label: Q.tabs.mine, count: queue.counts.mine, href: "/team/requests?tab=mine" },
+    { key: "unassigned", label: Q.tabs.unassigned, count: queue.counts.unassigned, href: "/team/requests?tab=unassigned" },
+    ...(queue.canViewAll ? [{ key: "all", label: Q.tabs.all, count: queue.counts.all, href: "/team/requests?tab=all" }] : []),
+    { key: "closed", label: Q.tabs.closed, href: "/team/requests?tab=closed" },
   ];
   const head = (children: ReactNode) => <th className="px-3 py-2.5 text-start text-13 font-semibold text-muted">{children}</th>;
 

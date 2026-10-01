@@ -164,7 +164,7 @@ export function LoginForm({ next }: { next: string }) {
       <div className="flex gap-2.5 border-t border-line pt-4 text-14 leading-[22px]">
         <Icon name="person" size={20} className="text-muted" />
         <span>
-          {L.ownerNoteLead} <Link href="/start">{L.ownerNoteLink}</Link> {L.ownerNoteTail}
+          {L.ownerNoteLead} <Link href="/signin">{L.ownerNoteLink}</Link> {L.ownerNoteTail}
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-4 text-13 text-muted">

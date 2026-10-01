@@ -17,10 +17,10 @@ public static class DemoImages
         [(251, 242, 222), (226, 194, 122), (138, 83, 0), (34, 38, 42), (250, 249, 246)],
     ];
 
-    /// <summary>PNG bytes of a w×h illustration; <paramref name="variant"/> picks colours and the building shape.</summary>
-    public static byte[] Building(int variant, int w = 960, int h = 640)
+    /// <summary>PNG bytes of a w×h illustration; <paramref name="variant"/> picks the shape (0 tower, 1 villa, 2 townhouses, 3 plot), <paramref name="shade"/> the colours.</summary>
+    public static byte[] Building(int variant, int shade = 0, int w = 960, int h = 640)
     {
-        var p = Palettes[variant % Palettes.Length];
+        var p = Palettes[(variant + shade) % Palettes.Length];
         var sky = p[0]; var light = p[1]; var accent = p[2]; var ink = p[3]; var ground = p[4];
         var px = new byte[w * h * 3];
         void Set(int x, int y, (byte R, byte G, byte B) c)
@@ -44,8 +44,15 @@ public static class DemoImages
         var groundY = (int)(h * 0.82);
         Rect(0, groundY, w, h, ground);
 
-        var kind = variant % 3;
-        if (kind == 0)
+        var kind = variant % 4;
+        if (kind == 3)
+        {
+            // Empty plot: boundary posts and a dashed street edge.
+            for (var x = 120; x < w - 120; x += 60) Rect(x, groundY - 46, x + 8, groundY, ink);
+            Rect(120, groundY - 46, w - 112, groundY - 40, ink);
+            for (var x = 0; x < w; x += 70) Rect(x, h - 40, x + 40, h - 32, light);
+        }
+        else if (kind == 0)
         {
             // Apartment tower with a window grid.
             int x0 = w / 2 - 170, x1 = w / 2 + 170, y0 = (int)(h * 0.16);

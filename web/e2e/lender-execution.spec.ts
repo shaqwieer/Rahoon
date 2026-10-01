@@ -1,6 +1,9 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { api, apiLogin, completeStepUp } from "./helpers";
 
+// Archived mortgage-help model (docs/redefinition/legacy-inventory.md): runs only with RAHOON_LEGACY_MODES=1 on web and API.
+test.skip(process.env.RAHOON_LEGACY_MODES !== "1", "legacy model archived");
+
 /**
  * Phase 1A-2 step 5 — lender-on-platform mode (secondary to the individual-first journey): after approval and the owner's
  * acceptance, legal activates the agreement (L19, guard reasons shown first), finance records a payment and a second

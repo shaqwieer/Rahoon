@@ -1,6 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { USERS, PASSWORD, api, apiLogin, completeStepUp } from "./helpers";
 
+// Archived mortgage-help model (docs/redefinition/legacy-inventory.md): runs only with RAHOON_LEGACY_MODES=1 on web and API.
+test.skip(process.env.RAHOON_LEGACY_MODES !== "1", "legacy model archived");
+
 /*
  * SECONDARY (Phase 1A direction review): the lender-on-platform mode (lender workspace L01–L26). Not part of the
  * individual-first MVP demo — see owner-journey.spec.ts for the primary journey. Kept green as a regression check.

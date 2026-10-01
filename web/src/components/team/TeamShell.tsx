@@ -21,20 +21,27 @@ export function useTeamCopy(): TeamCopy {
   return teamCopy(locale);
 }
 
-type TeamNavKey = "requests" | "verify" | "objections";
-const TEAM_NAV: Array<{ key: TeamNavKey; href: string; icon: string; permission: string }> = [
-  { key: "requests", href: "/team", icon: "inbox", permission: "request.view_assigned" },
-  { key: "verify", href: "/team/verify", icon: "fact_check", permission: "request.offer_verify" },
-  { key: "objections", href: "/team/objections", icon: "support_agent", permission: "request.objection_handle" },
+type TeamNavKey = "overview" | "sale" | "buyers" | "opportunities" | "interests" | "messages" | "requests" | "verify" | "objections";
+/** Exit/buy workspace (2026-10-01); the legacy mortgage-help queues appear only when RAHOON_LEGACY_MODES=1. */
+const TEAM_NAV: Array<{ key: TeamNavKey; href: string; icon: string; permission: string; label: string; legacy?: boolean }> = [
+  { key: "overview", href: "/team", icon: "dashboard", permission: "market.view", label: "مهامي والملخص" },
+  { key: "sale", href: "/team/sale", icon: "sell", permission: "market.view", label: "طلبات البيع" },
+  { key: "buyers", href: "/team/buyers", icon: "person_search", permission: "market.view", label: "طلبات المشترين" },
+  { key: "opportunities", href: "/team/opportunities", icon: "home_work", permission: "market.view", label: "الفرص" },
+  { key: "interests", href: "/team/interests", icon: "handshake", permission: "market.view", label: "الاهتمامات" },
+  { key: "messages", href: "/team/messages", icon: "mail", permission: "market.view", label: "رسائل التواصل" },
+  { key: "requests", href: "/team/requests", icon: "inbox", permission: "request.view_assigned", label: "طلبات المساعدة (أرشيف)", legacy: true },
+  { key: "verify", href: "/team/verify", icon: "fact_check", permission: "request.offer_verify", label: "التحقق (أرشيف)", legacy: true },
+  { key: "objections", href: "/team/objections", icon: "support_agent", permission: "request.objection_handle", label: "الاعتراضات (أرشيف)", legacy: true },
 ];
 
-function useNav(user: ShellUser) {
+function useNav(user: ShellUser, legacy: boolean) {
   const pathname = usePathname();
-  const items = TEAM_NAV.filter((i) => user.permissions.includes(i.permission) || (i.key === "requests" && user.permissions.includes("request.view_all")));
+  const items = TEAM_NAV.filter((i) => (legacy || !i.legacy) && user.permissions.includes(i.permission));
   const current =
     items
       .filter((i) => pathname === i.href || pathname.startsWith(`${i.href}/`))
-      .sort((a, b) => b.href.length - a.href.length)[0]?.key ?? (pathname.startsWith("/team") ? "requests" : null);
+      .sort((a, b) => b.href.length - a.href.length)[0]?.key ?? null;
   return { items, current };
 }
 
@@ -42,19 +49,19 @@ function useNav(user: ShellUser) {
  * «فريق رهون» workspace (design request D-4 shell): 264px sidebar ≥1280, icon rail 768–1279, top bar + drawer below
  * 768. Based on the lender shell layout with its own navigation; no command palette or bell in the MVP.
  */
-export function TeamShell({ user, children }: { user: ShellUser; children: ReactNode }) {
+export function TeamShell({ user, legacy = false, children }: { user: ShellUser; legacy?: boolean; children: ReactNode }) {
   const { locale } = useI18n();
   return (
     <I18nProvider locale={locale} numerals={user.numerals}>
-      <TeamShellInner user={user}>{children}</TeamShellInner>
+      <TeamShellInner user={user} legacy={legacy}>{children}</TeamShellInner>
     </I18nProvider>
   );
 }
 
-function TeamShellInner({ user, children }: { user: ShellUser; children: ReactNode }) {
+function TeamShellInner({ user, legacy, children }: { user: ShellUser; legacy: boolean; children: ReactNode }) {
   const c = useTeamCopy();
   const { t } = useI18n();
-  const { items, current } = useNav(user);
+  const { items, current } = useNav(user, legacy);
   const [open, setOpen] = useState(false);
   const { logout, busy } = useSessionActions();
 
@@ -68,7 +75,7 @@ function TeamShellInner({ user, children }: { user: ShellUser; children: ReactNo
               href={i.href}
               onClick={onNavigate}
               aria-current={on ? "page" : undefined}
-              title={rail ? c.nav[i.key] : undefined}
+              title={rail ? i.label : undefined}
               className={cn(
                 "flex min-h-10 items-center gap-3 rounded-sm px-3 text-14 no-underline",
                 rail && "max-xl:justify-center max-xl:px-0",
@@ -76,7 +83,7 @@ function TeamShellInner({ user, children }: { user: ShellUser; children: ReactNo
               )}
             >
               <Icon name={i.icon} size={20} />
-              <span className={cn("flex-1", rail && "max-xl:sr-only")}>{c.nav[i.key]}</span>
+              <span className={cn("flex-1", rail && "max-xl:sr-only")}>{i.label}</span>
             </Link>
           </li>
         );
@@ -121,7 +128,7 @@ function TeamShellInner({ user, children }: { user: ShellUser; children: ReactNo
               <Icon name="logout" size={18} />
               <span className="max-xl:sr-only">{c.signOut}</span>
             </button>
-            <LocaleSwitch className="px-2 text-13" />
+            {legacy ? <LocaleSwitch className="px-2 text-13" /> : null}
           </div>
         </div>
       </nav>
@@ -147,7 +154,7 @@ function TeamShellInner({ user, children }: { user: ShellUser; children: ReactNo
               <Icon name="logout" size={20} />
               {c.signOut}
             </button>
-            <LocaleSwitch className="px-2 text-13" />
+            {legacy ? <LocaleSwitch className="px-2 text-13" /> : null}
           </div>
         </div>
       </Drawer>

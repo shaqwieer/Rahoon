@@ -2,6 +2,9 @@ import { expect, test, type Browser, type Page } from "@playwright/test";
 import { api, completeStepUp } from "./helpers";
 import { registerIndividual, sandboxCode, signInIndividual, submitRequest, teamPage } from "./journey";
 
+// Archived mortgage-help model (docs/redefinition/legacy-inventory.md): runs only with RAHOON_LEGACY_MODES=1 on web and API.
+test.skip(process.env.RAHOON_LEGACY_MODES !== "1", "legacy model archived");
+
 /**
  * Primary MVP journey (individual-first, Phase 1A): on a 390px phone the individual registers, fills the request
  * wizard with documented consent, submits, and follows the tracker. Screenshots go to test-results/journey-*.png.

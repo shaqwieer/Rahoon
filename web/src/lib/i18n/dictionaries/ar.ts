@@ -312,7 +312,7 @@ const ar = {
   auth: {
     login: {
       title: "تسجيل الدخول",
-      sub: "لفرق الجهات المموّلة ومقدمي الخدمة وإدارة المنصة.",
+      sub: "دخول فريق رهون.",
       email: "البريد المؤسسي",
       password: "كلمة المرور",
       forgot: "نسيت كلمة المرور؟",
@@ -320,9 +320,9 @@ const ar = {
       hidePassword: "إخفاء كلمة المرور",
       submit: "متابعة",
       submitting: "جارٍ التحقق",
-      ownerNoteLead: "صاحب عقار متعثر في تمويله؟",
-      ownerNoteLink: "ابدأ من هنا",
-      ownerNoteTail: "برقم هويتك وجوالك. وإن وصلتك دعوة من جهتك المموّلة فافتح رابطها.",
+      ownerNoteLead: "صاحب عقار أو مشترٍ؟",
+      ownerNoteLink: "ادخل إلى حسابك",
+      ownerNoteTail: "برقم جوالك.",
       ownerVerifyLink: "كيف أتحقق من الدعوة؟",
       privacy: "الخصوصية",
       help: "المساعدة",
