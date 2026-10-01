@@ -15,7 +15,37 @@ The browser only talks to the Next.js origin. `next.config.ts` rewrites `/api/*`
 (`API_ORIGIN`, default `http://localhost:5080`), so session cookies are first-party. Server
 Components call the API directly, forwarding the incoming `Cookie` header.
 
-## Backend modules (`server/src/Rahoon.Api/Modules`)
+## Current model and the archived one (2026-10-01)
+
+The product is the Saudi exit/buy platform (`docs/product/product-definition.md`). Its backend is the **Market** module
+(schema `market`) plus the shared Identity, Audit, storage and integration pieces. Everything else below belongs to the
+withdrawn mortgage-help model: `Features:LegacyMortgage` (API, default false) maps its endpoints, jobs and demo seed only
+when true; `RAHOON_LEGACY_MODES=1` does the same for the web routes (`src/proxy.ts` answers 404 otherwise). Its tables are
+kept untouched (`docs/redefinition/legacy-inventory.md`).
+
+### Market module (`Modules/Market`)
+
+| File | Role |
+|---|---|
+| `FieldCatalog.cs` | The single rule set for sale-request fields: scope (property / obligation), property types, obligation kinds, conditions, «لا أعرف», submit tier and publish tier, documents per kind, Saudi cities. Served at `GET /api/market/catalog`; applied on every save (inactive branches dropped) |
+| `MarketCalculator.cs` | One calculation engine (decimal) for developer, financier and mixed tracks, buyer fit, commission policy (`Market:Commission`, never 0 while unapproved). Used by the public calculators, the owner estimate, the team's terms and the search snapshot |
+| `MarketEntities.cs` | SaleRequest, SaleObligation, PrivateDocument, ListingPhoto, FigureVerification, ExternalApproval, CompletionRequest, BuyerRequest, Opportunity, OpportunityTerms (versioned), Interest, SavedOpportunity, MarketEvent (log + in-app notifications), MarketNotification (SMS attempts with honest results), ContactMessage, ObligationParty |
+| `SaleRequestEndpoints.cs` | Owner: create (idempotent per device draft id), autosave, submit, resubmit, withdraw, files, opportunity confirmation |
+| `BuyerEndpoints.cs` | Buyer: one live buyer request, suggestions with fit, interests, saved, account summary |
+| `TeamMarketEndpoints.cs`, `TeamOpportunityEndpoints.cs` | «فريق رهون»: review, completion, figure verification with source/date, corrections with reason, file review, external approvals, opportunity preparation, owner confirmation, checklist, publish/pause/withdraw, interests, contact messages |
+| `MarketPublicEndpoints.cs` | Visitors: catalog, contact, calculators, server-side search, opportunity details, public photos |
+
+Rules worth knowing:
+- Rows are operator-owned and applicant-owned (`IApplicantOwned`): the owner/buyer reads only their rows; the team reads all.
+- Public payloads come from published opportunities and their published terms only; exact coordinates never leave the API
+  (`OpportunityProjection.PublicPoint`). Listing photos and private documents use separate storage areas
+  (`market-photos/…`, `market-docs/…`); photos are public only while approved and shown in a published opportunity.
+- Approving a sale request never publishes. Terms sent to the owner are immutable; any change is a new version that needs
+  the owner's confirmation and a new publication. Interests keep the terms version they were made on.
+- Search: unknown amounts never pass a budget filter (`IS NOT NULL AND <= max`), and the count excluded for that reason is returned.
+- Sign-in is by mobile (`PhoneAuthEndpoints`); the account of an existing mobile is reused, never duplicated.
+
+## Backend modules of the archived model (`server/src/Rahoon.Api/Modules`)
 
 | Module | Schema | Responsibility |
 |---|---|---|

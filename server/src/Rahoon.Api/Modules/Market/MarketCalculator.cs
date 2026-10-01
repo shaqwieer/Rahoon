@@ -284,7 +284,7 @@ public static class MarketCalculator
         {
             "incomplete" => "تقدير غير مكتمل — ينقصه: " + string.Join("، ", missing) + ".",
             "complete_verified" => "أرقام راجعها فريق رهون من مستنداتها.",
-            _ => "تقدير مبدئي يحتاج مراجعة؛ بعض الأرقام كما أدخلها صاحب العقار.",
+            _ => "تقدير مبدئي يحتاج مراجعة؛ لم يتحقق الفريق من كل الأرقام من مستنداتها بعد.",
         };
 
         var monthly = dev is null ? null : MonthlyEquivalent(dev.Installment, dev.InstallmentFrequency);

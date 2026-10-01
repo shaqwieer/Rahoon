@@ -19,18 +19,18 @@ It also meets the 11 acceptance criteria of the brief (§13), each checked below
 | # | Step | Tech status |
 |---|---|---|
 | 0 | Inventory, product definition, phase plan; legacy flag on API and web (old endpoints, jobs, seed and routes off; non-team staff login refused) | ✅ |
-| 1 | Public site: new home, navigation (الرئيسية، بيع عقارك، الفرص المتاحة، كيف نعمل، الحاسبات، تواصل معنا، حسابي), how-it-works, contact, legal drafts, SEO | 🟩 (contact form needs the step 3 API) |
-| 2 | Mobile-first sign-in (reuses the account by mobile) and `/account` | ⬜ |
-| 3 | Market backend: field catalog, sale requests and obligations, draft autosave, submit, private documents and listing photos | ⬜ |
-| 4 | Calculator (developer / financier / buyer capacity / opportunity cost) + public endpoints + verbatim tests of the 3 examples | ⬜ |
-| 5 | Seller wizard (3 steps, device draft before sign-in) and completion file (4 groups, map picker, photos, documents) | ⬜ |
-| 6 | Team review of sale requests (assign, completion request, approve/reject with reason, figure verification with source and date, external approval log) | ⬜ |
-| 7 | Opportunity preparation, terms versions, owner confirmation, publish / pause / withdraw | ⬜ |
-| 8 | Public listing: cards, server-side search and pagination (city, type, due now, installment), details page, map with approximate location | ⬜ |
-| 9 | Buyer request (3 steps), team review, status and suggested opportunities with reasons, edit preferences | ⬜ |
-| 10 | Interest linked to the opportunity, the buyer profile and the terms version; team follow-up; saved opportunities | ⬜ |
-| 11 | Calculators page (3 calculators) | ⬜ |
-| 12 | E2E journey + mobile 390 checks, docs, handoff | ⬜ |
+| 1 | Public site: new home, navigation (الرئيسية، بيع عقارك، الفرص المتاحة، كيف نعمل، الحاسبات، تواصل معنا، حسابي), how-it-works, contact, legal drafts, SEO | ✅ |
+| 2 | Mobile-first sign-in (reuses the account by mobile) and `/account` | ✅ |
+| 3 | Market backend: field catalog, sale requests and obligations, draft autosave, submit, private documents and listing photos | ✅ |
+| 4 | Calculator (developer / financier / buyer capacity / opportunity cost) + public endpoints + verbatim tests of the 3 examples | ✅ |
+| 5 | Seller wizard (3 steps, device draft before sign-in) and completion file (4 groups, map picker, photos, documents) | ✅ |
+| 6 | Team review of sale requests (assign, completion request, approve/reject with reason, figure verification with source and date, external approval log) | ✅ |
+| 7 | Opportunity preparation, terms versions, owner confirmation, publish / pause / withdraw | ✅ |
+| 8 | Public listing: cards, server-side search and pagination (city, type, due now, installment), details page, map with approximate location | ✅ |
+| 9 | Buyer request (3 steps), team review, status and suggested opportunities with reasons, edit preferences | ✅ |
+| 10 | Interest linked to the opportunity, the buyer profile and the terms version; team follow-up; saved opportunities | ✅ |
+| 11 | Calculators page (3 calculators) | ✅ |
+| 12 | E2E journey + mobile 390 checks, docs, handoff | ✅ |
 
 ## Acceptance criteria (brief §13)
 
@@ -50,4 +50,32 @@ It also meets the 11 acceptance criteria of the brief (§13), each checked below
 
 ## Findings
 
-(Filled in as the steps are done.)
+Verified on 2026-10-01: `dotnet test` (249 passed: archived suite with the legacy flag on, calculator examples, catalog rules,
+`MarketTests` end-to-end API journeys, `LegacyGateTests`), `tsc`, `eslint`, `next build`, Playwright
+`market-journey.spec.ts` (full UI journey + old routes 404 + no horizontal scroll at 390px on 10 public pages; 13 archived
+specs skipped), and a manual browser pass (wizard, file, map, team review, opportunity editor).
+
+- **Design decisions taken under the brief:**
+  - Old model gated, not deleted (reversible, no data loss).
+  - Mobile-only sign-in reuses the account of an existing mobile.
+  - Field rules served by the API.
+  - One server calculator called by the UI.
+  - The opportunity terms are versioned, and a published version never changes in place.
+  - Public location is the centre of a ~1 km cell unless the owner agreed to exact.
+- **Things the app refuses on purpose** (seen while testing):
+  - Sending a summary without a description.
+  - Publishing without a location, owner confirmation, the checklist, or accepted photos.
+  - Publishing with a negative gap.
+  - Saving two edits of the same opportunity at the same instant (409, "refresh").
+- **Map:**
+  - OpenStreetMap tiles need a Referer; the site's `same-origin` policy sends none, so the tile layer sets `strict-origin-when-cross-origin`.
+  - Nominatim search found nothing for some Arabic district queries; the UI then says so and the pin is placed by hand (D3: production geocoder/tiles provider).
+- **Demo data:** fictional and labelled «تجريبي». Photos are drawn illustrations. Parties end with «(تجريبي)».
+- **Open decisions:** D1 SMS provider (blocking for real use), D2 commission policy, D3 map provider, D4 REGA/FAL advertising requirements per opportunity, D5 real party directory, D6 retention of the archived data, D7 object storage and malware scanning.
+- **Deferred to M2/M3 (not built):**
+  - **M2:** map-area search and clustering, explained ranking beyond the fit reasons, comparison, saved searches and alerts.
+  - **M3:** offers and negotiation, reservation, transfer checklists, closing and fees.
+- **Deferred inside M1 for review:**
+  - English UI: the current model is Arabic-only.
+  - Editing an obligation's party after submission.
+  - Team messaging to the owner beyond completion requests, notes and the visible log.
