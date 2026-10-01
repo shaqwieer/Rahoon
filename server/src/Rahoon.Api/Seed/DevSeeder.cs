@@ -49,7 +49,7 @@ public sealed partial class DevSeeder(
         else log.LogInformation("Core seed skipped: organizations already present.");
 
         // Runs on every seed, also on databases seeded before the 2026-10-01 redefinition.
-        await SyncSystemRolesAsync();
+        await SystemRoleSync.SyncAsync(db);
         await SeedMarketAsync();
         log.LogInformation("Seed complete.");
     }
@@ -99,28 +99,6 @@ public sealed partial class DevSeeder(
         await SeedProviderAdminAsync();
         await SeedRequestsAsync(pii);
         await FlushAuditAsync();
-    }
-
-    /// <summary>
-    /// Brings the role rows of every organization up to its system templates (names and permissions). Role rows are copied
-    /// per organization, so permissions added later (e.g. market.* on 2026-10-01) would otherwise never reach existing tenants.
-    /// Adds missing permissions only; never removes a grant an organization changed.
-    /// </summary>
-    private async Task SyncSystemRolesAsync()
-    {
-        var roles = await db.Roles.IgnoreQueryFilters().Include(r => r.Permissions).ToListAsync();
-        var orgKinds = await db.Organizations.IgnoreQueryFilters().ToDictionaryAsync(o => o.Id, o => o.Kind);
-        foreach (var role in roles)
-        {
-            var t = SystemRoles.Find(role.Key);
-            if (t is null || !orgKinds.TryGetValue(role.OrganizationId, out var kind) || kind != t.Kind) continue;
-            role.NameAr = t.NameAr;
-            role.NameEn = t.NameEn;
-            var have = role.Permissions.Select(p => p.PermissionKey).ToHashSet();
-            foreach (var key in t.Permissions.Distinct().Where(k => !have.Contains(k)))
-                role.Permissions.Add(new RolePermission { RoleId = role.Id, PermissionKey = key, Grant = PermissionGrant.Allow });
-        }
-        await db.SaveChangesAsync();
     }
 
     private string DemoPassword => config["Seed:DemoPassword"] is { Length: >= 10 } p ? p : "Rahoon-Demo-2026!";

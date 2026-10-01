@@ -50,10 +50,11 @@ It also meets the 11 acceptance criteria of the brief (§13), each checked below
 
 ## Findings
 
-Verified on 2026-10-01: `dotnet test` (249 passed: archived suite with the legacy flag on, calculator examples, catalog rules,
-`MarketTests` end-to-end API journeys, `LegacyGateTests`), `tsc`, `eslint`, `next build`, Playwright
-`market-journey.spec.ts` (full UI journey + old routes 404 + no horizontal scroll at 390px on 10 public pages; 13 archived
-specs skipped), and a manual browser pass (wizard, file, map, team review, opportunity editor).
+Verified on 2026-10-01:
+- `dotnet test`: 254 passed. This covers the archived suite with the legacy flag on, the calculator examples, the catalog rules, the `MarketTests` end-to-end API journeys and `LegacyGateTests`. It also covers `CurrentModelTests`: the default flag-off configuration on a fresh database, photo metadata stripping, and exact location only with the owner's explicit choice.
+- `tsc`, `eslint` and `next build` pass.
+- Playwright `market-journey.spec.ts`: 14 passed. It covers the full UI journey, old routes answering 404, and no horizontal scroll at 390px on 10 public pages, 7 owner/buyer pages and 7 team pages. The 13 archived specs were skipped.
+- A manual browser pass covered the wizard, the follow-up file, the map, team review and the opportunity editor.
 
 - **Design decisions taken under the brief:**
   - Old model gated, not deleted (reversible, no data loss).
@@ -67,6 +68,8 @@ specs skipped), and a manual browser pass (wizard, file, map, team review, oppor
   - Publishing without a location, owner confirmation, the checklist, or accepted photos.
   - Publishing with a negative gap.
   - Saving two edits of the same opportunity at the same instant (409, "refresh").
+- **Photos:** EXIF/XMP/IPTC metadata (e.g. phone GPS) is stripped on upload, so a photo can't reveal an exact location the listing shows as approximate.
+- **Roles:** the role-permission sync runs with every migration (`dotnet run -- migrate` and migrate-on-startup), not only with the demo seed, so existing tenants get the `market.*` permissions in any environment.
 - **Map:**
   - OpenStreetMap tiles need a Referer; the site's `same-origin` policy sends none, so the tile layer sets `strict-origin-when-cross-origin`.
   - Nominatim search found nothing for some Arabic district queries; the UI then says so and the pin is placed by hand (D3: production geocoder/tiles provider).

@@ -94,6 +94,7 @@ if (args.Length > 0 && args[0] is "migrate" or "seed" or "reset-demo")
     {
         if (args[0] == "reset-demo") await db.Database.EnsureDeletedAsync();
         await db.Database.MigrateAsync();
+        await SystemRoleSync.SyncAsync(db);
         if (args[0] is "seed" or "reset-demo") await scope.ServiceProvider.GetRequiredService<DevSeeder>().SeedAsync();
     }
     Console.WriteLine($"{args[0]}: done");
@@ -107,6 +108,7 @@ if ((app.Environment.IsDevelopment() || app.Environment.IsStaging()) && config.G
     using (db.Request.BeginSystemScope())
     {
         await db.Database.MigrateAsync();
+        await SystemRoleSync.SyncAsync(db);
         if (config.GetValue("Database:SeedOnStartup", false)) await scope.ServiceProvider.GetRequiredService<DevSeeder>().SeedAsync();
     }
 }

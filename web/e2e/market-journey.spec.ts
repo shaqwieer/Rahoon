@@ -133,10 +133,14 @@ test("sale request → completion → approval → opportunity → owner confirm
   for (const label of ["راجعنا علاقة صاحب العقار", "راجعنا الأرقام الجوهرية", "راجعنا الصور والموقع", "حددنا طريق الإتمام", "راجعنا موافقات المطور"]) {
     await team.getByRole("checkbox", { name: new RegExp(label) }).check();
   }
-  await team.getByRole("button", { name: "حفظ", exact: true }).click();
+  await Promise.all([team.waitForResponse((r) => r.url().endsWith("/checklist")), team.getByRole("button", { name: "حفظ", exact: true }).click()]);
   await expect(team.getByRole("button", { name: "نشر الفرصة" })).toBeVisible();
-  await team.getByRole("button", { name: "نشر الفرصة" }).click();
-  await expect(team.getByText("منشورة").first()).toBeVisible();
+  const [published] = await Promise.all([
+    team.waitForResponse((r) => r.url().endsWith("/publish") && r.request().method() === "POST"),
+    team.getByRole("button", { name: "نشر الفرصة" }).click(),
+  ]);
+  expect(published.status()).toBe(200);
+  await expect(team.getByRole("link", { name: "الصفحة العامة" })).toBeVisible();
 
   // ── Visitor/buyer: the public page shows due-now first and no private data ──
   await visitor.goto(`/opportunities/${op}`);
@@ -185,4 +189,36 @@ test.describe("phone width", () => {
       await page.screenshot({ path: `test-results/m390${path.replace(/\//g, "_") || "_home"}.png`, fullPage: true });
     });
   }
+});
+
+test.describe("phone width, signed in", () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  async function noOverflow(page: Page, path: string) {
+    await page.goto(path);
+    await page.waitForLoadState("networkidle");
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow, `${path} overflows by ${overflow}px`).toBeLessThanOrEqual(1);
+    await page.screenshot({ path: `test-results/m390-in${path.replace(/\//g, "_")}.png`, fullPage: true });
+  }
+
+  test("owner and buyer screens", async ({ page }) => {
+    await page.goto("/");
+    // Seeded demo owner (README «Demo logins»): mobile sign-in with the sandbox code.
+    const start = await page.request.post("/api/auth/phone/start", { headers: { Origin: "http://localhost:3000", "Idempotency-Key": crypto.randomUUID() }, data: { phone: "0561110004" } });
+    const { sandboxCode } = (await start.json()) as { sandboxCode: string };
+    const verify = await page.request.post("/api/auth/phone/verify", { headers: { Origin: "http://localhost:3000", "Idempotency-Key": crypto.randomUUID() }, data: { code: sandboxCode, acceptTerms: true } });
+    expect(verify.status()).toBe(200);
+    for (const path of ["/account", "/account/sell", "/account/sell/SR-2026-00004", "/account/sell/SR-2026-00004/opportunity", "/account/buy", "/account/interests", "/account/saved"]) {
+      await noOverflow(page, path);
+    }
+  });
+
+  test("team screens", async ({ page }) => {
+    await page.goto("/");
+    await apiLogin(page, LEAD, "فريق رهون");
+    for (const path of ["/team", "/team/sale", "/team/sale/SR-2026-00002", "/team/buyers/BR-2026-00002", "/team/opportunities/OP-2026-00001", "/team/interests/IN-2026-00001", "/team/messages"]) {
+      await noOverflow(page, path);
+    }
+  });
 });

@@ -287,8 +287,8 @@ public static class TeamOpportunityEndpoints
         v.Require(req.Readiness is null or "ready" or "under_construction", "readiness", "اختر حالة العقار.");
         v.Require(req.DeliveryMonth is null || System.Text.RegularExpressions.Regex.IsMatch(req.DeliveryMonth, @"^(19|20|21)\d{2}-(0[1-9]|1[0-2])$"), "deliveryMonth", "اختر شهر التسليم.");
         v.Require(req.LocationPrecision is null or "exact" or "approximate", "locationPrecision", "اختر دقة الموقع.");
-        v.Require(!(req.LocationPrecision == "exact" && f.Request.LocationDisplayWish == "approximate"), "locationPrecision",
-            "طلب المالك عرض موقع تقريبي؛ لا يُعرض الموقع الدقيق دون موافقته.");
+        v.Require(!(req.LocationPrecision == "exact" && f.Request.LocationDisplayWish != "exact"), "locationPrecision",
+            "لم يوافق المالك على عرض الموقع الدقيق؛ يُعرض الموقع التقريبي فقط.");
         var photoIds = req.PhotoIds?.Distinct().ToList();
         if (photoIds is not null)
             v.Require(photoIds.All(id => f.Photos.Any(p => p.Id == id && p.ReviewStatus != FileReviewStatus.Rejected)), "photoIds", "اختر من صور الطلب غير المرفوضة.");

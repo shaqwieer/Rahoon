@@ -11,7 +11,7 @@ const inputCls =
   "min-h-12 w-full rounded-sm border border-line-strong bg-white px-3 text-16 outline-none transition-colors focus-visible:border-ink focus-visible:ring-2 focus-visible:ring-ink/10 disabled:bg-subtle disabled:text-soft aria-[invalid=true]:border-err";
 
 /** Toggle chips for short option lists (2–4): one tap, keyboard-friendly, announced as a radio group. */
-export function Chips({ name, options, value, onChange, invalid, describedBy, multiple }: {
+export function Chips({ name, options, value, onChange, invalid, describedBy, multiple, labelledBy }: {
   name: string;
   options: { value: string; label: string }[];
   value: string | string[] | null | undefined;
@@ -19,10 +19,12 @@ export function Chips({ name, options, value, onChange, invalid, describedBy, mu
   invalid?: boolean;
   describedBy?: string;
   multiple?: boolean;
+  /** id of the visible question (fieldsets get their name from <legend>). */
+  labelledBy?: string;
 }) {
   const selected = (v: string) => (Array.isArray(value) ? value.includes(v) : value === v);
   return (
-    <div role={multiple ? "group" : "radiogroup"} aria-describedby={describedBy} aria-invalid={invalid || undefined} className="flex flex-wrap gap-2">
+    <div role={multiple ? "group" : "radiogroup"} aria-labelledby={labelledBy} aria-describedby={describedBy} aria-invalid={invalid || undefined} className="flex flex-wrap gap-2">
       {options.map((o) => {
         const on = selected(o.value);
         return (
@@ -99,7 +101,7 @@ export function DynamicField({ def, value, onChange, propertyType, error, idPref
     case "select":
       control =
         opts.length <= 4 ? (
-          <Chips name={id} options={opts} value={value} onChange={(v) => onChange(v === value ? undefined : v)} invalid={Boolean(error)} describedBy={described} />
+          <Chips name={id} labelledBy={`${id}-label`} options={opts} value={value} onChange={(v) => onChange(v === value ? undefined : v)} invalid={Boolean(error)} describedBy={described} />
         ) : (
           <select id={id} className={inputCls} value={unknown ? "" : (value ?? "")} disabled={unknown} aria-invalid={Boolean(error) || undefined} aria-describedby={described}
             onChange={(e) => onChange(e.target.value || undefined)}>
@@ -114,14 +116,14 @@ export function DynamicField({ def, value, onChange, propertyType, error, idPref
       break;
     case "boolean":
       control = (
-        <Chips name={id} options={[{ value: "true", label: "نعم" }, { value: "false", label: "لا" }]} value={value} onChange={(v) => onChange(v === value ? undefined : v)}
+        <Chips name={id} labelledBy={`${id}-label`} options={[{ value: "true", label: "نعم" }, { value: "false", label: "لا" }]} value={value} onChange={(v) => onChange(v === value ? undefined : v)}
           invalid={Boolean(error)} describedBy={described} />
       );
       break;
     case "multiSelect": {
       const list = (value ?? "").split(",").filter(Boolean);
       control = (
-        <Chips name={id} multiple options={opts} value={list} invalid={Boolean(error)} describedBy={described}
+        <Chips name={id} labelledBy={`${id}-label`} multiple options={opts} value={list} invalid={Boolean(error)} describedBy={described}
           onChange={(v) => {
             const next = list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
             onChange(next.length ? next.join(",") : undefined);

@@ -467,7 +467,17 @@ public static class SaleRequestEndpoints
 
     internal static async Task<ListingPhoto> StorePhotoAsync(RahoonDbContext db, IDocumentStorage storage, IFileScanner scanner, SaleRequestFile f, IFormFile file, Guid uploadedBy)
     {
-        await using var stream = file.OpenReadStream();
+        if (file.Length > PhotoMaxBytes) throw new DomainException("file_too_large", $"حجم الصورة يتجاوز {PhotoMaxBytes / (1024 * 1024)} م.ب.");
+        byte[] bytes;
+        await using (var input = file.OpenReadStream())
+        using (var ms = new MemoryStream())
+        {
+            await input.CopyToAsync(ms);
+            bytes = ms.ToArray();
+        }
+        // Embedded metadata (EXIF GPS on phone photos) would reveal the exact location: removed before storing.
+        bytes = ImageMetadata.Strip(bytes, ImageMetadata.DetectType(bytes.AsSpan(0, Math.Min(12, bytes.Length))));
+        await using var stream = new MemoryStream(bytes);
         // Listing photos live in their own storage area, apart from private documents.
         var stored = await storage.SaveAsync(stream, file.FileName, f.Request.OrganizationId, area: "market-photos", allowedTypes: PhotoTypes, maxBytes: PhotoMaxBytes);
         if (await scanner.ScanAsync(stored.StorageKey) == ScanStatus.Infected)

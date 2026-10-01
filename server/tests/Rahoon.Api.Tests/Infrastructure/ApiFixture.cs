@@ -14,7 +14,7 @@ namespace Rahoon.Api.Tests.Infrastructure;
 /// (not EnsureCreated — migrations are part of what we test) and seeds the fictional demo
 /// data without the bulk synthetic portfolio.
 /// </summary>
-public sealed class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
+public class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
 {
     public const string Password = "Test-Password-2026!";
 
@@ -61,10 +61,13 @@ public sealed class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
             ["Auth:RateLimitPerMinute"] = "10000",
             ["Jobs:BreachMonitor"] = "false",
             ["Jobs:TempAccessExpiry"] = "false",
-            // The archived mortgage-help suite runs against the legacy model; market tests don't depend on it.
-            ["Features:LegacyMortgage"] = "true",
+            // The archived mortgage-help suite runs against the legacy model; CurrentModelFixture runs the default (off).
+            ["Features:LegacyMortgage"] = LegacyMortgage ? "true" : "false",
         }));
     }
+
+    /// <summary>On for the archived suite; <see cref="CurrentModelFixture"/> turns it off (the product default).</summary>
+    protected virtual bool LegacyMortgage => true;
 
     public TestClient Client() => new(CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false, AllowAutoRedirect = false }));
 
@@ -83,7 +86,7 @@ public sealed class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
         using (db.Request.BeginSystemScope()) return await action(db);
     }
 
-    public new async Task DisposeAsync()
+    public new virtual async Task DisposeAsync()
     {
         await base.DisposeAsync();
         await _pg.DisposeAsync();
@@ -102,4 +105,19 @@ public sealed class ApiCollection : ICollectionFixture<ApiFixture>
 public sealed class IsolatedApiCollection : ICollectionFixture<ApiFixture>
 {
     public const string Name = "api-isolated";
+}
+
+/// <summary>
+/// The product as deployed: Features:LegacyMortgage off on a fresh database, so the core seed (team only), the role sync and
+/// the market seed run exactly as on a reset or a new environment.
+/// </summary>
+public sealed class CurrentModelFixture : ApiFixture
+{
+    protected override bool LegacyMortgage => false;
+}
+
+[CollectionDefinition(Name)]
+public sealed class CurrentModelCollection : ICollectionFixture<CurrentModelFixture>
+{
+    public const string Name = "api-current-model";
 }
