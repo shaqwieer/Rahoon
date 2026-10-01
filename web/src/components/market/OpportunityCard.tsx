@@ -1,18 +1,28 @@
 import Link from "next/link";
+import { CompareToggle } from "@/components/market/discovery/CompareControls";
+import { FitSummary } from "@/components/market/discovery/FitSummary";
 import { SaveButton } from "@/components/market/SaveButton";
 import { Amount, Badge, DemoBadge, QualityBadge } from "@/components/market/ui";
 import { buttonClasses } from "@/components/ui/buttonStyles";
 import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/cn";
 import { FREQ_PER, monthLabel } from "@/lib/market/format";
-import type { Fit, OpportunityCard as Card } from "@/lib/market/types";
+import type { Fit, MatchExplanation, OpportunityCard as Card } from "@/lib/market/types";
 
 /**
  * A card for one specific property (not a project launch with «يبدأ من» prices). The amount due now from the buyer is the
  * headline; the price or total commitment, the future balance and the installment are labelled separately on a plain
  * surface (not over the photo). Unknown figures say so. No owner data, no «متعثر» label.
  */
-export function OpportunityCard({ card: c, fit, signedIn }: { card: Card; fit?: Fit | null; signedIn: boolean }) {
+export function OpportunityCard({ card: c, fit, match, signedIn, highlighted, compare = true }: {
+  card: Card;
+  fit?: Fit | null;
+  match?: MatchExplanation | null;
+  signedIn: boolean;
+  /** Selected on the map (list ↔ map). */
+  highlighted?: boolean;
+  compare?: boolean;
+}) {
   const href = `/opportunities/${c.reference}`;
   const specs: string[] = [];
   if (c.area) specs.push(`${c.area} م²`);
@@ -20,7 +30,8 @@ export function OpportunityCard({ card: c, fit, signedIn }: { card: Card; fit?: 
   if (c.bathrooms) specs.push(`${c.bathrooms} دورات مياه`);
   for (const s of c.specs) if (specs.length < 4) specs.push(`${s.label}: ${s.value}`);
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-lg border border-line bg-white shadow-1 transition-shadow duration-200 hover:shadow-2">
+    <article data-ref={c.reference} className={cn("group relative flex h-full flex-col overflow-hidden rounded-lg border bg-white shadow-1 transition-shadow duration-200 hover:shadow-2",
+      highlighted ? "border-rust ring-2 ring-rust/40" : "border-line")}>
       <div className="relative aspect-[4/3] bg-subtle">
         {c.coverUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- API-served listing photo
@@ -57,6 +68,7 @@ export function OpportunityCard({ card: c, fit, signedIn }: { card: Card; fit?: 
             {c.district ? `، ${c.district}` : ""}
             {c.project ? ` · ${c.project}` : ""}
           </span>
+          {c.developerName ? <span className="text-12 text-muted">المطور: {c.developerName}</span> : null}
         </div>
         {specs.length ? (
           <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0 text-12 text-charcoal">
@@ -92,7 +104,10 @@ export function OpportunityCard({ card: c, fit, signedIn }: { card: Card; fit?: 
                 {c.largestExtraPayment ? (
                   <div className="flex justify-between gap-2">
                     <dt className="text-muted">دفعة إضافية</dt>
-                    <dd className="m-0"><Amount value={c.largestExtraPayment} size="sm" /></dd>
+                    <dd className="m-0 flex items-center gap-1">
+                      <Amount value={c.largestExtraPayment} size="sm" />
+                      <span className="text-muted">{c.extraPaymentRecurrence === "annual" ? "سنويًا" : c.extraPaymentRecurrence === "once" ? "مرة واحدة" : ""}</span>
+                    </dd>
                   </div>
                 ) : null}
               </>
@@ -101,17 +116,11 @@ export function OpportunityCard({ card: c, fit, signedIn }: { card: Card; fit?: 
           {c.needsNewFinancing ? <span className="text-12 text-info">يمكن الشراء نقدًا أو بتمويل جديد يخضع لموافقة جهتك.</span> : null}
           {c.deliveryMonth ? <span className="text-12 text-muted">التسليم المتوقع: {monthLabel(c.deliveryMonth)}</span> : null}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <QualityBadge quality={c.quality} />
+          {compare ? <CompareToggle reference={c.reference} /> : null}
         </div>
-        {fit ? (
-          <div className={cn("flex flex-col gap-1 rounded-md border p-2.5 text-12 leading-5", fit.fits ? "border-ok-line bg-ok-bg" : "border-warn-line bg-warn-bg")}>
-            <strong className={fit.fits ? "text-ok" : "text-warn"}>{fit.fits ? "تناسب الأرقام التي حددتها" : "لا تناسب كل ما حددته"}</strong>
-            {[...fit.reasons.slice(0, 2), ...fit.limits.slice(0, 2)].map((r) => (
-              <span key={r}>{r}</span>
-            ))}
-          </div>
-        ) : null}
+        {fit ? <FitSummary fit={fit} match={match} compact /> : null}
         <div className="relative z-10 mt-auto flex gap-2 pt-1">
           <Link href={href} className={buttonClasses({ variant: "secondary", size: "md", className: "flex-1" })}>عرض التفاصيل</Link>
           <Link href={`${href}#interest`} className={buttonClasses({ variant: "primary", size: "md", className: "flex-1" })}>مهتم بالفرصة</Link>

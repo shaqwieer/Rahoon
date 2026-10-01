@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
+import { FitSummary } from "@/components/market/discovery/FitSummary";
 import { Chips } from "@/components/market/DynamicField";
 import { Amount, StatusBadge } from "@/components/market/ui";
 import { Alert } from "@/components/ui/Alert";
@@ -10,7 +11,6 @@ import { buttonClasses } from "@/components/ui/buttonStyles";
 import { Textarea, TextField } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { apiSend, isApiError } from "@/lib/api/client";
-import { cn } from "@/lib/cn";
 import { toLatinDigits } from "@/lib/market/numbers";
 import type { Fit } from "@/lib/market/types";
 
@@ -19,7 +19,7 @@ export function OpportunityCalculator({ reference, frequencies }: { reference: s
   const [available, setAvailable] = useState("");
   const [inst, setInst] = useState("");
   const [freq, setFreq] = useState("monthly");
-  const [res, setRes] = useState<{ fit: Fit; leftAfterNow: number | null } | null>(null);
+  const [res, setRes] = useState<{ fit: Fit; leftAfterNow: number | null; annualCommitment: number | null; comfortAnnual: number | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const num = (v: string) => (v ? Number(toLatinDigits(v).replace(/[^\d.]/g, "")) : null);
@@ -52,14 +52,14 @@ export function OpportunityCalculator({ reference, frequencies }: { reference: s
       <Button type="submit" variant="secondary" loading={busy} className="self-start">احسب</Button>
       {error ? <Alert tone="err" compact>{error}</Alert> : null}
       {res ? (
-        <div className={cn("flex flex-col gap-1.5 rounded-md border p-3 text-14", res.fit.fits ? "border-ok-line bg-ok-bg" : "border-warn-line bg-warn-bg")} role="status">
-          <strong>{!res.fit.comparable ? "لا يمكن المقارنة بعد" : res.fit.fits ? "تبدو مناسبة لأرقامك" : "لا تناسب كل أرقامك"}</strong>
+        <div className="flex flex-col gap-2" role="status">
+          <FitSummary fit={res.fit} />
           {res.leftAfterNow !== null ? (
-            <span>
-              يتبقى لديك بعد الدفع الآن: <Amount value={res.leftAfterNow} size="sm" strong />
-            </span>
+            <span className="text-14">يتبقى لديك بعد الدفع الآن: <Amount value={res.leftAfterNow} size="sm" strong /></span>
           ) : null}
-          {[...res.fit.reasons, ...res.fit.limits].map((r) => <span key={r}>• {r}</span>)}
+          {res.annualCommitment !== null && res.comfortAnnual !== null ? (
+            <span className="text-14">التزامك في السنة: <Amount value={res.annualCommitment} size="sm" strong /> مقابل ما يريحك <Amount value={res.comfortAnnual} size="sm" /></span>
+          ) : null}
           <span className="text-12 text-muted">نتيجة تقديرية من أرقامك، ليست موافقة تمويل ولا عرضًا.</span>
         </div>
       ) : null}

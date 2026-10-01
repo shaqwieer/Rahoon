@@ -12,6 +12,7 @@ const ITEMS = [
   { href: "/account/buy", label: "طلب الشراء", icon: "travel_explore" },
   { href: "/account/interests", label: "اهتماماتي", icon: "handshake" },
   { href: "/account/saved", label: "المحفوظة", icon: "favorite" },
+  { href: "/account/searches", label: "عمليات البحث", icon: "saved_search" },
 ];
 
 /** «حسابي» sub-navigation: one account for selling and buying. Scrolls horizontally on phones. */

@@ -95,6 +95,20 @@ export function TermsBreakdown({ result, audience = "buyer", className }: { resu
           )}
         </span>
       </div>
+      {result.feeLines?.length ? (
+        <section aria-label="توزيع الرسوم">
+          <h3 className="m-0 mb-1 text-14 font-semibold text-muted">توزيع الرسوم (داخل الأرقام أعلاه)</h3>
+          <div>{result.feeLines.map((l) => <LineRow key={l.key} l={l} />)}</div>
+        </section>
+      ) : null}
+      {result.assumptions?.length ? (
+        <section aria-label="الافتراضات" className="rounded-md border border-line p-3">
+          <h3 className="m-0 mb-1 text-14 font-semibold">ما تفترضه النتيجة</h3>
+          <ul className="m-0 flex list-none flex-col gap-1 p-0 text-13 leading-6 text-charcoal">
+            {result.assumptions.map((a) => <li key={a}>• {a}</li>)}
+          </ul>
+        </section>
+      ) : null}
       {result.notes.length ? (
         <ul className="m-0 flex list-none flex-col gap-1 p-0 text-13 leading-6 text-muted">
           {result.notes.map((n) => (

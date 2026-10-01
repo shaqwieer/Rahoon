@@ -88,6 +88,9 @@ export interface TermsResult {
   remainingMonths: number | null;
   needsNewFinancing: boolean;
   commission: { policyApproved: boolean; amount: number | null; text: string };
+  /** Phase 2 calculators only: how each fee was allocated, and what the result assumes. */
+  feeLines?: CalcLine[] | null;
+  assumptions?: string[] | null;
 }
 
 export interface MissingItem {
@@ -206,6 +209,7 @@ export interface OpportunityCard {
   cityLabel: string;
   district: string | null;
   project: string | null;
+  developerName?: string | null;
   propertyType: string;
   propertyTypeLabel: string;
   track: "developer" | "financier" | "mixed";
@@ -226,6 +230,8 @@ export interface OpportunityCard {
   installmentFrequencyLabel: string | null;
   installmentMonthlyEquivalent: number | null;
   largestExtraPayment: number | null;
+  extraPaymentRecurrence?: "once" | "annual" | null;
+  remainingMonths?: number | null;
   needsNewFinancing: boolean;
   quality: TermsResult["quality"];
   complete: boolean;
@@ -236,21 +242,148 @@ export interface OpportunityCard {
   location: { lat: number; lng: number; precision: "exact" | "approximate" } | null;
 }
 
+export type FitOutcome = "fits" | "does_not_fit" | "incomplete";
+
+export interface PaymentItem {
+  key: "due_now" | "installment" | "extra_payment" | "buyer_financing" | string;
+  label: string;
+  amount: number | null;
+  when: "now" | "schedule" | "extra" | "financing" | string;
+  note: string | null;
+}
+
+/** The server's affordability classifier (Discovery/Affordability.cs). Never a financing approval. */
 export interface Fit {
+  outcome: FitOutcome;
+  headline: string;
   fits: boolean;
   comparable: boolean;
   reasons: string[];
   limits: string[];
+  unknowns: string[];
+  caveats: string[];
+  nextPayments: PaymentItem[];
+  cashLeftAfterNow: number | null;
+  annualCommitment: number | null;
+  comfortAnnual: number | null;
+}
+
+/** Why an opportunity is in a buyer's list (Discovery/Matching.cs). No percentage. */
+export interface MatchExplanation {
+  eligibility: string[];
+  preferences: string[];
+  notMet: string[];
+}
+
+export interface SearchItem {
+  card: OpportunityCard;
+  fit: Fit | null;
+  match: MatchExplanation | null;
+}
+
+export interface Facet {
+  key: string;
+  label: string;
+  count: number;
 }
 
 export interface SearchResult {
-  items: { card: OpportunityCard; fit: Fit | null }[];
+  items: SearchItem[];
   total: number;
   page: number;
   pageSize: number;
   pages: number;
   excludedIncomplete: number;
+  withoutLocation: number;
   sort: string;
+  sortExplanation: string;
+  query: string;
+  profile: { applied: boolean; reference?: string; revision?: number; reason?: string } | null;
+  facets: { cities: Facet[]; types: Facet[] };
+}
+
+export interface MapMarker {
+  reference: string;
+  title: string;
+  cityLabel: string;
+  district: string | null;
+  propertyTypeLabel: string;
+  lat: number;
+  lng: number;
+  precision: "exact" | "approximate";
+  dueNow: number | null;
+  buyerTotal: number | null;
+  coverUrl: string | null;
+  isDemo: boolean;
+}
+
+export interface MapResult {
+  markers: MapMarker[];
+  total: number;
+  located: number;
+  withoutLocation: number;
+  capped: boolean;
+  cap: number;
+}
+
+export interface CompareCell {
+  state: "value" | "unknown" | "not_applicable";
+  value: number | null;
+  text: string | null;
+}
+
+export interface ApprovalSummary {
+  party: string;
+  status: string;
+  statusLabel: string;
+  conditions: string | null;
+  expiresOn: string | null;
+}
+
+export type CompareItem =
+  | { reference: string; available: false }
+  | {
+      reference: string;
+      available: true;
+      title: string;
+      isDemo: boolean;
+      track: string;
+      trackLabel: string;
+      coverUrl: string | null;
+      cells: Record<string, CompareCell>;
+      approvals: ApprovalSummary[];
+      fit: Fit | null;
+    };
+
+export interface CompareResult {
+  items: CompareItem[];
+  max: number;
+  hasProfile: boolean;
+}
+
+export interface SavedSearchView {
+  id: string;
+  name: string;
+  query: string;
+  summary: string[];
+  url: string;
+  alertsEnabled: boolean;
+  channel: "in_app" | "sms";
+  paused: boolean;
+  pausedAt: string | null;
+  createdAt: string;
+  lastCheckedAt: string | null;
+  version: number;
+  currentMatches: number;
+  recentAlerts: { status: string; reason: string | null; sentAt: string | null; createdAt: string; kind: string }[];
+}
+
+export interface AlertDelivery {
+  workerEnabled: boolean;
+  intervalMinutes: number;
+  inApp: boolean;
+  smsLive: boolean;
+  smsText: string | null;
 }
 
 export interface TermsView extends Omit<TermsResult, "commission"> {
@@ -295,8 +428,9 @@ export interface OpportunityDetail {
   photos: { id: string; url: string }[];
   terms: TermsView;
   location: { lat: number; lng: number; precision: "exact" | "approximate"; googleMapsUrl: string } | null;
-  approvals: { party: string; status: string; statusLabel: string; conditions: string | null; expiresOn: string | null }[];
-  fit: { fit: Fit; hasBuyerRequest: boolean } | null;
+  approvals: ApprovalSummary[];
+  fit: { fit: Fit; hasBuyerRequest: boolean; revision: number; match: MatchExplanation } | null;
+  schedule: { nextPayments: PaymentItem[]; caveats: string[] } | null;
   myInterest: { reference: string; status: string; statusLabel: string } | null;
   status: string;
   statusLabel: string;
@@ -329,6 +463,7 @@ export interface BuyerRequestView {
   updatedAt: string;
   decisionReason: string | null;
   isDemo: boolean;
+  preferencesRevision: number;
   installmentMonthlyEquivalent: number | null;
   capacity: {
     declared: { availableNow: number | null; installmentComfort: number | null; installmentFrequency: string | null; maxPrice: number | null };

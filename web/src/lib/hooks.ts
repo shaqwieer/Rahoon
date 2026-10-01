@@ -83,3 +83,18 @@ export function parseJson<T>(raw: string | null): T | null {
     return null;
   }
 }
+
+/* ───────── useMediaQuery (false during SSR/hydration) ───────── */
+
+/** Whether a CSS media query matches; `false` on the server and during hydration. */
+export function useMediaQuery(query: string): boolean {
+  return useSyncExternalStore(
+    (cb) => {
+      const mq = window.matchMedia(query);
+      mq.addEventListener("change", cb);
+      return () => mq.removeEventListener("change", cb);
+    },
+    () => window.matchMedia(query).matches,
+    () => false,
+  );
+}

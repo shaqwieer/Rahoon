@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CompareToggle, CompareTray } from "@/components/market/discovery/CompareControls";
+import { FitSummary, NextPayments } from "@/components/market/discovery/FitSummary";
 import { Gallery } from "@/components/market/Gallery";
 import { LocationMap } from "@/components/market/LocationMap";
 import { InterestBox, OpportunityCalculator } from "@/components/market/OpportunityActions";
@@ -52,7 +54,10 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
               </div>
               <div className="flex items-start justify-between gap-3">
                 <h1 className="m-0 text-26 leading-10 font-bold md:text-32 md:leading-[46px]">{c.title}</h1>
-                <SaveButton reference={ref} saved={d.card.saved} signedIn={Boolean(me)} />
+                <span className="flex flex-none items-center gap-2">
+                  <CompareToggle reference={ref} />
+                  <SaveButton reference={ref} saved={d.card.saved} signedIn={Boolean(me)} />
+                </span>
               </div>
               <span className="flex items-center gap-1 text-15 text-charcoal">
                 <Icon name="location_on" size={18} className="text-rust" />
@@ -84,6 +89,17 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
                 <p className="m-0 mt-3 text-13 text-muted">
                   القسط الفعلي <Amount value={t.installment} size="sm" /> {FREQ_PER[t.installmentFrequency ?? ""]}، ويعادل للمقارنة فقط <Amount value={t.installmentMonthlyEquivalent} size="sm" /> شهريًا.
                 </p>
+              ) : null}
+              {d.schedule ? (
+                <div className="mt-4 flex flex-col gap-2 rounded-md bg-warm p-3">
+                  <h3 className="m-0 text-15 font-bold">الدفعات القادمة كما هي مسجلة</h3>
+                  <NextPayments items={d.schedule.nextPayments} />
+                  {d.schedule.caveats.length ? (
+                    <ul className="m-0 flex list-none flex-col gap-1 p-0 text-13 text-charcoal">
+                      {d.schedule.caveats.map((c) => <li key={c} className="flex gap-1.5"><Icon name="info" size={16} className="mt-0.5 flex-none text-muted" />{c}</li>)}
+                    </ul>
+                  ) : null}
+                </div>
               ) : null}
               <p className="m-0 mt-3 text-13 text-muted">
                 {t.verificationScope ? `ما راجعه الفريق: ${t.verificationScope}` : "لم يراجع الفريق مستندات هذه الأرقام بعد."}
@@ -128,12 +144,7 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
                 {t.installment !== null ? <div className="flex justify-between gap-2"><dt className="text-muted">القسط</dt><dd className="m-0"><Amount value={t.installment} size="sm" /> <span className="text-muted">{FREQ_PER[t.installmentFrequency ?? ""]}</span></dd></div> : null}
               </dl>
               {t.needsNewFinancing ? <p className="m-0 text-13 text-info">عند الشراء بتمويل جديد، المبلغ الآن والكلفة الكلية تعتمد على شروط جهة تمويلك وموافقتها.</p> : null}
-              {d.fit ? (
-                <div className={d.fit.fit.fits ? "rounded-md border border-ok-line bg-ok-bg p-3 text-13" : "rounded-md border border-warn-line bg-warn-bg p-3 text-13"}>
-                  <strong>{d.fit.fit.fits ? "تناسب طلب الشراء المسجل لك" : "لا تناسب كل ما في طلب الشراء المسجل لك"}</strong>
-                  {[...d.fit.fit.reasons, ...d.fit.fit.limits].map((r) => <span key={r} className="block">• {r}</span>)}
-                </div>
-              ) : null}
+              {d.fit ? <FitSummary fit={d.fit.fit} match={d.fit.match} title={`مع طلب الشراء المسجل لك: ${d.fit.fit.headline}`} /> : null}
             </section>
             <section id="interest" className="flex scroll-mt-24 flex-col gap-3 rounded-lg border border-rust-200 bg-white p-5 shadow-1">
               <h2 className="m-0 text-18 font-bold">مهتم بالفرصة؟</h2>
@@ -146,6 +157,7 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
           </aside>
         </div>
       </main>
+      <CompareTray />
       <PublicFooter />
     </>
   );

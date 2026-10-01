@@ -87,6 +87,7 @@ public static class BuyerEndpoints
             "sale_request" => saleRef.TryGetValue(e.SubjectId, out var r) ? $"/account/sell/{r}" : "/account",
             "opportunity" => oppToSale.TryGetValue(e.SubjectId, out var s) && s is not null ? $"/account/sell/{s}" : "/account",
             "buyer_request" => "/account/buy",
+            "saved_search" => "/account/searches",
             "interest" => interestRefs.ContainsKey(e.SubjectId) ? "/account/interests" : "/account",
             _ => "/account",
         };
