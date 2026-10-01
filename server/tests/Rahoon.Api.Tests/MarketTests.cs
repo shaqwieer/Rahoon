@@ -118,6 +118,7 @@ public sealed class MarketTests(ApiFixture api)
     public async Task Team_asks_for_completion_the_owner_resubmits_and_the_log_keeps_every_decision()
     {
         var (owner, reference) = await SubmittedAsync(api);
+        await AssignAsync(api, $"sale-requests/{reference}", Coordinator);
         var team = await api.LoginAsync(Coordinator);
         await Ok(team.PostAsync($"/api/team/market/sale-requests/{reference}/start-review"));
         var (s0, bad) = await team.PostAsync($"/api/team/market/sale-requests/{reference}/request-completion", new { items = Array.Empty<string>(), note = "" });
@@ -144,6 +145,7 @@ public sealed class MarketTests(ApiFixture api)
         var (owner, reference) = await SubmittedAsync(api);
         var (sOwner, _) = await owner.PostAsync($"/api/team/market/sale-requests/{reference}/reject", new { reason = "سبب كافٍ للرفض" });
         Assert.Equal(HttpStatusCode.Forbidden, sOwner);
+        await AssignAsync(api, $"sale-requests/{reference}", Coordinator);
         var team = await api.LoginAsync(Coordinator);
         var (s1, _) = await team.PostAsync($"/api/team/market/sale-requests/{reference}/reject", new { reason = "" });
         Assert.Equal(HttpStatusCode.BadRequest, s1);
@@ -180,7 +182,8 @@ public sealed class MarketTests(ApiFixture api)
     public async Task Owner_edit_of_a_verified_figure_drops_the_verification()
     {
         var (owner, reference) = await SubmittedAsync(api);
-        var team = await api.LoginAsync(Coordinator);
+        // Verifying a figure is market.verify: the operations manager holds it for all work.
+        var team = await api.LoginAsync(OpsManager);
         await Ok(team.PostAsync($"/api/team/market/sale-requests/{reference}/start-review"));
         var (_, detail) = await team.GetAsync($"/api/team/market/sale-requests/{reference}");
         var obligationId = detail!["file"]!["obligations"]![0]!["id"]!.GetValue<string>();
@@ -278,6 +281,9 @@ public sealed class MarketTests(ApiFixture api)
         Assert.Equal(HttpStatusCode.NotFound, sBuyer);
         var (sPublic, _, _) = await api.Client().GetBytesAsync($"/api/market/photos/{id}");
         Assert.Equal(HttpStatusCode.NotFound, sPublic);
+        // Unassigned: case managers (assigned scope) don't see it; once assigned, its case manager does.
+        Assert.Equal(HttpStatusCode.NotFound, (await (await api.LoginAsync(Coordinator)).GetBytesAsync(url)).Status);
+        await AssignAsync(api, $"sale-requests/{reference}", Coordinator);
         var team = await api.LoginAsync(Coordinator);
         var (sTeam, _, _) = await team.GetBytesAsync(url);
         Assert.Equal(HttpStatusCode.OK, sTeam);
@@ -353,9 +359,12 @@ public sealed class MarketTests(ApiFixture api)
         Assert.Equal(opp.PublishedTermsId, stored.TermsId);
         Assert.Equal(OpportunityStatus.Published, opp.Status);
 
-        var team = await api.LoginAsync(Coordinator);
+        var team = await api.LoginAsync(OpsManager);
         var (_, list) = await team.GetAsync("/api/team/market/interests");
         Assert.Contains(list!.AsArray(), x => x!["reference"]!.GetValue<string>() == TestClient.Str(i1, "reference"));
+        // Unassigned interest on an opportunity nobody gave the case manager: outside their scope.
+        var (_, cmList) = await (await api.LoginAsync(Coordinator2)).GetAsync("/api/team/market/interests");
+        Assert.DoesNotContain(cmList!.AsArray(), x => x!["reference"]!.GetValue<string>() == TestClient.Str(i1, "reference"));
         var (_, mine) = await owner.PostAsync($"/api/market/opportunities/{op}/interest", new { message = "x" });
         Assert.Equal("own_opportunity", TestClient.Str(mine, "code"));
     }
@@ -375,6 +384,7 @@ public sealed class MarketTests(ApiFixture api)
         var (_, br) = await Ok(buyer.PostAsync("/api/market/buyer-requests", body));
         var reference = TestClient.Str(br, "reference");
         await Ok(buyer.PostAsync($"/api/market/buyer-requests/{reference}/submit", new { contactName = "مشتري معدل", acceptDeclarations = true }));
+        await AssignAsync(api, $"buyer-requests/{reference}", Coordinator);
         var team = await api.LoginAsync(Coordinator);
         await Ok(team.PostAsync($"/api/team/market/buyer-requests/{reference}/start-review"));
         await Ok(team.PostAsync($"/api/team/market/buyer-requests/{reference}/approve", new { reason = "" }));

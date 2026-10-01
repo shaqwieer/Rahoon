@@ -58,6 +58,7 @@ internal sealed class MembershipConfig : IEntityTypeConfiguration<Membership>
     public void Configure(EntityTypeBuilder<Membership> b)
     {
         b.ToTable("memberships", "identity");
+        b.Property(x => x.StatusReason).HasMaxLength(500);
         b.HasIndex(x => new { x.UserId, x.OrganizationId }).IsUnique();
         b.HasOne(x => x.Organization).WithMany().HasForeignKey(x => x.OrganizationId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
@@ -71,6 +72,9 @@ internal sealed class RoleConfig : IEntityTypeConfiguration<Role>
     {
         b.ToTable("roles", "identity");
         b.HasIndex(x => new { x.OrganizationId, x.Key }).IsUnique();
+        b.Property(x => x.NameAr).HasMaxLength(120);
+        b.Property(x => x.NameEn).HasMaxLength(120);
+        b.Property(x => x.DescriptionAr).HasMaxLength(500);
         b.HasMany(x => x.Permissions).WithOne().HasForeignKey(x => x.RoleId).OnDelete(DeleteBehavior.Cascade);
     }
 }
@@ -82,6 +86,23 @@ internal sealed class RolePermissionConfig : IEntityTypeConfiguration<RolePermis
         b.ToTable("role_permissions", "identity");
         b.HasKey(x => new { x.RoleId, x.PermissionKey });
         b.Property(x => x.PermissionKey).HasMaxLength(64);
+        b.Property(x => x.Scope).HasMaxLength(16).HasDefaultValue(GrantScope.All).HasSentinel((GrantScope)(-1));
+    }
+}
+
+internal sealed class StaffInvitationConfig : IEntityTypeConfiguration<StaffInvitation>
+{
+    public void Configure(EntityTypeBuilder<StaffInvitation> b)
+    {
+        b.ToTable("staff_invitations", "identity");
+        b.Property(x => x.Email).HasMaxLength(254);
+        b.Property(x => x.FullName).HasMaxLength(200);
+        b.Property(x => x.Phone).HasMaxLength(20);
+        b.Property(x => x.Title).HasMaxLength(120);
+        b.Property(x => x.InvitedByLabel).HasMaxLength(200);
+        b.HasIndex(x => x.TokenHash).IsUnique();
+        // One pending invitation per e-mail: a double submit or a second inviter gets a conflict, never a second link.
+        b.HasIndex(x => new { x.OrganizationId, x.Email }).IsUnique().HasFilter("status = 'Pending'");
     }
 }
 

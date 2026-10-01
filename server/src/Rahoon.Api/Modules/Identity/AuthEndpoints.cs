@@ -122,10 +122,13 @@ public static class AuthEndpoints
         var m = await ActiveMembershipAsync(db, user.Id);
         await db.SaveChangesAsync();
         if (m is null) return Results.Ok(new { next = "/access-denied" });
-        await sessions.RotateAsync(http, session, user, SessionScope.Organization, m.OrganizationId, m.Id, m.Organization!.IdleTimeoutMinutes, "mfa_complete");
+        var fresh = await sessions.RotateAsync(http, session, user, SessionScope.Organization, m.OrganizationId, m.Id, m.Organization!.IdleTimeoutMinutes, "mfa_complete");
         await audit.RecordAsync(new AuditEntry("auth.login", "تسجيل دخول", OrganizationId: m.OrganizationId));
         await db.SaveChangesAsync();
-        return Results.Ok(new { next = "/team" });
+        // Land on the first area this member's grants open.
+        rc.SetSession(user.Id, fresh.Id, user.FullName, SessionScope.Organization, SessionStage.Active);
+        await Infrastructure.Auth.RequestContextMiddleware.ResolveScopeAsync(rc, db, fresh);
+        return Results.Ok(new { next = TeamHome.For(rc) });
     }
 
     private static async Task<IResult> ResendMfa(HttpContext http, RahoonDbContext db, SessionService sessions, OtpService otp, RequestContext rc)
@@ -170,7 +173,8 @@ public static class AuthEndpoints
             permissions = rc.Permissions,
             individual,
             smsConfirmation = options.SmsConfirmation,
-            home = rc.IsOperator ? "/team" : rc.IsIndividual ? "/account" : "/",
+            scopes = rc.Grants.ToDictionary(g => g.Key, g => g.Value == GrantScope.All ? "all" : "assigned"),
+            home = rc.IsOperator ? TeamHome.For(rc) : rc.IsIndividual ? "/account" : "/",
         });
     }
 

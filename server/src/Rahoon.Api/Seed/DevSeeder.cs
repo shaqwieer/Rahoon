@@ -35,11 +35,12 @@ public sealed partial class DevSeeder(
         else log.LogInformation("Core seed skipped: the Rahoon team is already present.");
 
         await SystemRoleSync.SyncAsync(db);
+        await SeedStaffAsync();
         await SeedMarketAsync();
         log.LogInformation("Seed complete.");
     }
 
-    /// <summary>«فريق رهون» and its members.</summary>
+    /// <summary>«فريق رهون» (its system roles come from SystemRoleSync).</summary>
     private async Task SeedCoreAsync()
     {
         var team = new Organization
@@ -48,20 +49,31 @@ public sealed partial class DevSeeder(
             CreatedAt = DemoToday.AddYears(-1),
         };
         db.Organizations.Add(team);
-        _orgs[team.ShortCode] = team;
-        foreach (var t in SystemRoles.Templates)
-        {
-            var role = new Role { OrganizationId = team.Id, Key = t.Key, NameAr = t.NameAr, NameEn = t.NameEn };
-            role.Permissions.AddRange(t.Permissions.Distinct().Select(p => new RolePermission { PermissionKey = p }));
-            db.Roles.Add(role);
-            _roles[(team.Id, t.Key)] = role;
-        }
         await db.SaveChangesAsync();
+    }
 
-        User("lama", "l.alharbi@team.rahoon.example", "لمى الحربي", "0550000601", (team, SystemRoles.TeamLead, "قائدة الفريق"));
-        User("nayef", "n.alyami@team.rahoon.example", "نايف اليامي", "0550000602", (team, SystemRoles.TeamCoordinator, "منسق طلبات"));
-        User("turki", "t.alshehri@team.rahoon.example", "تركي الشهري", "0550000603", (team, SystemRoles.TeamCoordinator, "منسق طلبات"));
-        User("abeer", "a.alqahtani@team.rahoon.example", "عبير القحطاني", "0550000604", (team, SystemRoles.TeamVerifier, "مراجِعة النشر"));
+    /// <summary>Demo members, one per default role (two case managers). Each is added only if its e-mail is missing.</summary>
+    private async Task SeedStaffAsync()
+    {
+        var team = await db.Organizations.FirstAsync(o => o.ShortCode == "rahoon-team");
+        _orgs[team.ShortCode] = team;
+        foreach (var r in await db.Roles.Where(r => r.OrganizationId == team.Id).ToListAsync()) _roles[(team.Id, r.Key)] = r;
+        var existing = (await db.Users.Select(u => u.Email).ToListAsync()).ToHashSet();
+
+        void Add(string key, string email, string name, string phone, string role, string title)
+        {
+            if (existing.Contains(email)) return;
+            User(key, email, name, phone, (team, role, title));
+        }
+        Add("lama", "l.alharbi@team.rahoon.example", "لمى الحربي", "0550000601", SystemRoles.PlatformOwner, "قائدة الفريق");
+        Add("nayef", "n.alyami@team.rahoon.example", "نايف اليامي", "0550000602", SystemRoles.CaseManager, "مسؤول ملفات");
+        Add("turki", "t.alshehri@team.rahoon.example", "تركي الشهري", "0550000603", SystemRoles.CaseManager, "مسؤول ملفات");
+        Add("abeer", "a.alqahtani@team.rahoon.example", "عبير القحطاني", "0550000604", SystemRoles.Publisher, "مسؤولة النشر");
+        Add("fahad", "f.alotaibi@team.rahoon.example", "فهد العتيبي", "0550000605", SystemRoles.OperationsManager, "مدير العمليات");
+        Add("huda", "h.alzahrani@team.rahoon.example", "هدى الزهراني", "0550000606", SystemRoles.DocumentReviewer, "مراجِعة مستندات");
+        Add("majed", "m.alghamdi@team.rahoon.example", "ماجد الغامدي", "0550000607", SystemRoles.FinanceOfficer, "مسؤول مالي");
+        Add("reem", "r.almutairi@team.rahoon.example", "ريم المطيري", "0550000608", SystemRoles.SupportAgent, "دعم العملاء");
+        Add("sara", "s.aldosari@team.rahoon.example", "سارة الدوسري", "0550000609", SystemRoles.Auditor, "مدققة");
         await db.SaveChangesAsync();
     }
 

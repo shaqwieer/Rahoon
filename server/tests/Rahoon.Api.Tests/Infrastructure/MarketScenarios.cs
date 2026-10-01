@@ -10,6 +10,22 @@ public static class MarketScenarios
     public const string Lead = "l.alharbi@team.rahoon.example";
     public const string Coordinator = "n.alyami@team.rahoon.example";
     public const string Verifier = "a.alqahtani@team.rahoon.example";
+    /// <summary>A second case manager (assigned scope), for "another manager's file" checks.</summary>
+    public const string Coordinator2 = "t.alshehri@team.rahoon.example";
+    public const string Reviewer = "h.alzahrani@team.rahoon.example";
+    public const string OpsManager = "f.alotaibi@team.rahoon.example";
+    public const string Auditor = "s.aldosari@team.rahoon.example";
+    public const string Support = "r.almutairi@team.rahoon.example";
+
+    public static Task<Guid> UserIdAsync(ApiFixture api, string email) =>
+        api.WithDbAsync(db => Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstAsync(db.Users.Where(u => u.Email == email).Select(u => u.Id)));
+
+    /// <summary>The platform owner assigns a request/opportunity/interest (e.g. "sale-requests/SR-…") to a member.</summary>
+    public static async Task AssignAsync(ApiFixture api, string path, string email)
+    {
+        var lead = await api.LoginAsync(Lead);
+        await Ok(lead.PostAsync($"/api/team/market/{path}/assign", new { userId = await UserIdAsync(api, email) }));
+    }
 
     /// <summary>A fresh Saudi mobile in a range no seed uses (0569xxxxxx).</summary>
     public static string NewPhone() => $"0569{Interlocked.Increment(ref _seq):D6}";

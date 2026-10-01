@@ -24,8 +24,12 @@ public sealed class SmsConfirmationTests(ApiFixture api)
     private static TestClient ClientOf(WebApplicationFactory<Program> f) =>
         new(f.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false, AllowAutoRedirect = false }));
 
-    private Task<int> SmsCountAsync(string phone) =>
-        api.WithDbAsync(db => db.OutboundSms.CountAsync(m => m.Destination == Rahoon.Api.Infrastructure.Security.Mask.Phone(phone)));
+    /// <summary>
+    /// SMS to this masked number since the test started. The mask keeps only the last two digits, so team sign-ins in
+    /// earlier tests can share it; tests in the collection run one at a time, so the time filter isolates this test.
+    /// </summary>
+    private Task<int> SmsCountAsync(string phone, DateTimeOffset since) =>
+        api.WithDbAsync(db => db.OutboundSms.CountAsync(m => m.Destination == Rahoon.Api.Infrastructure.Security.Mask.Phone(phone) && m.CreatedAt >= since));
 
     [Fact]
     public async Task Off_returns_the_code_for_automatic_confirmation_and_sends_nothing()
@@ -33,13 +37,14 @@ public sealed class SmsConfirmationTests(ApiFixture api)
         await using var factory = WithoutSms();
         var c = ClientOf(factory);
         var phone = NewPhone();
+        var since = DateTimeOffset.UtcNow;
 
         var (s, start) = await c.PostAsync("/api/auth/phone/start", new { phone });
         Assert.Equal(HttpStatusCode.OK, s);
         Assert.False(start!["otpRequired"]!.GetValue<bool>());
         var code = TestClient.Str(start, "sandboxCode");
         Assert.Matches("^[0-9]{6}$", code);
-        Assert.Equal(0, await SmsCountAsync(phone));
+        Assert.Equal(0, await SmsCountAsync(phone, since));
 
         var (v, body) = await c.PostAsync("/api/auth/phone/verify", new { code, acceptTerms = true });
         Assert.Equal(HttpStatusCode.OK, v);
@@ -52,12 +57,13 @@ public sealed class SmsConfirmationTests(ApiFixture api)
     {
         var c = api.Client(); // the shared fixture runs with SmsConfirmation=true
         var phone = NewPhone();
+        var since = DateTimeOffset.UtcNow;
         var (s, start) = await c.PostAsync("/api/auth/phone/start", new { phone });
         Assert.Equal(HttpStatusCode.OK, s);
         Assert.True(start!["otpRequired"]!.GetValue<bool>());
-        Assert.Equal(1, await SmsCountAsync(phone));
+        Assert.Equal(1, await SmsCountAsync(phone, since));
         var masked = Rahoon.Api.Infrastructure.Security.Mask.Phone(phone);
-        var sms = await api.WithDbAsync(db => db.OutboundSms.SingleAsync(m => m.Destination == masked));
+        var sms = await api.WithDbAsync(db => db.OutboundSms.SingleAsync(m => m.Destination == masked && m.CreatedAt >= since));
         Assert.Equal("simulated", sms.Result);
         Assert.DoesNotMatch(@"\d{6}", sms.Body); // the code is never stored readable
         Assert.DoesNotContain(phone, sms.Destination);

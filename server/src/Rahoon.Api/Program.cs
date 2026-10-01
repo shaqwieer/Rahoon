@@ -77,8 +77,8 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
-// ── CLI: `dotnet run -- migrate` / `seed` / `reset-demo` / `import-directory` ──
-if (args.Length > 0 && args[0] is "migrate" or "seed" or "reset-demo" or "import-directory")
+// ── CLI: `dotnet run -- migrate` / `seed` / `reset-demo` / `import-directory` / `bootstrap-owner` ──
+if (args.Length > 0 && args[0] is "migrate" or "seed" or "reset-demo" or "import-directory" or "bootstrap-owner")
 {
     // Demo-data commands are refused outside Development/Staging/Testing *before* touching the database.
     if (args[0] is "seed" or "reset-demo" && !DemoDataGuard.IsAllowed(app.Environment))
@@ -94,6 +94,12 @@ if (args.Length > 0 && args[0] is "migrate" or "seed" or "reset-demo" or "import
         if (args[0] == "import-directory")
         {
             Environment.ExitCode = await DirectoryCli.RunAsync(scope.ServiceProvider, args.Skip(1).ToArray());
+            return;
+        }
+        if (args[0] == "bootstrap-owner")
+        {
+            await DatabaseMigrator.MigrateAsync(scope.ServiceProvider);
+            Environment.ExitCode = await TeamBootstrap.RunAsync(scope.ServiceProvider, args.Skip(1).ToArray());
             return;
         }
         if (args[0] == "reset-demo") await db.Database.EnsureDeletedAsync();

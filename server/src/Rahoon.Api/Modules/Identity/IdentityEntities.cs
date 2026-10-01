@@ -46,7 +46,11 @@ public sealed class User : Entity, IHasTimestamps
 
 public enum MembershipStatus { Invited, Active, Suspended, Revoked }
 
-public sealed class Membership : Entity, IOrgOwned, IHasTimestamps
+/// <summary>
+/// Staff membership of «فريق رهون». Separate from any public (owner/buyer) account: those are different users with a
+/// different session scope. Never deleted: suspension is reversible, removal (Revoked) ends it and keeps the history.
+/// </summary>
+public sealed class Membership : Entity, IOrgOwned, IHasTimestamps, IConcurrencyVersioned
 {
     public Guid OrganizationId { get; set; }
     public Organization? Organization { get; set; }
@@ -55,23 +59,64 @@ public sealed class Membership : Entity, IOrgOwned, IHasTimestamps
     public MembershipStatus Status { get; set; } = MembershipStatus.Active;
     public string? Title { get; set; }
     public List<MembershipRole> Roles { get; set; } = [];
+    /// <summary>Why and when the membership was last suspended or removed (cleared on reactivation; the audit keeps all).</summary>
+    public string? StatusReason { get; set; }
+    public DateTimeOffset? StatusChangedAt { get; set; }
+    public Guid? StatusChangedByUserId { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
+    public uint Version { get; set; }
 }
 
-public sealed class Role : Entity, IOrgOwned
+/// <summary>A role of the team: protected system roles (fixed grants, see SystemRoles) or custom roles.</summary>
+public sealed class Role : Entity, IOrgOwned, IConcurrencyVersioned
 {
     public Guid OrganizationId { get; set; }
     public required string Key { get; set; }
     public required string NameAr { get; set; }
     public required string NameEn { get; set; }
+    public string? DescriptionAr { get; set; }
+    public bool IsSystem { get; set; }
+    /// <summary>Archived custom roles can't be assigned; a role is archived only when no membership holds it.</summary>
+    public DateTimeOffset? ArchivedAt { get; set; }
     public List<RolePermission> Permissions { get; set; } = [];
+    public uint Version { get; set; }
 }
 
+/// <summary>One grant of a role: a catalog permission and how far it reaches.</summary>
 public sealed class RolePermission
 {
     public Guid RoleId { get; set; }
     public required string PermissionKey { get; set; }
+    public GrantScope Scope { get; set; } = GrantScope.All;
+}
+
+public enum InvitationStatus { Pending, Accepted, Revoked }
+
+/// <summary>
+/// An invitation to join «فريق رهون», bound to one e-mail and mobile chosen by the inviter, with the roles the inviter
+/// was allowed to grant. Only the SHA-256 of the one-time token is stored. Expires; can be revoked; used once.
+/// No e-mail provider is configured: the inviter hands the link over and the UI says so.
+/// </summary>
+public sealed class StaffInvitation : Entity, IOrgOwned, IConcurrencyVersioned
+{
+    public Guid OrganizationId { get; set; }
+    public required string Email { get; set; }
+    public required string FullName { get; set; }
+    public required string Phone { get; set; }
+    public string? Title { get; set; }
+    public List<Guid> RoleIds { get; set; } = [];
+    public required byte[] TokenHash { get; set; }
+    public InvitationStatus Status { get; set; } = InvitationStatus.Pending;
+    public Guid InvitedByUserId { get; set; }
+    public required string InvitedByLabel { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset ExpiresAt { get; set; }
+    public DateTimeOffset? AcceptedAt { get; set; }
+    public Guid? AcceptedUserId { get; set; }
+    public DateTimeOffset? RevokedAt { get; set; }
+    public Guid? RevokedByUserId { get; set; }
+    public uint Version { get; set; }
 }
 
 public sealed class MembershipRole

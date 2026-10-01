@@ -21,12 +21,14 @@ public sealed class SecurityTests(ApiFixture api)
     [Fact]
     public async Task Team_endpoints_check_permissions_on_the_server()
     {
-        // A coordinator works on requests but does not manage the directory.
+        // A case manager works on requests and reads the directory, but does not manage it.
         var coordinator = await api.LoginAsync(Coordinator);
         Assert.Equal(HttpStatusCode.OK, (await coordinator.GetAsync("/api/team/market/overview")).Status);
-        Assert.Equal(HttpStatusCode.Forbidden, (await coordinator.GetAsync("/api/team/directory")).Status);
+        Assert.Equal(HttpStatusCode.OK, (await coordinator.GetAsync("/api/team/directory")).Status);
         var (s, _) = await coordinator.PostAsync("/api/team/directory", new { nameAr = "جهة", types = new[] { "bank" } });
         Assert.Equal(HttpStatusCode.Forbidden, s);
+        // A document reviewer has no directory grant at all.
+        Assert.Equal(HttpStatusCode.Forbidden, (await (await api.LoginAsync(Reviewer)).GetAsync("/api/team/directory")).Status);
     }
 
     [Fact]
@@ -54,7 +56,8 @@ public sealed class SecurityTests(ApiFixture api)
     public async Task Failed_logins_lock_the_account_after_five_attempts()
     {
         var c = api.Client();
-        const string email = "t.alshehri@team.rahoon.example";
+        // The demo finance officer: no other test signs in as this member (the lockout lasts 15 minutes).
+        const string email = "m.alghamdi@team.rahoon.example";
         for (var i = 0; i < 4; i++)
         {
             var (s, b) = await c.PostAsync("/api/auth/login", new { email, password = "wrong-password" });

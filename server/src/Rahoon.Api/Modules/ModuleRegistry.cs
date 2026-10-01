@@ -18,6 +18,9 @@ public static class ModuleRegistry
         // Rahoon team sign-in and sessions; owners' and buyers' mobile sign-in.
         AuthEndpoints.Map(app);
         PhoneAuthEndpoints.Map(app);
+        // Team administration: members, invitations, roles, effective access, administration log.
+        InvitationEndpoints.Map(app);
+        TeamAdminEndpoints.Map(app);
         // Exit/buy marketplace: sale and buyer requests, team review, opportunities, interests.
         Market.MarketPublicEndpoints.Map(app);
         Market.SaleRequestEndpoints.Map(app);

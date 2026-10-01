@@ -21,6 +21,8 @@ public sealed class RequestContext
     public Guid? MembershipId { get; private set; }
     public IReadOnlySet<string> RoleKeys { get; private set; } = new HashSet<string>();
     public IReadOnlySet<string> Permissions { get; private set; } = new HashSet<string>();
+    /// <summary>Effective scope of each held permission: the widest scope among the roles granting that permission only.</summary>
+    public IReadOnlyDictionary<string, GrantScope> Grants { get; private set; } = new Dictionary<string, GrantScope>();
     public string? PrimaryRoleNameAr { get; private set; }
 
     /// <summary>Organizations whose rows EF may read in this request (global query filter).</summary>
@@ -31,6 +33,16 @@ public sealed class RequestContext
     public string? IpMasked { get; set; }
 
     public bool Has(string permission) => Permissions.Contains(permission);
+    public GrantScope? ScopeOf(string permission) => Grants.TryGetValue(permission, out var s) ? s : null;
+    /// <summary>Holds the permission over all of the team's work (not just assigned work).</summary>
+    public bool HasAll(string permission) => ScopeOf(permission) == GrantScope.All;
+    /// <summary>Holds the permission for a record whose assignees (the record's own, and the work it belongs to) are given.</summary>
+    public bool CanOn(string permission, params Guid?[] assignees) => ScopeOf(permission) switch
+    {
+        GrantScope.All => true,
+        GrantScope.Assigned => assignees.Any(a => a == UserId),
+        _ => false,
+    };
     /// <summary>Rahoon team member (operator tenant).</summary>
     public bool IsOperator => Scope == SessionScope.Organization && OrganizationKind == Modules.Identity.OrganizationKind.Operator;
     /// <summary>Owner or buyer (mobile sign-in): no organization data at all; access to their own rows only.</summary>
@@ -51,8 +63,10 @@ public sealed class RequestContext
     }
 
     public void SetOrganization(Guid orgId, OrganizationKind kind, string orgName, Guid membershipId,
-        IReadOnlySet<string> roles, IReadOnlySet<string> permissions, string? primaryRoleNameAr, IReadOnlyList<Guid> dataOrgIds)
+        IReadOnlySet<string> roles, IReadOnlyDictionary<string, GrantScope> grants, string? primaryRoleNameAr, IReadOnlyList<Guid> dataOrgIds)
     {
+        var permissions = grants.Keys.ToHashSet();
+        Grants = grants;
         OrganizationId = orgId;
         OrganizationKind = kind;
         OrganizationName = orgName;

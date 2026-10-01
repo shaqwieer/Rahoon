@@ -59,7 +59,7 @@ public static class TeamOpportunityEndpoints
     private static async Task<IResult> Create(string reference, RahoonDbContext db, RequestContext rc, MarketService market, IClock clock, IConfiguration config)
     {
         Need(rc, P.MarketPrepare);
-        var f = await TeamMarketEndpoints.LoadSaleAsync(db, reference);
+        var f = await TeamMarketEndpoints.LoadSaleAsync(db, rc, reference, P.MarketPrepare);
         var r = f.Request;
         SaleRequestFlow.Ensure(r.Status, SaleRequestStatus.ApprovedForListing);
         if (f.Opportunities.FirstOrDefault(o => o.Status != OpportunityStatus.Withdrawn) is { } existing)
@@ -140,9 +140,9 @@ public static class TeamOpportunityEndpoints
 
     // ── Read ──
 
-    private static async Task<IResult> List(RahoonDbContext db, string? status)
+    private static async Task<IResult> List(RahoonDbContext db, RequestContext rc, string? status)
     {
-        var query = db.Opportunities.AsQueryable();
+        var query = db.Opportunities.Scoped(db, rc);
         if (status is { Length: > 0 } && Enum.TryParse<OpportunityStatus>(status, true, out var st)) query = query.Where(o => o.Status == st);
         var rows = await query.OrderByDescending(o => o.StatusChangedAt).Take(200).ToListAsync();
         var ids = rows.Select(o => o.Id).ToList();
@@ -156,11 +156,13 @@ public static class TeamOpportunityEndpoints
         }));
     }
 
-    private static async Task<(Opportunity Opp, SaleRequestFile File, List<OpportunityTerms> Terms)> LoadAsync(RahoonDbContext db, string reference)
+    /// <summary>An opportunity the caller may see (404 otherwise) and act on with <paramref name="permission"/> (403 otherwise).</summary>
+    private static async Task<(Opportunity Opp, SaleRequestFile File, List<OpportunityTerms> Terms)> LoadAsync(RahoonDbContext db, RequestContext rc, string reference, string permission)
     {
         var opp = await db.Opportunities.FirstOrDefaultAsync(o => o.Reference == reference) ?? throw new NotFoundException();
         var sr = await db.SaleRequests.Where(r => r.Id == opp.SaleRequestId).Select(r => r.Reference).FirstAsync();
         var f = await SaleRequestFile.LoadAsync(db, sr) ?? throw new NotFoundException();
+        TeamScope.Need(rc, permission, TeamScope.Assignees(opp, f.Request));
         var terms = await db.OpportunityTerms.Where(t => t.OpportunityId == opp.Id).OrderByDescending(t => t.VersionNo).ToListAsync();
         return (opp, f, terms);
     }
@@ -188,7 +190,7 @@ public static class TeamOpportunityEndpoints
 
     private static async Task<IResult> Get(string reference, RahoonDbContext db, RequestContext rc, IConfiguration config)
     {
-        var (opp, f, terms) = await LoadAsync(db, reference);
+        var (opp, f, terms) = await LoadAsync(db, rc, reference, P.MarketView);
         var events = await db.MarketEvents.Where(e => e.SubjectId == opp.Id).OrderByDescending(e => e.At).ToListAsync();
         var interests = await db.Interests.Where(i => i.OpportunityId == opp.Id).OrderByDescending(i => i.CreatedAt).ToListAsync();
         var draft = terms.FirstOrDefault(t => t.Id == opp.DraftTermsId);
@@ -196,6 +198,7 @@ public static class TeamOpportunityEndpoints
         var latest = draft ?? published ?? terms.FirstOrDefault();
         var blockers = PublishBlockers(opp, f, terms);
         var s = opp.Status;
+        var who = TeamScope.Assignees(opp, f.Request);
         return Results.Ok(new
         {
             opp.Reference, status = s, statusLabel = OpportunityFlow.Labels[s], saleRequest = f.Request.Reference,
@@ -224,14 +227,15 @@ public static class TeamOpportunityEndpoints
             publicUrl = s == OpportunityStatus.Published ? $"/opportunities/{opp.Reference}" : null,
             actions = new
             {
-                edit = rc.Has(P.MarketPrepare) && s is not (OpportunityStatus.Withdrawn or OpportunityStatus.Completed),
-                sendToOwner = rc.Has(P.MarketPrepare) && s is OpportunityStatus.Preparing or OpportunityStatus.Published or OpportunityStatus.Paused
+                edit = rc.CanOn(P.MarketPrepare, who) && s is not (OpportunityStatus.Withdrawn or OpportunityStatus.Completed),
+                sendToOwner = rc.CanOn(P.MarketPrepare, who) && s is OpportunityStatus.Preparing or OpportunityStatus.Published or OpportunityStatus.Paused
                               && draft is { Status: TermsStatus.Draft },
-                publish = rc.Has(P.MarketPublish) && blockers.Count == 0,
-                pause = rc.Has(P.MarketPublish) && s == OpportunityStatus.Published,
-                resume = rc.Has(P.MarketPublish) && s == OpportunityStatus.Paused && opp.PublishedTermsId is not null,
-                withdraw = rc.Has(P.MarketPublish) && s is not (OpportunityStatus.Withdrawn or OpportunityStatus.Completed),
-                checklist = rc.Has(P.MarketReview) || rc.Has(P.MarketPublish),
+                publish = rc.CanOn(P.MarketPublish, who) && blockers.Count == 0,
+                pause = rc.CanOn(P.MarketPublish, who) && s == OpportunityStatus.Published,
+                resume = rc.CanOn(P.MarketPublish, who) && s == OpportunityStatus.Paused && opp.PublishedTermsId is not null,
+                withdraw = rc.CanOn(P.MarketPublish, who) && s is not (OpportunityStatus.Withdrawn or OpportunityStatus.Completed),
+                checklist = rc.CanOn(P.MarketReview, who) || rc.CanOn(P.MarketPublish, who),
+                assignOthers = rc.Has(P.MarketAssign),
             },
             commissionPolicy = CommissionPolicy.From(config),
         });
@@ -240,7 +244,7 @@ public static class TeamOpportunityEndpoints
     private static async Task<IResult> Assign(string reference, AssignInput req, RahoonDbContext db, RequestContext rc, MarketService market)
     {
         Need(rc, P.MarketPrepare);
-        var (opp, _, _) = await LoadAsync(db, reference);
+        var (opp, _, _) = await LoadAsync(db, rc, reference, P.MarketPrepare);
         var (id, label) = await TeamMarketEndpoints.AssigneeAsync(db, rc, req.UserId);
         opp.AssignedToUserId = id;
         opp.AssignedToLabel = label;
@@ -273,7 +277,7 @@ public static class TeamOpportunityEndpoints
     private static async Task<IResult> SaveContent(string reference, ContentForm req, RahoonDbContext db, RequestContext rc, MarketService market, IClock clock, IConfiguration config)
     {
         Need(rc, P.MarketPrepare);
-        var (opp, f, terms) = await LoadAsync(db, reference);
+        var (opp, f, terms) = await LoadAsync(db, rc, reference, P.MarketPrepare);
         OpportunityFlow.Ensure(opp.Status, OpportunityStatus.Preparing, OpportunityStatus.AwaitingOwnerConfirmation, OpportunityStatus.ReadyToPublish,
             OpportunityStatus.Published, OpportunityStatus.Paused);
         var v = new Validator();
@@ -339,7 +343,7 @@ public static class TeamOpportunityEndpoints
     private static async Task<IResult> SaveTerms(string reference, TermsForm req, RahoonDbContext db, RequestContext rc, MarketService market, IClock clock, IConfiguration config)
     {
         Need(rc, P.MarketPrepare);
-        var (opp, f, terms) = await LoadAsync(db, reference);
+        var (opp, f, terms) = await LoadAsync(db, rc, reference, P.MarketPrepare);
         OpportunityFlow.Ensure(opp.Status, OpportunityStatus.Preparing, OpportunityStatus.AwaitingOwnerConfirmation, OpportunityStatus.ReadyToPublish,
             OpportunityStatus.Published, OpportunityStatus.Paused);
         var v = new Validator();
@@ -393,7 +397,7 @@ public static class TeamOpportunityEndpoints
     private static async Task<IResult> SendToOwner(string reference, RahoonDbContext db, RequestContext rc, MarketService market, IClock clock)
     {
         Need(rc, P.MarketPrepare);
-        var (opp, _, terms) = await LoadAsync(db, reference);
+        var (opp, _, terms) = await LoadAsync(db, rc, reference, P.MarketPrepare);
         OpportunityFlow.Ensure(opp.Status, OpportunityStatus.Preparing, OpportunityStatus.Published, OpportunityStatus.Paused);
         var draft = terms.FirstOrDefault(t => t.Id == opp.DraftTermsId && t.Status == TermsStatus.Draft)
                     ?? throw new ConflictException("no_draft", "لا توجد نسخة جديدة لإرسالها. عدّل الأرقام أو المحتوى أولًا.");
@@ -415,7 +419,9 @@ public static class TeamOpportunityEndpoints
     private static async Task<IResult> SaveChecklist(string reference, ChecklistInput req, RahoonDbContext db, RequestContext rc, MarketService market)
     {
         if (!rc.Has(P.MarketReview) && !rc.Has(P.MarketPublish)) throw new ForbiddenException();
-        var (opp, _, _) = await LoadAsync(db, reference);
+        var (opp, f, _) = await LoadAsync(db, rc, reference, P.MarketView);
+        var who = TeamScope.Assignees(opp, f.Request);
+        if (!rc.CanOn(P.MarketReview, who) && !rc.CanOn(P.MarketPublish, who)) throw new ForbiddenException();
         var allowed = OpportunityFlow.Checklist.Select(c => c.Key).ToHashSet();
         opp.Checklist = (req.Items ?? []).Where(allowed.Contains).Distinct().ToList();
         market.Event(opp.OrganizationId, "opportunity", opp.Id, opp.ApplicantUserId, "checklist", "حدّث الفريق قائمة التحقق قبل النشر", visible: false, data: new { opp.Checklist });
@@ -426,7 +432,7 @@ public static class TeamOpportunityEndpoints
     private static async Task<IResult> Publish(string reference, RahoonDbContext db, RequestContext rc, MarketService market, IClock clock)
     {
         Need(rc, P.MarketPublish);
-        var (opp, f, terms) = await LoadAsync(db, reference);
+        var (opp, f, terms) = await LoadAsync(db, rc, reference, P.MarketPublish);
         var blockers = PublishBlockers(opp, f, terms);
         if (blockers.Count > 0) throw new DomainException("publish_blocked", "لا يمكن النشر بعد.", StatusCodes.Status409Conflict, blockers);
         var now = clock.UtcNow;
@@ -455,7 +461,7 @@ public static class TeamOpportunityEndpoints
         Need(rc, P.MarketPublish);
         var reason = req.Reason?.Trim() ?? "";
         if (reason.Length < 5) Validate.Throw("reason", "اكتب سبب الإيقاف.");
-        var (opp, _, _) = await LoadAsync(db, reference);
+        var (opp, _, _) = await LoadAsync(db, rc, reference, P.MarketPublish);
         OpportunityFlow.Ensure(opp.Status, OpportunityStatus.Published);
         opp.Status = OpportunityStatus.Paused;
         opp.StatusChangedAt = clock.UtcNow;
@@ -469,7 +475,7 @@ public static class TeamOpportunityEndpoints
     private static async Task<IResult> Resume(string reference, RahoonDbContext db, RequestContext rc, MarketService market, IClock clock)
     {
         Need(rc, P.MarketPublish);
-        var (opp, _, _) = await LoadAsync(db, reference);
+        var (opp, _, _) = await LoadAsync(db, rc, reference, P.MarketPublish);
         OpportunityFlow.Ensure(opp.Status, OpportunityStatus.Paused);
         if (opp.PublishedTermsId is null) throw new ConflictException("never_published", "لم تُنشر هذه الفرصة من قبل.");
         opp.Status = OpportunityStatus.Published;
@@ -486,7 +492,7 @@ public static class TeamOpportunityEndpoints
         Need(rc, P.MarketPublish);
         var reason = req.Reason?.Trim() ?? "";
         if (reason.Length < 5) Validate.Throw("reason", "اكتب سبب السحب.");
-        var (opp, _, _) = await LoadAsync(db, reference);
+        var (opp, _, _) = await LoadAsync(db, rc, reference, P.MarketPublish);
         if (opp.Status is OpportunityStatus.Withdrawn or OpportunityStatus.Completed) throw new ConflictException("invalid_status", "الفرصة مغلقة.");
         var from = opp.Status;
         opp.Status = OpportunityStatus.Withdrawn;
@@ -502,7 +508,7 @@ public static class TeamOpportunityEndpoints
 
     private static async Task<IResult> ListInterests(RahoonDbContext db, RequestContext rc, string? status, string? assigned)
     {
-        var query = db.Interests.AsQueryable();
+        var query = db.Interests.Scoped(db, rc);
         if (status is { Length: > 0 } && Enum.TryParse<InterestStatus>(status, true, out var st)) query = query.Where(i => i.Status == st);
         if (assigned == "me") query = query.Where(i => i.AssignedToUserId == rc.UserId);
         else if (assigned == "none") query = query.Where(i => i.AssignedToUserId == null);
@@ -519,8 +525,8 @@ public static class TeamOpportunityEndpoints
 
     private static async Task<IResult> GetInterest(string reference, RahoonDbContext db, RequestContext rc)
     {
-        var i = await db.Interests.FirstOrDefaultAsync(x => x.Reference == reference) ?? throw new NotFoundException();
-        var opp = await db.Opportunities.FirstAsync(o => o.Id == i.OpportunityId);
+        var (i, opp) = await LoadInterestAsync(db, rc, reference, P.MarketView);
+        var who = TeamScope.Assignees(i, opp);
         var terms = await db.OpportunityTerms.FirstAsync(t => t.Id == i.TermsId);
         var buyer = i.BuyerRequestId is { } bid ? await db.BuyerRequests.FirstOrDefaultAsync(b => b.Id == bid) : null;
         var events = await db.MarketEvents.Where(e => e.SubjectId == i.Id).OrderByDescending(e => e.At).ToListAsync();
@@ -539,13 +545,14 @@ public static class TeamOpportunityEndpoints
             buyerRequest = buyer is null ? null : BuyerEndpoints.BuyerDto(buyer, null),
             fit,
             events = events.Select(SaleRequestFile.EventDto),
+            actions = new { follow = rc.CanOn(P.MarketFollow, who), assignOthers = rc.Has(P.MarketAssign) },
             notice = "طلب الاهتمام لا يحجز العقار ولا يعد عرضًا ملزمًا. أي عرض أو حجز يأتي في مرحلة لاحقة بشروطه.",
         });
     }
 
     private static async Task<IResult> InterestContact(string reference, RahoonDbContext db, RequestContext rc, PiiProtector pii, AuditLog audit)
     {
-        var i = await db.Interests.FirstOrDefaultAsync(x => x.Reference == reference) ?? throw new NotFoundException();
+        var (i, _) = await LoadInterestAsync(db, rc, reference, P.MarketFollow);
         string phone;
         using (rc.BeginSystemScope())
             phone = pii.Unprotect(await db.IndividualProfiles.Where(p => p.UserId == i.ApplicantUserId).Select(p => p.PhoneEnc).FirstAsync());
@@ -554,12 +561,18 @@ public static class TeamOpportunityEndpoints
         return Results.Ok(new { phone });
     }
 
-    private static async Task<Interest> LoadInterestAsync(RahoonDbContext db, string reference) =>
-        await db.Interests.FirstOrDefaultAsync(x => x.Reference == reference) ?? throw new NotFoundException();
+    /// <summary>An interest the caller may see (404 otherwise) and act on with <paramref name="permission"/> (403 otherwise).</summary>
+    private static async Task<(Interest Interest, Opportunity Opportunity)> LoadInterestAsync(RahoonDbContext db, RequestContext rc, string reference, string permission)
+    {
+        var i = await db.Interests.FirstOrDefaultAsync(x => x.Reference == reference) ?? throw new NotFoundException();
+        var opp = await db.Opportunities.FirstAsync(o => o.Id == i.OpportunityId);
+        TeamScope.Need(rc, permission, TeamScope.Assignees(i, opp));
+        return (i, opp);
+    }
 
     private static async Task<IResult> AssignInterest(string reference, AssignInput req, RahoonDbContext db, RequestContext rc, MarketService market)
     {
-        var i = await LoadInterestAsync(db, reference);
+        var (i, _) = await LoadInterestAsync(db, rc, reference, P.MarketFollow);
         var (id, label) = await TeamMarketEndpoints.AssigneeAsync(db, rc, req.UserId);
         i.AssignedToUserId = id;
         i.AssignedToLabel = label;
@@ -570,7 +583,7 @@ public static class TeamOpportunityEndpoints
 
     private static async Task<IResult> FollowUp(string reference, NoteInput req, RahoonDbContext db, RequestContext rc, MarketService market, IClock clock)
     {
-        var i = await LoadInterestAsync(db, reference);
+        var (i, _) = await LoadInterestAsync(db, rc, reference, P.MarketFollow);
         if (i.Status != InterestStatus.Received) throw new ConflictException("invalid_status", $"الاهتمام في حالة «{InterestFlow.Labels[i.Status]}».");
         i.Status = InterestStatus.InFollowUp;
         i.StatusChangedAt = clock.UtcNow;
@@ -587,7 +600,7 @@ public static class TeamOpportunityEndpoints
     {
         var reason = req.Reason?.Trim() ?? "";
         if (reason.Length < 5) Validate.Throw("reason", "اكتب سبب الإغلاق؛ سيظهر للمشتري.");
-        var i = await LoadInterestAsync(db, reference);
+        var (i, _) = await LoadInterestAsync(db, rc, reference, P.MarketFollow);
         if (i.Status is InterestStatus.Closed or InterestStatus.Withdrawn) throw new ConflictException("invalid_status", "الاهتمام مغلق.");
         var from = i.Status;
         i.Status = InterestStatus.Closed;
@@ -603,7 +616,7 @@ public static class TeamOpportunityEndpoints
     {
         var note = req.Note?.Trim() ?? "";
         if (note.Length < 2) Validate.Throw("note", "اكتب الملاحظة.");
-        var i = await LoadInterestAsync(db, reference);
+        var (i, _) = await LoadInterestAsync(db, rc, reference, P.MarketFollow);
         market.Event(i.OrganizationId, "interest", i.Id, i.ApplicantUserId, "note", "ملاحظة داخلية", visible: false, body: note[..Math.Min(note.Length, 2000)]);
         await db.SaveChangesAsync();
         return Results.Ok(new { ok = true });

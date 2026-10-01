@@ -24,13 +24,14 @@ public static class DirectoryEndpoints
     {
         app.MapGet("/api/directory/organizations", Lookup);
 
-        var g = app.MapGroup("/api/team/directory").RequireOrg(OrganizationKind.Operator).RequirePermission(P.DirectoryManage);
+        // Reading the administration list needs directory.read (or manage); every change needs directory.manage.
+        var g = app.MapGroup("/api/team/directory").RequireOrg(OrganizationKind.Operator).RequireAnyPermission(P.DirectoryRead, P.DirectoryManage);
         g.MapGet("", List);
         g.MapGet("/{id:guid}", Get);
-        g.MapPost("", Create).Idempotent();
-        g.MapPut("/{id:guid}", Update).Idempotent();
-        g.MapPost("/{id:guid}/activate", Activate).Idempotent();
-        g.MapPost("/{id:guid}/deactivate", Deactivate).Idempotent();
+        g.MapPost("", Create).RequirePermission(P.DirectoryManage).Idempotent();
+        g.MapPut("/{id:guid}", Update).RequirePermission(P.DirectoryManage).Idempotent();
+        g.MapPost("/{id:guid}/activate", Activate).RequirePermission(P.DirectoryManage).Idempotent();
+        g.MapPost("/{id:guid}/deactivate", Deactivate).RequirePermission(P.DirectoryManage).Idempotent();
     }
 
     // ── Lookup for forms ──

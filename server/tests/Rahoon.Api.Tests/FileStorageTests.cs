@@ -62,7 +62,9 @@ public sealed class FileStorageTests(ApiFixture api)
         Assert.Equal(HttpStatusCode.NotFound, (await api.Client().GetBytesAsync(url)).Status);
         var stranger = await SellerAsync(api);
         Assert.Equal(HttpStatusCode.NotFound, (await stranger.GetBytesAsync(url)).Status);
+        await AssignAsync(api, $"sale-requests/{reference}", Coordinator);
         Assert.Equal(HttpStatusCode.OK, (await (await api.LoginAsync(Coordinator)).GetBytesAsync(url)).Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await (await api.LoginAsync(Coordinator2)).GetBytesAsync(url)).Status);
         Assert.Equal(HttpStatusCode.NotFound, (await owner.GetBytesAsync($"/api/files/{Guid.NewGuid()}")).Status);
     }
 

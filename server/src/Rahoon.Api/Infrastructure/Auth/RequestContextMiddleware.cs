@@ -20,6 +20,8 @@ public sealed class RequestContextMiddleware(RequestDelegate next)
         "/api/auth/login", "/api/health",
         // Mobile sign-in (before a session exists), the visitor contact form and the stateless calculators. Origin is still checked.
         "/api/auth/phone/", "/api/market/contact", "/api/market/calc/",
+        // Joining the team from an invitation link (no session yet; the token is the credential).
+        "/api/auth/invitations/",
     ];
 
     public async Task InvokeAsync(HttpContext http, RequestContext rc, RahoonDbContext db, SessionService sessions,
@@ -90,11 +92,11 @@ public sealed class RequestContextMiddleware(RequestDelegate next)
                 if (m is null || m.Status != MembershipStatus.Active || m.Organization is not { Status: OrganizationStatus.Active } org)
                     return null;
 
-                var roles = m.Roles.Select(r => r.Role!).ToList();
-                var permissions = roles.SelectMany(r => r.Permissions).Select(p => p.PermissionKey).ToHashSet();
+                var roles = m.Roles.Select(r => r.Role!).Where(r => r.ArchivedAt is null).OrderByDescending(r => r.IsSystem).ThenBy(r => r.NameAr).ToList();
                 if (org.Kind != OrganizationKind.Operator) return null;
 
-                rc.SetOrganization(org.Id, org.Kind, org.NameAr, m.Id, roles.Select(r => r.Key).ToHashSet(), permissions,
+                // Re-read on every request: a role change, suspension or removal applies to sessions already issued.
+                rc.SetOrganization(org.Id, org.Kind, org.NameAr, m.Id, roles.Select(r => r.Key).ToHashSet(), EffectiveAccess.Grants(roles),
                     roles.FirstOrDefault()?.NameAr, [org.Id]);
                 return org.IdleTimeoutMinutes;
             }

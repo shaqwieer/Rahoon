@@ -23,6 +23,7 @@ public sealed class RahoonDbContext(DbContextOptions<RahoonDbContext> options, R
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<MembershipRole> MembershipRoles => Set<MembershipRole>();
+    public DbSet<StaffInvitation> StaffInvitations => Set<StaffInvitation>();
     public DbSet<Session> Sessions => Set<Session>();
     public DbSet<OtpChallenge> OtpChallenges => Set<OtpChallenge>();
 

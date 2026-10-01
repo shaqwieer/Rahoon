@@ -81,11 +81,12 @@ public static class TeamMarketEndpoints
     private static async Task<IResult> Overview(RahoonDbContext db, RequestContext rc)
     {
         var me = rc.UserId;
-        var sale = await db.SaleRequests.Where(r => r.Status != SaleRequestStatus.Draft).GroupBy(r => r.Status).Select(g => new { g.Key, n = g.Count() }).ToListAsync();
-        var buyer = await db.BuyerRequests.Where(r => r.Status != BuyerRequestStatus.Draft).GroupBy(r => r.Status).Select(g => new { g.Key, n = g.Count() }).ToListAsync();
-        var opps = await db.Opportunities.GroupBy(o => o.Status).Select(g => new { g.Key, n = g.Count() }).ToListAsync();
-        var interests = await db.Interests.GroupBy(i => i.Status).Select(g => new { g.Key, n = g.Count() }).ToListAsync();
-        var contact = await db.ContactMessages.CountAsync(c => c.Status == ContactMessageStatus.New);
+        // Counts come from the same scoped queries as the lists: assigned-scope members see their own work only.
+        var sale = await db.SaleRequests.Scoped(rc).Where(r => r.Status != SaleRequestStatus.Draft).GroupBy(r => r.Status).Select(g => new { g.Key, n = g.Count() }).ToListAsync();
+        var buyer = await db.BuyerRequests.Scoped(rc).Where(r => r.Status != BuyerRequestStatus.Draft).GroupBy(r => r.Status).Select(g => new { g.Key, n = g.Count() }).ToListAsync();
+        var opps = await db.Opportunities.Scoped(db, rc).GroupBy(o => o.Status).Select(g => new { g.Key, n = g.Count() }).ToListAsync();
+        var interests = await db.Interests.Scoped(db, rc).GroupBy(i => i.Status).Select(g => new { g.Key, n = g.Count() }).ToListAsync();
+        int? contact = rc.HasAll(P.MarketFollow) ? await db.ContactMessages.CountAsync(c => c.Status == ContactMessageStatus.New) : null;
         var mySale = await db.SaleRequests.Where(r => r.AssignedToUserId == me && (r.Status == SaleRequestStatus.Submitted || r.Status == SaleRequestStatus.UnderReview))
             .OrderBy(r => r.StatusChangedAt).Select(r => new { kind = "sale", r.Reference, title = r.Reference, status = r.Status.ToString(), at = r.StatusChangedAt }).ToListAsync();
         var myBuyer = await db.BuyerRequests.Where(r => r.AssignedToUserId == me && (r.Status == BuyerRequestStatus.Submitted || r.Status == BuyerRequestStatus.UnderReview))
@@ -94,8 +95,8 @@ public static class TeamMarketEndpoints
             .Select(o => new { kind = "opportunity", o.Reference, title = o.Title, status = o.Status.ToString(), at = o.StatusChangedAt }).ToListAsync();
         var myInterests = await db.Interests.Where(i => i.AssignedToUserId == me && (i.Status == InterestStatus.Received || i.Status == InterestStatus.InFollowUp))
             .Select(i => new { kind = "interest", i.Reference, title = i.Reference, status = i.Status.ToString(), at = i.StatusChangedAt }).ToListAsync();
-        var unassignedSale = await db.SaleRequests.CountAsync(r => r.AssignedToUserId == null && (r.Status == SaleRequestStatus.Submitted || r.Status == SaleRequestStatus.UnderReview));
-        var unassignedInterest = await db.Interests.CountAsync(i => i.AssignedToUserId == null && i.Status == InterestStatus.Received);
+        var unassignedSale = await db.SaleRequests.Scoped(rc).CountAsync(r => r.AssignedToUserId == null && (r.Status == SaleRequestStatus.Submitted || r.Status == SaleRequestStatus.UnderReview));
+        var unassignedInterest = await db.Interests.Scoped(db, rc).CountAsync(i => i.AssignedToUserId == null && i.Status == InterestStatus.Received);
         return Results.Ok(new
         {
             sale = sale.ToDictionary(x => x.Key.ToString(), x => x.n),
@@ -106,6 +107,7 @@ public static class TeamMarketEndpoints
             unassigned = new { sale = unassignedSale, interests = unassignedInterest },
             myTasks = mySale.Concat(myBuyer).Concat(myOpps).Concat(myInterests).OrderBy(t => t.at),
             permissions = rc.Permissions.Where(p => p.StartsWith("market.")),
+            scopes = rc.Grants.Where(g => g.Key.StartsWith("market.")).ToDictionary(g => g.Key, g => g.Value == GrantScope.All ? "all" : "assigned"),
         });
     }
 
@@ -113,11 +115,11 @@ public static class TeamMarketEndpoints
     {
         using var _ = rc.BeginSystemScope();
         var org = rc.OrganizationId!.Value;
-        var members = await db.Memberships.Include(m => m.Roles).ThenInclude(r => r.Role)
-            .Where(m => m.OrganizationId == org && m.Status == MembershipStatus.Active)
-            .Join(db.Users, m => m.UserId, u => u.Id, (m, u) => new { u.Id, u.FullName, role = m.Roles.Select(r => r.Role!.NameAr).FirstOrDefault() })
-            .ToListAsync();
-        return Results.Ok(members.Select(m => new { id = m.Id, name = m.FullName, m.role }));
+        var members = await db.Memberships.Include(m => m.User).Include(m => m.Roles).ThenInclude(r => r.Role!).ThenInclude(r => r.Permissions)
+            .Where(m => m.OrganizationId == org && m.Status == MembershipStatus.Active).ToListAsync();
+        // Only members who can see request work can be given some.
+        return Results.Ok(members.Where(m => EffectiveAccess.Grants(m.Roles.Select(r => r.Role!)).ContainsKey(P.MarketView))
+            .Select(m => new { id = m.UserId, name = m.User!.FullName, role = m.Roles.Select(r => r.Role!).OrderByDescending(r => r.IsSystem).Select(r => r.NameAr).FirstOrDefault() }));
     }
 
     internal static async Task<(Guid Id, string Label)> AssigneeAsync(RahoonDbContext db, RequestContext rc, Guid? userId)
@@ -126,8 +128,11 @@ public static class TeamMarketEndpoints
         Need(rc, P.MarketAssign);
         using var _ = rc.BeginSystemScope();
         var org = rc.OrganizationId!.Value;
-        var ok = await db.Memberships.AnyAsync(m => m.OrganizationId == org && m.UserId == userId && m.Status == MembershipStatus.Active);
-        if (!ok) Validate.Throw("userId", "اختر عضوًا من فريق رهون.");
+        var m = await db.Memberships.Include(x => x.Roles).ThenInclude(r => r.Role!).ThenInclude(r => r.Permissions)
+            .FirstOrDefaultAsync(x => x.OrganizationId == org && x.UserId == userId && x.Status == MembershipStatus.Active);
+        if (m is null) Validate.Throw("userId", "اختر عضوًا نشطًا من فريق رهون.");
+        if (!EffectiveAccess.Grants(m!.Roles.Select(r => r.Role!)).ContainsKey(P.MarketView))
+            Validate.Throw("userId", "هذا العضو لا يملك صلاحية عرض الطلبات، فلا يمكن إسناد العمل إليه.");
         var name = await db.Users.Where(u => u.Id == userId).Select(u => u.FullName).FirstAsync();
         return (userId!.Value, name);
     }
@@ -147,7 +152,7 @@ public static class TeamMarketEndpoints
     private static async Task<IResult> ListSale(RahoonDbContext db, RequestContext rc, string? queue, string? assigned, string? q)
     {
         var statuses = SaleQueues.GetValueOrDefault(queue ?? "all") ?? SaleQueues["all"];
-        var query = db.SaleRequests.Include(r => r.Obligations).Where(r => statuses.Contains(r.Status));
+        var query = db.SaleRequests.Scoped(rc).Include(r => r.Obligations).Where(r => statuses.Contains(r.Status));
         if (assigned == "me") query = query.Where(r => r.AssignedToUserId == rc.UserId);
         else if (assigned == "none") query = query.Where(r => r.AssignedToUserId == null);
         if (!string.IsNullOrWhiteSpace(q)) { var term = q.Trim(); query = query.Where(r => r.Reference.Contains(term) || (r.ContactName != null && r.ContactName.Contains(term))); }
@@ -161,12 +166,18 @@ public static class TeamMarketEndpoints
         }));
     }
 
-    internal static async Task<SaleRequestFile> LoadSaleAsync(RahoonDbContext db, string reference) =>
-        await SaleRequestFile.LoadAsync(db, reference) is { } f && f.Request.Status != SaleRequestStatus.Draft ? f : throw new NotFoundException();
+    /// <summary>A sent sale request the caller may see (404 otherwise) and act on with <paramref name="permission"/> (403 otherwise).</summary>
+    internal static async Task<SaleRequestFile> LoadSaleAsync(RahoonDbContext db, RequestContext rc, string reference, string permission)
+    {
+        var f = await SaleRequestFile.LoadAsync(db, reference) is { } x && x.Request.Status != SaleRequestStatus.Draft ? x : throw new NotFoundException();
+        TeamScope.Need(rc, permission, TeamScope.Assignees(f.Request));
+        return f;
+    }
 
     private static async Task<IResult> GetSale(string reference, RahoonDbContext db, RequestContext rc, IConfiguration config)
     {
-        var f = await LoadSaleAsync(db, reference);
+        Need(rc, P.MarketView);
+        var f = await LoadSaleAsync(db, rc, reference, P.MarketView);
         var r = f.Request;
         var policy = CommissionPolicy.From(config);
         string? phoneMasked;
@@ -241,27 +252,34 @@ public static class TeamMarketEndpoints
     private static object SaleActions(SaleRequestFile f, RequestContext rc)
     {
         var s = f.Request.Status;
-        var review = rc.Has(P.MarketReview);
+        var who = TeamScope.Assignees(f.Request);
+        var review = rc.CanOn(P.MarketReview, who);
+        var decide = rc.CanOn(P.MarketDecide, who);
+        var open = s is not (SaleRequestStatus.Rejected or SaleRequestStatus.Withdrawn);
         return new
         {
             assign = review && s is SaleRequestStatus.Submitted or SaleRequestStatus.UnderReview or SaleRequestStatus.NeedsCompletion or SaleRequestStatus.ApprovedForListing,
             assignOthers = rc.Has(P.MarketAssign),
             startReview = review && s == SaleRequestStatus.Submitted,
             requestCompletion = review && s is SaleRequestStatus.Submitted or SaleRequestStatus.UnderReview,
-            approve = review && s == SaleRequestStatus.UnderReview,
-            reject = review && s is SaleRequestStatus.Submitted or SaleRequestStatus.UnderReview or SaleRequestStatus.NeedsCompletion,
-            verify = review && s is not (SaleRequestStatus.Rejected or SaleRequestStatus.Withdrawn),
-            correct = review && s is not (SaleRequestStatus.Rejected or SaleRequestStatus.Withdrawn),
-            reviewFiles = review,
+            approve = decide && s == SaleRequestStatus.UnderReview,
+            reject = decide && s is SaleRequestStatus.Submitted or SaleRequestStatus.UnderReview or SaleRequestStatus.NeedsCompletion,
+            verify = rc.CanOn(P.MarketVerify, who) && open,
+            correct = rc.CanOn(P.MarketEdit, who) && open,
+            note = rc.CanOn(P.MarketEdit, who),
+            reviewFiles = rc.CanOn(P.DocumentsReview, who),
+            openDocuments = rc.CanOn(P.DocumentsRead, who),
+            contact = rc.CanOn(P.MarketFollow, who),
             externalApproval = review,
-            createOpportunity = rc.Has(P.MarketPrepare) && s == SaleRequestStatus.ApprovedForListing
+            createOpportunity = rc.CanOn(P.MarketPrepare, who) && s == SaleRequestStatus.ApprovedForListing
                                 && !f.Opportunities.Any(o => o.Status != OpportunityStatus.Withdrawn),
         };
     }
 
     private static async Task<IResult> SaleContact(string reference, RahoonDbContext db, RequestContext rc, PiiProtector pii, AuditLog audit)
     {
-        var f = await LoadSaleAsync(db, reference);
+        Need(rc, P.MarketFollow);
+        var f = await LoadSaleAsync(db, rc, reference, P.MarketFollow);
         string phone;
         using (rc.BeginSystemScope())
         {
@@ -276,7 +294,7 @@ public static class TeamMarketEndpoints
     private static async Task<IResult> AssignSale(string reference, AssignInput req, RahoonDbContext db, RequestContext rc, MarketService market, IClock clock)
     {
         Need(rc, P.MarketReview);
-        var f = await LoadSaleAsync(db, reference);
+        var f = await LoadSaleAsync(db, rc, reference, P.MarketReview);
         var (id, label) = await AssigneeAsync(db, rc, req.UserId);
         var r = f.Request;
         r.AssignedToUserId = id;
@@ -296,7 +314,7 @@ public static class TeamMarketEndpoints
     private static async Task<IResult> StartReviewSale(string reference, RahoonDbContext db, RequestContext rc, MarketService market, IClock clock)
     {
         Need(rc, P.MarketReview);
-        var f = await LoadSaleAsync(db, reference);
+        var f = await LoadSaleAsync(db, rc, reference, P.MarketReview);
         var r = f.Request;
         SaleRequestFlow.Ensure(r.Status, SaleRequestStatus.Submitted);
         Transition(r, SaleRequestStatus.UnderReview, clock);
@@ -310,7 +328,7 @@ public static class TeamMarketEndpoints
     private static async Task<IResult> CompletionSale(string reference, CompletionInput req, RahoonDbContext db, RequestContext rc, MarketService market, IClock clock)
     {
         Need(rc, P.MarketReview);
-        var f = await LoadSaleAsync(db, reference);
+        var f = await LoadSaleAsync(db, rc, reference, P.MarketReview);
         var r = f.Request;
         SaleRequestFlow.Ensure(r.Status, SaleRequestStatus.Submitted, SaleRequestStatus.UnderReview);
         var allowed = ItemKeys(f).ToHashSet();
@@ -336,8 +354,8 @@ public static class TeamMarketEndpoints
 
     private static async Task<IResult> ApproveSale(string reference, DecisionInput req, RahoonDbContext db, RequestContext rc, MarketService market, IClock clock)
     {
-        Need(rc, P.MarketReview);
-        var f = await LoadSaleAsync(db, reference);
+        Need(rc, P.MarketDecide);
+        var f = await LoadSaleAsync(db, rc, reference, P.MarketDecide);
         var r = f.Request;
         SaleRequestFlow.Ensure(r.Status, SaleRequestStatus.UnderReview);
         Transition(r, SaleRequestStatus.ApprovedForListing, clock);
@@ -354,10 +372,10 @@ public static class TeamMarketEndpoints
 
     private static async Task<IResult> RejectSale(string reference, DecisionInput req, RahoonDbContext db, RequestContext rc, MarketService market, IClock clock)
     {
-        Need(rc, P.MarketReview);
+        Need(rc, P.MarketDecide);
         var reason = req.Reason?.Trim() ?? "";
         if (reason.Length < 5) Validate.Throw("reason", "اكتب سبب الرفض بوضوح؛ سيظهر لصاحب الطلب.");
-        var f = await LoadSaleAsync(db, reference);
+        var f = await LoadSaleAsync(db, rc, reference, P.MarketDecide);
         var r = f.Request;
         SaleRequestFlow.Ensure(r.Status, SaleRequestStatus.Submitted, SaleRequestStatus.UnderReview, SaleRequestStatus.NeedsCompletion);
         var from = r.Status;
@@ -391,8 +409,8 @@ public static class TeamMarketEndpoints
 
     private static async Task<IResult> VerifyFigure(string reference, VerifyFigureInput req, RahoonDbContext db, RequestContext rc, MarketService market, IClock clock)
     {
-        Need(rc, P.MarketReview);
-        var f = await LoadSaleAsync(db, reference);
+        Need(rc, P.MarketVerify);
+        var f = await LoadSaleAsync(db, rc, reference, P.MarketVerify);
         var (def, answers, _) = ResolveKey(f, req.FieldKey);
         var raw = req.Value ?? answers.GetValueOrDefault(def.Key);
         var v = new Validator();
@@ -424,10 +442,10 @@ public static class TeamMarketEndpoints
 
     private static async Task<IResult> Correct(string reference, CorrectInput req, RahoonDbContext db, RequestContext rc, MarketService market, IClock clock)
     {
-        Need(rc, P.MarketReview);
+        Need(rc, P.MarketEdit);
         var reason = req.Reason?.Trim() ?? "";
         if (reason.Length < 5) Validate.Throw("reason", "اكتب سبب التصحيح.");
-        var f = await LoadSaleAsync(db, reference);
+        var f = await LoadSaleAsync(db, rc, reference, P.MarketEdit);
         if (f.Request.Status is SaleRequestStatus.Rejected or SaleRequestStatus.Withdrawn) throw new ConflictException("invalid_status", "الطلب مغلق.");
         var (def, answers, o) = ResolveKey(f, req.FieldKey);
         var old = answers.GetValueOrDefault(def.Key);
@@ -457,9 +475,9 @@ public static class TeamMarketEndpoints
 
     private static async Task<IResult> ReviewDocument(string reference, Guid id, FileReviewInput req, RahoonDbContext db, RequestContext rc, MarketService market, IClock clock)
     {
-        Need(rc, P.MarketReview);
+        Need(rc, P.DocumentsReview);
         var status = ParseReview(req);
-        var f = await LoadSaleAsync(db, reference);
+        var f = await LoadSaleAsync(db, rc, reference, P.DocumentsReview);
         var d = f.Documents.FirstOrDefault(x => x.Id == id) ?? throw new NotFoundException();
         d.ReviewStatus = status;
         d.ReviewNote = req.Note?.Trim() is { Length: > 0 } n ? n[..Math.Min(n.Length, 500)] : null;
@@ -474,9 +492,9 @@ public static class TeamMarketEndpoints
 
     private static async Task<IResult> ReviewPhoto(string reference, Guid id, FileReviewInput req, RahoonDbContext db, RequestContext rc, MarketService market, IClock clock)
     {
-        Need(rc, P.MarketReview);
+        Need(rc, P.DocumentsReview);
         var status = ParseReview(req);
-        var f = await LoadSaleAsync(db, reference);
+        var f = await LoadSaleAsync(db, rc, reference, P.DocumentsReview);
         var p = f.Photos.FirstOrDefault(x => x.Id == id) ?? throw new NotFoundException();
         p.ReviewStatus = status;
         p.ReviewNote = req.Note?.Trim() is { Length: > 0 } n ? n[..Math.Min(n.Length, 500)] : null;
@@ -489,7 +507,7 @@ public static class TeamMarketEndpoints
     private static async Task<IResult> RecordApproval(string reference, ExternalApprovalInput req, RahoonDbContext db, RequestContext rc, MarketService market, IClock clock)
     {
         Need(rc, P.MarketReview);
-        var f = await LoadSaleAsync(db, reference);
+        var f = await LoadSaleAsync(db, rc, reference, P.MarketReview);
         var o = f.Obligations.FirstOrDefault(x => x.Id == req.ObligationId) ?? throw new NotFoundException();
         if (!Enum.TryParse<ExternalApprovalStatus>(req.Status, true, out var status)) Validate.Throw("status", "اختر حالة الموافقة.");
         var v = new Validator();
@@ -515,9 +533,10 @@ public static class TeamMarketEndpoints
 
     private static async Task<IResult> NoteSale(string reference, NoteInput req, RahoonDbContext db, RequestContext rc, MarketService market)
     {
+        Need(rc, P.MarketEdit);
         var note = req.Note?.Trim() ?? "";
         if (note.Length < 2) Validate.Throw("note", "اكتب الملاحظة.");
-        var f = await LoadSaleAsync(db, reference);
+        var f = await LoadSaleAsync(db, rc, reference, P.MarketEdit);
         market.Event(f.Request.OrganizationId, "sale_request", f.Request.Id, f.Request.ApplicantUserId, "note", "ملاحظة داخلية", visible: false, body: note[..Math.Min(note.Length, 2000)]);
         await db.SaveChangesAsync();
         return Results.Ok(new { ok = true });
@@ -538,7 +557,7 @@ public static class TeamMarketEndpoints
     private static async Task<IResult> ListBuyer(RahoonDbContext db, RequestContext rc, string? queue, string? assigned)
     {
         var statuses = BuyerQueues.GetValueOrDefault(queue ?? "all") ?? BuyerQueues["all"];
-        var query = db.BuyerRequests.Where(r => statuses.Contains(r.Status));
+        var query = db.BuyerRequests.Scoped(rc).Where(r => statuses.Contains(r.Status));
         if (assigned == "me") query = query.Where(r => r.AssignedToUserId == rc.UserId);
         else if (assigned == "none") query = query.Where(r => r.AssignedToUserId == null);
         var rows = await query.OrderByDescending(r => r.StatusChangedAt).Take(200).ToListAsync();
@@ -550,12 +569,18 @@ public static class TeamMarketEndpoints
         }));
     }
 
-    internal static async Task<BuyerRequest> LoadBuyerAsync(RahoonDbContext db, string reference) =>
-        await db.BuyerRequests.FirstOrDefaultAsync(r => r.Reference == reference && r.Status != BuyerRequestStatus.Draft) ?? throw new NotFoundException();
+    /// <summary>A sent buyer request the caller may see (404 otherwise) and act on with <paramref name="permission"/> (403 otherwise).</summary>
+    internal static async Task<BuyerRequest> LoadBuyerAsync(RahoonDbContext db, RequestContext rc, string reference, string permission)
+    {
+        var r = await db.BuyerRequests.FirstOrDefaultAsync(r => r.Reference == reference && r.Status != BuyerRequestStatus.Draft) ?? throw new NotFoundException();
+        TeamScope.Need(rc, permission, TeamScope.Assignees(r));
+        return r;
+    }
 
     private static async Task<IResult> GetBuyer(string reference, RahoonDbContext db, RequestContext rc)
     {
-        var r = await LoadBuyerAsync(db, reference);
+        Need(rc, P.MarketView);
+        var r = await LoadBuyerAsync(db, rc, reference, P.MarketView);
         var events = await db.MarketEvents.Where(e => e.SubjectId == r.Id).OrderByDescending(e => e.At).ToListAsync();
         var completions = await db.CompletionRequests.Where(c => c.SubjectId == r.Id).OrderByDescending(c => c.RequestedAt).ToListAsync();
         var interests = await db.Interests.Where(i => i.ApplicantUserId == r.ApplicantUserId)
@@ -564,7 +589,9 @@ public static class TeamMarketEndpoints
         using (rc.BeginSystemScope())
             phoneMasked = await db.IndividualProfiles.Where(p => p.UserId == r.ApplicantUserId).Select(p => p.PhoneMasked).FirstOrDefaultAsync();
         var s = r.Status;
-        var review = rc.Has(P.MarketReview);
+        var who = TeamScope.Assignees(r);
+        var review = rc.CanOn(P.MarketReview, who);
+        var decide = rc.CanOn(P.MarketDecide, who);
         return Results.Ok(new
         {
             request = BuyerEndpoints.BuyerDto(r, completions.FirstOrDefault(c => c.AnsweredAt is null)),
@@ -578,9 +605,11 @@ public static class TeamMarketEndpoints
                 assign = review, assignOthers = rc.Has(P.MarketAssign),
                 startReview = review && s == BuyerRequestStatus.Submitted,
                 requestCompletion = review && s is BuyerRequestStatus.Submitted or BuyerRequestStatus.UnderReview,
-                approve = review && s == BuyerRequestStatus.UnderReview,
-                reject = review && s is BuyerRequestStatus.Submitted or BuyerRequestStatus.UnderReview or BuyerRequestStatus.NeedsCompletion,
+                approve = decide && s == BuyerRequestStatus.UnderReview,
+                reject = decide && s is BuyerRequestStatus.Submitted or BuyerRequestStatus.UnderReview or BuyerRequestStatus.NeedsCompletion,
                 capacity = review && s is not (BuyerRequestStatus.Rejected or BuyerRequestStatus.Withdrawn),
+                financeApproval = rc.CanOn(P.MarketVerify, who) && s is not (BuyerRequestStatus.Rejected or BuyerRequestStatus.Withdrawn),
+                note = rc.CanOn(P.MarketEdit, who),
             },
         });
     }
@@ -588,7 +617,7 @@ public static class TeamMarketEndpoints
     private static async Task<IResult> AssignBuyer(string reference, AssignInput req, RahoonDbContext db, RequestContext rc, MarketService market)
     {
         Need(rc, P.MarketReview);
-        var r = await LoadBuyerAsync(db, reference);
+        var r = await LoadBuyerAsync(db, rc, reference, P.MarketReview);
         var (id, label) = await AssigneeAsync(db, rc, req.UserId);
         r.AssignedToUserId = id;
         r.AssignedToLabel = label;
@@ -600,7 +629,7 @@ public static class TeamMarketEndpoints
     private static async Task<IResult> StartReviewBuyer(string reference, RahoonDbContext db, RequestContext rc, MarketService market, IClock clock)
     {
         Need(rc, P.MarketReview);
-        var r = await LoadBuyerAsync(db, reference);
+        var r = await LoadBuyerAsync(db, rc, reference, P.MarketReview);
         BuyerRequestFlow.Ensure(r.Status, BuyerRequestStatus.Submitted);
         r.Status = BuyerRequestStatus.UnderReview;
         r.StatusChangedAt = clock.UtcNow;
@@ -614,7 +643,7 @@ public static class TeamMarketEndpoints
     private static async Task<IResult> CompletionBuyer(string reference, CompletionInput req, RahoonDbContext db, RequestContext rc, MarketService market, IClock clock)
     {
         Need(rc, P.MarketReview);
-        var r = await LoadBuyerAsync(db, reference);
+        var r = await LoadBuyerAsync(db, rc, reference, P.MarketReview);
         BuyerRequestFlow.Ensure(r.Status, BuyerRequestStatus.Submitted, BuyerRequestStatus.UnderReview);
         var note = req.Note?.Trim() ?? "";
         if (note.Length < 5) Validate.Throw("note", "اكتب ما يحتاج استكمالًا بوضوح.");
@@ -636,8 +665,8 @@ public static class TeamMarketEndpoints
 
     private static async Task<IResult> ApproveBuyer(string reference, DecisionInput req, RahoonDbContext db, RequestContext rc, MarketService market, IClock clock)
     {
-        Need(rc, P.MarketReview);
-        var r = await LoadBuyerAsync(db, reference);
+        Need(rc, P.MarketDecide);
+        var r = await LoadBuyerAsync(db, rc, reference, P.MarketDecide);
         BuyerRequestFlow.Ensure(r.Status, BuyerRequestStatus.UnderReview);
         r.Status = BuyerRequestStatus.ApprovedForMatching;
         r.StatusChangedAt = clock.UtcNow;
@@ -653,10 +682,10 @@ public static class TeamMarketEndpoints
 
     private static async Task<IResult> RejectBuyer(string reference, DecisionInput req, RahoonDbContext db, RequestContext rc, MarketService market, IClock clock)
     {
-        Need(rc, P.MarketReview);
+        Need(rc, P.MarketDecide);
         var reason = req.Reason?.Trim() ?? "";
         if (reason.Length < 5) Validate.Throw("reason", "اكتب سبب الرفض بوضوح؛ سيظهر لصاحب الطلب.");
-        var r = await LoadBuyerAsync(db, reference);
+        var r = await LoadBuyerAsync(db, rc, reference, P.MarketDecide);
         BuyerRequestFlow.Ensure(r.Status, BuyerRequestStatus.Submitted, BuyerRequestStatus.UnderReview, BuyerRequestStatus.NeedsCompletion);
         var from = r.Status;
         r.Status = BuyerRequestStatus.Rejected;
@@ -672,7 +701,7 @@ public static class TeamMarketEndpoints
     private static async Task<IResult> CapacityReview(string reference, CapacityReviewInput req, RahoonDbContext db, RequestContext rc, MarketService market, IClock clock)
     {
         Need(rc, P.MarketReview);
-        var r = await LoadBuyerAsync(db, reference);
+        var r = await LoadBuyerAsync(db, rc, reference, P.MarketReview);
         var note = req.Note?.Trim() ?? "";
         new Validator()
             .Require(req.ReviewedAvailableNow is >= 0, "reviewedAvailableNow", "أدخل المبلغ الذي راجعه الفريق.")
@@ -690,8 +719,8 @@ public static class TeamMarketEndpoints
 
     private static async Task<IResult> FinanceApproval(string reference, FinanceApprovalInput req, RahoonDbContext db, RequestContext rc, MarketService market)
     {
-        Need(rc, P.MarketReview);
-        var r = await LoadBuyerAsync(db, reference);
+        Need(rc, P.MarketVerify);
+        var r = await LoadBuyerAsync(db, rc, reference, P.MarketVerify);
         var v = new Validator();
         v.Require(req.Status is "none" or "pre_approval" or "approved", "status", "اختر حالة موافقة التمويل.");
         if (req.Status is "pre_approval" or "approved")
@@ -710,9 +739,10 @@ public static class TeamMarketEndpoints
 
     private static async Task<IResult> NoteBuyer(string reference, NoteInput req, RahoonDbContext db, RequestContext rc, MarketService market)
     {
+        Need(rc, P.MarketEdit);
         var note = req.Note?.Trim() ?? "";
         if (note.Length < 2) Validate.Throw("note", "اكتب الملاحظة.");
-        var r = await LoadBuyerAsync(db, reference);
+        var r = await LoadBuyerAsync(db, rc, reference, P.MarketEdit);
         market.Event(r.OrganizationId, "buyer_request", r.Id, r.ApplicantUserId, "note", "ملاحظة داخلية", visible: false, body: note[..Math.Min(note.Length, 2000)]);
         await db.SaveChangesAsync();
         return Results.Ok(new { ok = true });
@@ -720,8 +750,10 @@ public static class TeamMarketEndpoints
 
     // ── Contact messages ──
 
-    private static async Task<IResult> ListContact(RahoonDbContext db, string? status)
+    /// <summary>Visitor messages belong to no case: only members who follow all work (market.follow, all) see them.</summary>
+    private static async Task<IResult> ListContact(RahoonDbContext db, RequestContext rc, string? status)
     {
+        if (!rc.HasAll(P.MarketFollow)) throw new ForbiddenException();
         var query = db.ContactMessages.AsQueryable();
         if (status == "new") query = query.Where(c => c.Status == ContactMessageStatus.New);
         var rows = await query.OrderByDescending(c => c.CreatedAt).Take(200).ToListAsync();
@@ -733,6 +765,7 @@ public static class TeamMarketEndpoints
 
     private static async Task<IResult> HandledContact(string reference, NoteInput req, RahoonDbContext db, RequestContext rc, IClock clock)
     {
+        if (!rc.HasAll(P.MarketFollow)) throw new ForbiddenException();
         var c = await db.ContactMessages.FirstOrDefaultAsync(x => x.Reference == reference) ?? throw new NotFoundException();
         c.Status = ContactMessageStatus.Handled;
         c.HandledNote = req.Note?.Trim() is { Length: > 0 } n ? n[..Math.Min(n.Length, 500)] : null;

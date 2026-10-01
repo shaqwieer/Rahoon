@@ -31,7 +31,7 @@ public sealed class CurrentModelTests(ApiFixture api)
         Assert.Equal(
             ["app.idempotency_records", "app.outbound_sms", "app.reference_counters", "audit.audit_events", "directory.organizations", "files.file_blobs",
              "files.stored_files", "identity.individual_profiles", "identity.membership_roles", "identity.memberships", "identity.organizations",
-             "identity.otp_challenges", "identity.role_permissions", "identity.roles", "identity.sessions", "identity.terms_acceptances", "identity.users",
+             "identity.otp_challenges", "identity.role_permissions", "identity.roles", "identity.sessions", "identity.staff_invitations", "identity.terms_acceptances", "identity.users",
              "public.__ef_migrations"],
             tables.Order().ToList());
 
@@ -55,7 +55,7 @@ public sealed class CurrentModelTests(ApiFixture api)
         var permissions = await api.WithDbAsync(db => db.RolePermissions.Select(p => p.PermissionKey).Distinct().ToListAsync());
         Assert.All(permissions, p => Assert.Contains(p, P.AllKeys));
         var leadPerms = await api.WithDbAsync(db => db.Roles.Include(r => r.Permissions)
-            .Where(r => r.Key == SystemRoles.TeamLead).SelectMany(r => r.Permissions.Select(p => p.PermissionKey)).ToListAsync());
+            .Where(r => r.Key == SystemRoles.PlatformOwner).SelectMany(r => r.Permissions.Select(p => p.PermissionKey)).ToListAsync());
         Assert.Contains(P.MarketPublish, leadPerms);
         Assert.Contains(P.DirectoryManage, leadPerms);
         // The demo never puts fictional organizations into the directory.
