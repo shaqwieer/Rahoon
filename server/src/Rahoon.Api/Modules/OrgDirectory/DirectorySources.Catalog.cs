@@ -148,22 +148,33 @@ public static partial class DirectorySources
         {
             if (fetched > 0) await Task.Delay(TimeSpan.FromSeconds(Math.Max(5, options.PauseSeconds)));
             string html;
-            try
+            int start;
+            var backoff = 0;
+            while (true)
             {
-                html = await GetStringAsync(http, RegaResults + page, log);
+                try
+                {
+                    html = await GetStringAsync(http, RegaResults + page, log);
+                }
+                catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or SourceRefusedException)
+                {
+                    failures.Add($"page {page}: {ex.Message} — rerun with --pages {page}-{lastPage?.ToString() ?? ""} to continue");
+                    html = "";
+                }
+                fetched++;
+                start = html.IndexOf("wafi-developers-page", StringComparison.Ordinal);
+                // REGA answers rate-limited requests with HTTP 200 and «Not Exist»: never read that as an empty list. Wait and
+                // ask again a few times (1, 2, 3 minutes); then stop and say where to resume.
+                var refused = start >= 0 && html.AsSpan(start, Math.Min(800, html.Length - start)).Contains("Not Exist", StringComparison.Ordinal);
+                if (!refused || ++backoff > 3) break;
+                log.LogInformation("REGA answered «Not Exist» for page {Page}; waiting {Minutes} min", page, backoff);
+                await Task.Delay(TimeSpan.FromMinutes(backoff));
             }
-            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or SourceRefusedException)
-            {
-                failures.Add($"page {page}: {ex.Message} — rerun with --pages {page}-{lastPage?.ToString() ?? ""} to continue");
-                break;
-            }
-            fetched++;
-            var start = html.IndexOf("wafi-developers-page", StringComparison.Ordinal);
+            if (html.Length == 0) break;
             if (start < 0) { failures.Add($"page {page}: the results section is missing (page layout changed?) — stopped"); break; }
-            // REGA answers throttled requests with HTTP 200 and «Not Exist»: never read that as an empty list.
-            if (html.AsSpan(start, Math.Min(800, html.Length - start)).Contains("Not Exist", StringComparison.Ordinal))
+            if (backoff > 3)
             {
-                failures.Add($"page {page}: REGA answered «Not Exist» (rate limited) — stopped; rerun later with --pages {page}-{lastPage?.ToString() ?? ""}");
+                failures.Add($"page {page}: REGA kept answering «Not Exist» (rate limited) — stopped; rerun later with --pages {page}-{lastPage?.ToString() ?? ""}");
                 break;
             }
             if (lastPage is null)

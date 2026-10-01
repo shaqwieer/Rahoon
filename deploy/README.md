@@ -63,9 +63,10 @@ $C run --rm api import-directory --source developers --pages 40-92   # resume wh
 $C run --rm api import-directory --file /data/import/list.csv --dry-run   # a verified official dataset file
 ```
 
-Each run prints `discovered / created / updated / skipped / failed` and why items failed. REGA rate-limits repeated
-requests (it answers «Not Exist»); the run stops there and prints the page to resume from — wait and rerun with
-`--pages`. Administrators manage the directory at `/team/organizations` (team lead).
+Each run prints `discovered / created / updated / skipped / failed` and why items failed. REGA rate-limits requests
+(it answers «Not Exist», sometimes even for the first page): the importer waits 1, 2 and 3 minutes and asks again, then
+stops and prints the page to resume from. Results are saved at the end of each run, so import REGA in chunks
+(`--pages 1-20`, `--pages 21-40`, …) and run them detached (`nohup … &`). Administrators manage the directory at `/team/organizations` (team lead).
 
 ## Backup and restore
 
