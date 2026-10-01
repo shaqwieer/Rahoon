@@ -40,6 +40,7 @@ product decisions D1–D8). This file records what the roadmap phases adopted.
 | Snapshot backfill | New typed columns filled from stored JSON only; sent/published terms never recomputed | Terms are immutable once sent |
 | Relevance | Preferences met (with a profile) → verified figures → lowest cash now (with a budget) → newest → id; no percentage | Explainable and SQL-paginated |
 | Buyer profile in search | `match=me` from the session only; URL never carries the buyer's numbers | Brief: shared URLs must not expose another buyer's profile |
+| Developer name in public | Only a developer chosen from the directory is shown and searchable; owner-typed names stay internal; financiers never | Brief asks for a project/developer filter; typed text isn't reviewed for publication |
 | Guest favorites | Not stored locally; guests sign in (existing UX) | Brief: «if supported by current UX» |
 | Negotiability filter | Not offered | Not recorded in the model |
 | Next payments | Due now, installment cadence («next due date not recorded»), extra payment with its recorded date | No next-installment date in the model; no invented dates |

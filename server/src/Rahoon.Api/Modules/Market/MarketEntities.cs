@@ -288,6 +288,7 @@ public sealed class Opportunity : OrgEntity, IApplicantOwned, IConcurrencyVersio
     public string? District { get; set; }
     public string? Project { get; set; }
     /// <summary>The developer of the live developer obligation (directory id + the name recorded), for the public developer filter.
+    /// Public only when it comes from the directory (<see cref="DeveloperPartyId"/> set); a name the owner typed stays internal.
     /// The financier's identity is never copied here: it is never public.</summary>
     public Guid? DeveloperPartyId { get; set; }
     public string? DeveloperName { get; set; }

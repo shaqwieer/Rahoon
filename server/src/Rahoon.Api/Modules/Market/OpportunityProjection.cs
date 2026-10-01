@@ -78,7 +78,8 @@ public static class OpportunityProjection
         return new
         {
             reference = o.Reference, title = o.Title, city = o.City, cityLabel = FieldCatalog.City(o.City)?.Label ?? o.City, district = o.District, project = o.Project,
-            developerName = o.Track == "financier" ? null : o.DeveloperName,
+            // Only a developer chosen from the organization directory is shown; a name the owner typed is never published unreviewed.
+            developerName = o.Track == "financier" || o.DeveloperPartyId is null ? null : o.DeveloperName,
             propertyType = o.PropertyType, propertyTypeLabel = FieldCatalog.Label(FieldCatalog.PropertyTypes, o.PropertyType),
             track = o.Track, readiness = o.Readiness, readinessLabel = o.Readiness is null ? null : FieldCatalog.Label(Readiness, o.Readiness), deliveryMonth = o.DeliveryMonth,
             area = o.Area, bedrooms = o.Bedrooms, bathrooms = o.Bathrooms, specs = Specs(o).Take(3),

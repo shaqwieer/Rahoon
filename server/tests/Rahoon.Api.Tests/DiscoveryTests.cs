@@ -334,6 +334,26 @@ public sealed class DiscoveryTests(ApiFixture api)
     }
 
     [Fact]
+    public async Task A_developer_name_the_owner_typed_is_never_public_or_searchable()
+    {
+        const string city = "qatif";
+        const string typed = "اسم كتبه المالك بنفسه";
+        var o = await DiscoveryRows.InsertAsync(api, city, new Shape { DueNow = 200_000, Total = 600_000, FutureBalance = 400_000, Installment = 3_000, Frequency = "monthly" });
+        await api.WithDbAsync(db => db.Opportunities.Where(x => x.Id == o.Id)
+            .ExecuteUpdateAsync(u => u.SetProperty(x => x.DeveloperName, typed).SetProperty(x => x.DeveloperPartyId, (Guid?)null)));
+        var c = api.Client();
+        var (_, list) = await c.GetAsync($"/api/market/opportunities?city={city}");
+        Assert.Single(Items(list));
+        Assert.DoesNotContain(typed, list!.ToJsonString());
+        var (_, search) = await c.GetAsync($"/api/market/opportunities?city={city}&project={Uri.EscapeDataString(typed)}");
+        Assert.Equal(0, search!["total"]!.GetValue<int>());
+        var (_, cmp) = await c.GetAsync($"/api/market/compare?refs={o.Reference}");
+        Assert.DoesNotContain(typed, cmp!.ToJsonString());
+        var (_, detail) = await c.GetAsync($"/api/market/opportunities/{o.Reference}");
+        Assert.DoesNotContain(typed, detail!.ToJsonString());
+    }
+
+    [Fact]
     public async Task Public_photos_are_revalidated_so_a_withdrawn_listing_stops_serving_them()
     {
         var (owner, reference) = await SubmittedAsync(api);

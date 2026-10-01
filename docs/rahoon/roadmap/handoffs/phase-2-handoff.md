@@ -1,7 +1,8 @@
 # Phase 2 handoff — Discovery, maps, explained matching, comparison, saved searches and calculators
 
 **Status:** Completed · **Date:** 2026-10-02 · **Commits on `master`:** `9a04fdd` (server spine, migration), `b4d3a35` (API
-tests), `73ebee3` (web, e2e), and a docs commit with this handoff.
+tests), `73ebee3` (web, e2e), `bf66899` (docs, line endings), and a final commit (public developer name restricted to the
+directory, its test, an e2e hydration wait, these results).
 **Push / deployment:** **not pushed, not deployed.** origin/master and staging are still at `95e2f5c` (Phase 1.5).
 
 ## Verified prerequisites
@@ -68,6 +69,9 @@ Gaps found and handled in this phase:
   - Cells read `value`, «غير معروف بعد» or «لا ينطبق» (bank vs developer paths), never a comparable zero.
   - It shows the approvals per party and, for a signed-in buyer, their fit.
   - An unavailable reference returns only `{reference, available:false}`.
+- **Developer name**: shown on cards and searchable through the «project or developer» filter **only when the developer was
+  chosen from the organization directory** (`DeveloperPartyId` set). A name the owner typed stays internal; a financier's
+  identity is never copied to the opportunity.
 - **Favorites**: signed-in only (see decisions). Saving is idempotent, unpublished opportunities answer 404, and unavailable ones are shown honestly.
 - **Saved searches** (`/api/market/my/searches`, `/account/searches`):
   - The criteria are normalized and the page is dropped. Saving the same criteria twice returns the first search.
@@ -131,13 +135,13 @@ See `../decisions.md` («Adopted in Phase 2»). The main ones:
 
 ## Tests and checks run (actual results)
 
-- `dotnet test server/tests/Rahoon.Api.Tests`: **122 passed, 0 failed**, run three times in a row. That is 101 earlier tests (one updated, see above) plus 21 new:
+- `dotnet test server/tests/Rahoon.Api.Tests`: **123 passed, 0 failed** on the final tree. Before the developer-name fix, the 122-test version ran three times in a row, all green. That is 101 earlier tests (one updated, see above) plus 22 new:
   - `AffordabilityTests`: fee allocation, stored JSON unchanged, bank rule, annual payment, incomplete cases.
-  - `DiscoveryTests`: SQL and C# agreement on 8 schedule shapes × 7 profiles; list vs map vs pages vs bounds; public points and hidden statuses; matching revisions; `match=me` privacy; favorites and comparison availability; saved-search ownership; photo revalidation.
+  - `DiscoveryTests`: SQL and C# agreement on 8 schedule shapes × 7 profiles; list vs map vs pages vs bounds; public points and hidden statuses; matching revisions; `match=me` privacy; favorites and comparison availability; saved-search ownership; a typed developer name never public; photo revalidation.
   - `SearchAlertTests`: baseline and once-only delivery, 4 parallel runs, send-time skips (withdrawn, paused, deleted, resume baseline), revision rule, sandbox SMS once, stuck rows.
 - `MarketCalculatorTests` is unchanged and green: the developer and bank examples.
 - Web: `tsc --noEmit` ✓, `eslint src e2e` ✓, `next build` ✓.
-- Playwright (local stack): **22 passed**. That is the existing 16 plus 6 new in `e2e/discovery.spec.ts`:
+- Playwright (local stack): **22 passed** on the final tree. That is the existing 16 plus 6 new in `e2e/discovery.spec.ts`. One run on the final tree failed once: the test changed a filter right after a reload, before hydration. The test now waits for the client-only map, and `discovery.spec.ts` then passed 3 times in a row. The new tests check:
   - URL reload and Back restore the same list and map set.
   - A villa response delayed 3.5 s never overwrites the newer apartment search.
   - The comparison shows «لا ينطبق», «غير معروف بعد» and «لم تعد متاحة», and the tray opens it.
@@ -169,6 +173,7 @@ See `../decisions.md` («Adopted in Phase 2»). The main ones:
 - No negotiability filter: the field doesn't exist. Adding it means a catalog field and team input first.
 - The map uses public OSM tiles (D3). The marker cap is 500 per view, with a notice.
 - Map clustering is a simple client-side pixel grid. Many opportunities sharing one approximate cell open as a list popup.
+- The filters need JavaScript. A change made before the page hydrates (slow phone, first dev compile) is lost; there is no plain-form fallback.
 - The Phase 1 `MarketCalculator.Fit` is kept only for its existing tests. Every endpoint uses `Affordability`.
 - Relevance tiers are deliberately simple: preferences met, then figure quality, then cash now, then newest.
 - No market reference data is stored per opportunity. The comparison with a market price exists only in the calculator, with a reference the person enters.

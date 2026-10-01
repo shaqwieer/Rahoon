@@ -34,6 +34,7 @@ test("the URL restores the same list and map set, and back/forward follow it", a
 
   await page.reload();
   expect(await cardRefs(page)).toEqual(first);
+  await expect(page.locator(".leaflet-container")).toBeVisible(); // the map mounts only once the page is hydrated
 
   // A filter change goes into the URL (page 1), and Back restores the earlier search.
   await page.getByLabel("المدينة").selectOption("jeddah");

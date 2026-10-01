@@ -31,7 +31,9 @@ public static class DiscoveryQuery
         if (c.Project is { } project)
         {
             var p = $"%{Escape(project)}%";
-            q = q.Where(x => (x.O.Project != null && EF.Functions.ILike(x.O.Project, p)) || (x.O.DeveloperName != null && EF.Functions.ILike(x.O.DeveloperName, p)));
+            // The developer's name is searchable only when it comes from the directory (the same rule as the card).
+            q = q.Where(x => (x.O.Project != null && EF.Functions.ILike(x.O.Project, p))
+                             || (x.O.DeveloperPartyId != null && x.O.DeveloperName != null && EF.Functions.ILike(x.O.DeveloperName, p)));
         }
         if (c.Developer is { } dev) q = q.Where(x => x.O.DeveloperPartyId == dev);
         if (c.MinArea is { } minA) q = q.Where(x => x.O.Area != null && x.O.Area >= minA);
