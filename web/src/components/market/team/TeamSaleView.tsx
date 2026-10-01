@@ -28,7 +28,7 @@ export interface TeamSaleDetail {
   opportunities: { reference: string; status: string; statusLabel: string }[];
   itemOptions: { key: string; label: string }[];
   verifiableKeys: { key: string; label: string; current: string | null; type: string; options: { value: string; label: string }[] | null }[];
-  actions: { assign: boolean; assignOthers: boolean; startReview: boolean; requestCompletion: boolean; approve: boolean; reject: boolean; verify: boolean; correct: boolean; reviewFiles: boolean; externalApproval: boolean; createOpportunity: boolean };
+  actions: { assign: boolean; assignOthers: boolean; startReview: boolean; requestCompletion: boolean; approve: boolean; reject: boolean; verify: boolean; correct: boolean; reviewFiles: boolean; externalApproval: boolean; createOpportunity: boolean; note: boolean; openDocuments: boolean; contact: boolean };
 }
 interface Approval { id: string; status: string; statusLabel: string; conditions: string | null; documentId: string | null; decisionDate: string | null; expiresOn: string | null; note: string | null; recordedByLabel: string; recordedAt: string }
 
@@ -157,7 +157,11 @@ export function TeamSaleView({ d, catalog, members }: { d: TeamSaleDetail; catal
                 {f.documents.map((doc) => (
                   <li key={doc.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-subtle px-3 py-2">
                     <span className="flex flex-col">
-                      <a href={doc.url} target="_blank" rel="noopener" className="font-semibold">{doc.kindLabel}</a>
+                      {d.actions.openDocuments ? (
+                        <a href={doc.url} target="_blank" rel="noopener" className="font-semibold">{doc.kindLabel}</a>
+                      ) : (
+                        <span className="font-semibold" title="فتح المستند يحتاج صلاحية المستندات لهذا الملف">{doc.kindLabel}</span>
+                      )}
                       <span className="text-12 text-muted">{doc.fileName} · {dayTime(doc.uploadedAt)}</span>
                       {doc.reviewNote ? <span className="text-12">ملاحظة: {doc.reviewNote}</span> : null}
                     </span>
@@ -223,7 +227,7 @@ export function TeamSaleView({ d, catalog, members }: { d: TeamSaleDetail; catal
             <dl className="m-0 flex flex-col gap-2 text-14">
               <div><dt className="text-muted">الاسم</dt><dd className="m-0 font-semibold">{d.applicant.name ?? "—"}</dd></div>
               <div><dt className="text-muted">الجوال</dt><dd className="m-0 flex items-center gap-2"><bdi dir="ltr" className="font-mono">{phone ?? d.applicant.phoneMasked}</bdi>
-                {!phone ? <button type="button" className="text-13 text-rust" onClick={async () => { const r = await apiSend<{ phone: string }>("GET", `${base}/contact`).catch(() => null); if (r) setPhone(r.phone); }}>إظهار (يُسجل)</button> : null}</dd></div>
+                {!phone && d.actions.contact ? <button type="button" className="text-13 text-rust" onClick={async () => { const r = await apiSend<{ phone: string }>("GET", `${base}/contact`).catch(() => null); if (r) setPhone(r.phone); }}>إظهار (يُسجل)</button> : null}</dd></div>
               {d.applicant.email ? <div><dt className="text-muted">البريد</dt><dd className="m-0"><bdi dir="ltr">{d.applicant.email}</bdi></dd></div> : null}
               <div><dt className="text-muted">العلاقة المقرّة</dt><dd className="m-0">{d.applicant.relationship === "owner" ? "صاحب العقار" : d.applicant.relationship === "authorized" ? "مخوّل" : "—"} {d.applicant.declarationsAcceptedAt ? `· ${day(d.applicant.declarationsAcceptedAt)}` : ""}</dd></div>
             </dl>
@@ -258,7 +262,7 @@ export function TeamSaleView({ d, catalog, members }: { d: TeamSaleDetail; catal
               </ul>
             </Card>
           ) : null}
-          <Card title="السجل" actions={<Button size="sm" variant="text" onClick={() => open("note")}>ملاحظة داخلية</Button>}>
+          <Card title="السجل" actions={d.actions.note ? <Button size="sm" variant="text" onClick={() => open("note")}>ملاحظة داخلية</Button> : null}>
             <Timeline events={d.events} />
           </Card>
         </aside>

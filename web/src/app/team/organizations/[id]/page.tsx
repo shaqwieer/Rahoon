@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { DirectoryActiveToggle, DirectoryForm, type DirectoryRecord } from "@/components/market/team/DirectoryForm";
 import { TeamHeader } from "@/components/market/team/TeamBits";
 import { Badge, Card, Row } from "@/components/market/ui";
+import { can, requireMe } from "@/lib/api/server";
 import { marketGet } from "@/lib/market/server";
 import { ORG_TYPE_LABELS } from "@/lib/market/orgTypes";
 import { day, dayTime } from "@/lib/market/format";
@@ -24,6 +25,8 @@ interface Detail extends DirectoryRecord {
 
 export default async function OrganizationDetail({ params }: PageProps<"/team/organizations/[id]">) {
   const { id } = await params;
+  const me = await requireMe();
+  const manage = can(me, "directory.manage");
   const d = await marketGet<Detail>(`/team/directory/${encodeURIComponent(id)}`);
   if (!d) notFound();
   return (
@@ -31,8 +34,23 @@ export default async function OrganizationDetail({ params }: PageProps<"/team/or
       <div className="flex flex-col gap-6">
         <TeamHeader title={d.nameAr} back={{ href: "/team/organizations", label: "دليل الجهات" }}
           sub={d.types.map((t) => ORG_TYPE_LABELS[t] ?? t).join("، ")} />
-        <DirectoryActiveToggle record={d} />
-        <DirectoryForm record={d} />
+        {manage ? (
+          <>
+            <DirectoryActiveToggle record={d} />
+            <DirectoryForm record={d} />
+          </>
+        ) : (
+          <Card title="بيانات الجهة">
+            <p className="m-0 mb-2 text-13 text-muted">للعرض فقط: التعديل يحتاج صلاحية إدارة الدليل.</p>
+            <dl className="m-0 flex flex-col">
+              <Row label="الحالة">{d.active ? "مفعّلة" : "موقوفة"}</Row>
+              <Row label="الاسم بالإنجليزية">{d.nameEn ? <bdi dir="ltr">{d.nameEn}</bdi> : "—"}</Row>
+              <Row label="الموقع الرسمي">{d.website ? <bdi dir="ltr" className="break-all">{d.website}</bdi> : "—"}</Row>
+              <Row label="رقم الترخيص">{d.licenseNumber ?? "—"}</Row>
+              <Row label="رقم السجل">{d.registrationNumber ?? "—"}</Row>
+            </dl>
+          </Card>
+        )}
       </div>
       <aside className="flex flex-col gap-4">
         <Card title="الأصل والتحقق">

@@ -16,21 +16,27 @@ import { I18nProvider, useI18n } from "@/lib/i18n/client";
 
 const c = { brand: "فريق رهون", navLabel: "تنقل فريق رهون", signOut: "تسجيل الخروج" };
 
-type TeamNavKey = "overview" | "sale" | "buyers" | "opportunities" | "interests" | "messages" | "organizations";
-/** Exit/buy workspace. Each entry shows only to members holding its permission; the API checks every call again. */
-const TEAM_NAV: Array<{ key: TeamNavKey; href: string; icon: string; permission: string; label: string }> = [
-  { key: "overview", href: "/team", icon: "dashboard", permission: "market.view", label: "مهامي والملخص" },
-  { key: "sale", href: "/team/sale", icon: "sell", permission: "market.view", label: "طلبات البيع" },
-  { key: "buyers", href: "/team/buyers", icon: "person_search", permission: "market.view", label: "طلبات المشترين" },
-  { key: "opportunities", href: "/team/opportunities", icon: "home_work", permission: "market.view", label: "الفرص" },
-  { key: "interests", href: "/team/interests", icon: "handshake", permission: "market.view", label: "الاهتمامات" },
-  { key: "messages", href: "/team/messages", icon: "mail", permission: "market.view", label: "رسائل التواصل" },
-  { key: "organizations", href: "/team/organizations", icon: "domain", permission: "directory.manage", label: "دليل الجهات" },
+type TeamNavKey = "overview" | "sale" | "buyers" | "opportunities" | "interests" | "messages" | "organizations" | "members" | "roles" | "audit";
+/**
+ * One console for the whole team. Each entry shows only to members holding one of its permissions (and, when `all`
+ * is set, holding it for all of the team's work); the API checks every call again.
+ */
+const TEAM_NAV: Array<{ key: TeamNavKey; href: string; icon: string; anyOf: string[]; all?: boolean; label: string }> = [
+  { key: "overview", href: "/team", icon: "dashboard", anyOf: ["dashboard.view"], label: "مهامي والملخص" },
+  { key: "sale", href: "/team/sale", icon: "sell", anyOf: ["market.view"], label: "طلبات البيع" },
+  { key: "buyers", href: "/team/buyers", icon: "person_search", anyOf: ["market.view"], label: "طلبات المشترين" },
+  { key: "opportunities", href: "/team/opportunities", icon: "home_work", anyOf: ["market.view"], label: "الفرص" },
+  { key: "interests", href: "/team/interests", icon: "handshake", anyOf: ["market.view"], label: "الاهتمامات" },
+  { key: "messages", href: "/team/messages", icon: "mail", anyOf: ["market.follow"], all: true, label: "رسائل التواصل" },
+  { key: "organizations", href: "/team/organizations", icon: "domain", anyOf: ["directory.read", "directory.manage"], label: "دليل الجهات" },
+  { key: "members", href: "/team/members", icon: "group", anyOf: ["team.read"], label: "الفريق" },
+  { key: "roles", href: "/team/roles", icon: "admin_panel_settings", anyOf: ["roles.read"], label: "الأدوار والصلاحيات" },
+  { key: "audit", href: "/team/audit", icon: "history", anyOf: ["audit.read"], label: "السجل" },
 ];
 
 function useNav(user: ShellUser) {
   const pathname = usePathname();
-  const items = TEAM_NAV.filter((i) => user.permissions.includes(i.permission));
+  const items = TEAM_NAV.filter((i) => i.anyOf.some((p) => user.permissions.includes(p) && (!i.all || user.scopes[p] === "all")));
   const current =
     items
       .filter((i) => pathname === i.href || pathname.startsWith(`${i.href}/`))

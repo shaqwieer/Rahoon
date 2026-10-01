@@ -14,11 +14,13 @@ export interface MeAuthenticated {
   roles: string[];
   roleName: string | null;
   permissions: string[];
+  /** Reach of each held permission: only work assigned to the member, or all of the team's work. */
+  scopes?: Record<string, "assigned" | "all">;
   /** An owner or buyer signed in by mobile. */
   individual?: { phoneMasked: string } | null;
   /** Auth:SmsConfirmation on the API. When false, one-time codes are confirmed automatically and no code step is shown. */
   smsConfirmation?: boolean;
-  /** Server-computed landing route: /team for the Rahoon team, /account for owners and buyers. */
+  /** Server-computed landing route: the first team console area the member's grants open, /account for owners and buyers. */
   home: string;
 }
 

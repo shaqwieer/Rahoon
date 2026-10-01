@@ -10,6 +10,7 @@ export interface ShellUser {
   /** Role label in Arabic from the API (e.g. «قائدة الفريق»). */
   roleName: string;
   permissions: string[];
+  scopes: Record<string, "assigned" | "all">;
   numerals: Numerals;
 }
 
@@ -21,6 +22,7 @@ export function toShellUser(me: MeAuthenticated): ShellUser {
     orgInitials: me.organization?.initials ?? "",
     roleName: me.roleName ?? "",
     permissions: me.permissions,
+    scopes: me.scopes ?? {},
     numerals: me.user.numerals === "arab" ? "arab" : "latn",
   };
 }

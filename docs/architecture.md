@@ -70,7 +70,7 @@ cited source) licensing.
   then the normalized English name; types merge. The source item that created a record owns its fields; other items only
   fill gaps. Records an administrator edited (`AdminEditedAt`) are never changed again. Nothing is ever deleted or
   deactivated by an import; a failed source changes nothing. Report: discovered, created, updated, skipped, failed.
-- **Administration** (`/api/team/directory`, permission `directory.manage`, team lead): list/search/filter (type,
+- **Administration** (`/api/team/directory`; reading needs `directory.read` or `directory.manage`, changes need `directory.manage`): list/search/filter (type,
   status, origin), add, edit (optimistic concurrency), activate/deactivate with reason — no delete. Every change is
   audited. Web: `/team/organizations`.
 - **Forms**: `GET /api/directory/organizations?kind=developer|financier` (active only) feeds the searchable picker in
@@ -94,8 +94,9 @@ through the provider named by `Storage:Provider` (default `database`), and reads
 file**, checking size and checksum. Listing photos have EXIF/XMP/IPTC metadata (including GPS) stripped before storing.
 
 Serving: `GET /api/files/{fileId}` decides access from what the file is attached to — a private document: its owner and
-the team (`market.view`); a listing photo: the same, plus anyone while it is approved and shown in a published
-opportunity. Anything else is 404. Public photos also keep `GET /api/market/photos/{photoId}`.
+team members holding `documents.read` for that request (all work, or the request is assigned to them); a listing photo:
+its owner and members holding `market.view` for that request, plus anyone while it is approved and shown in a published
+opportunity. Anything else is 404. Private files are sent `Cache-Control: no-store`. Public photos also keep `GET /api/market/photos/{photoId}`.
 
 No malware scanning is part of this platform today.
 
@@ -137,9 +138,21 @@ columns and refuses to run while any file is not copied.
 * **Tenancy** — `RequestContext` comes from the session and the active membership, never from client input. Operator
   rows have a global EF query filter; individuals see only their own applicant-owned rows; `TenantWriteGuardInterceptor`
   refuses writes outside them.
-* **Authorization** — permission catalog `Modules/Identity/Permissions.cs`: `market.view|assign|review|prepare|publish|follow`
-  and `directory.manage`. Role templates (`SystemRoles.cs`): coordinator, publication reviewer, team lead.
-  `SystemRoleSync` brings the team's roles to the templates on every migration.
+* **Authorization (Phase 1.5)** — permission catalog `Modules/Identity/Permissions.cs`, grouped by area; reserved keys of
+  later phases are listed but not grantable. Each role grant carries a **scope** (`assigned` | `all`); a member's effective
+  scope is the widest per permission across their roles (`EffectiveAccess`), never borrowed from another permission.
+  Eight protected system roles (`SystemRoles.cs`: platform owner, operations manager, case manager, document reviewer,
+  publisher, finance officer, support, auditor) are re-applied exactly by `SystemRoleSync` on every migration; custom roles
+  are edited in the console. Scope is enforced in the query and in every loader (`Modules/Market/TeamScope.cs`): lists,
+  counts, details, mutations, contact reveals and downloads. Out-of-scope records answer 404; in scope but without the
+  action's permission, 403.
+* **Team administration** — `/api/team/admin/*` (`TeamAdminEndpoints`): members, invitations, roles, effective access,
+  log. Nobody changes their own roles or status; a manager acts only on members whose grants they fully hold and grants
+  only what they hold; the last active platform owner is protected under a per-team advisory lock that also re-reads the
+  actor. Invitations are bound to an e-mail and mobile, store only the token hash, expire, are single-use and revocable;
+  no e-mail is sent (no provider), the inviter hands over `/join#token`. Bootstrap: CLI `bootstrap-owner`.
+  Membership and grants are re-read on every request, so role changes, suspension and removal apply to sessions already
+  issued; suspension and removal also revoke the member's sessions.
 * **PII** — mobiles are encrypted with ASP.NET Data Protection (`PiiProtector`) with an HMAC lookup hash and masked
   copies. The SMS log stores masked numbers and blanks one-time codes.
 * **Idempotency & concurrency** — state-changing endpoints use `.Idempotent()` (`Idempotency-Key`; same key + same

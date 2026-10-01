@@ -97,14 +97,26 @@ One account per mobile; the same account can sell and buy. Any new `05…` mobil
 | سلطان عمر القرني | `0561110011` | BR-2026-00001 · buyer request received |
 | لينا أحمد الغامدي | `0561110012` | BR-2026-00002 · approved for matching; interest IN-2026-00001 on OP-2026-00001; one saved opportunity |
 
-### «فريق رهون» — sign in at **`/login`**, lands on `/team`
+### «فريق رهون» — sign in at **`/login`**, lands on the first console area the member's grants open
+
+One demo member per default role (Phase 1.5; matrix in `docs/rahoon/roadmap/phase-1.5-admin-access.md`). «Assigned» members
+see only the work assigned to them: assign it first as the owner or the operations manager.
 
 | Name | Email | Role |
 |---|---|---|
-| لمى الحربي | `l.alharbi@team.rahoon.example` | Team lead: everything, incl. assigning, publishing and the organization directory (`/team/organizations`) |
-| نايف اليامي | `n.alyami@team.rahoon.example` | Request coordinator: review, completion, figures, prepare opportunities, interests |
-| تركي الشهري | `t.alshehri@team.rahoon.example` | Request coordinator |
-| عبير القحطاني | `a.alqahtani@team.rahoon.example` | Publication reviewer: review and publish/pause |
+| لمى الحربي | `l.alharbi@team.rahoon.example` | Platform owner: everything, incl. team, roles (`/team/members`, `/team/roles`) and the directory |
+| فهد العتيبي | `f.alotaibi@team.rahoon.example` | Operations manager: all queues, assignment, review decisions; no team/role admin, no publishing |
+| نايف اليامي | `n.alyami@team.rahoon.example` | Case manager (assigned work): review, completion, decide, prepare opportunities, interests |
+| تركي الشهري | `t.alshehri@team.rahoon.example` | Case manager (assigned work) |
+| هدى الزهراني | `h.alzahrani@team.rahoon.example` | Document reviewer (assigned work): documents and figure verification; no decision, no publishing |
+| عبير القحطاني | `a.alqahtani@team.rahoon.example` | Publisher: publish / pause / withdraw; no private documents |
+| ماجد الغامدي | `m.alghamdi@team.rahoon.example` | Finance officer (assigned work): figures and their documents |
+| ريم المطيري | `r.almutairi@team.rahoon.example` | Support: contact messages, assigned requests; no private documents |
+| سارة الدوسري | `s.aldosari@team.rahoon.example` | Auditor: read-only, the log (`/team/audit`); no private documents |
+
+Production has no demo members: the first platform owner is created with
+`dotnet Rahoon.Api.dll bootstrap-owner --email … --name "…" --phone 05…` (prints a one-time `/join#…` link; refused once
+an active owner exists). Everyone else is invited from `/team/members/invite`.
 
 ## Open the database in pgAdmin
 

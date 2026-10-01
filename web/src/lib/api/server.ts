@@ -106,3 +106,8 @@ export function redirectToHome(me: MeAuthenticated, currentPortalPrefix: string)
 export function can(me: MeAuthenticated, permission: string): boolean {
   return me.permissions.includes(permission);
 }
+
+/** True when the member holds the permission for all of the team's work (not only assigned work). */
+export function canAll(me: MeAuthenticated, permission: string): boolean {
+  return can(me, permission) && me.scopes?.[permission] === "all";
+}

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { QueueTabs, TeamHeader, TeamTable } from "@/components/market/team/TeamBits";
 import { Badge } from "@/components/market/ui";
 import { buttonClasses } from "@/components/ui/buttonStyles";
-import { apiGet } from "@/lib/api/server";
+import { apiGet, can, requireMe } from "@/lib/api/server";
 import { ORG_TYPE_LABELS } from "@/lib/market/orgTypes";
 import { day } from "@/lib/market/format";
 
@@ -31,8 +31,10 @@ interface ListResult {
 
 const str = (v: string | string[] | undefined) => (typeof v === "string" ? v : "");
 
-/** Directory administration (directory.manage): search, filter by type, status and origin; add; open to edit. */
+/** Directory administration: read with directory.read; add and edit with directory.manage. */
 export default async function TeamOrganizations({ searchParams }: PageProps<"/team/organizations">) {
+  const me = await requireMe();
+  const manage = can(me, "directory.manage");
   const sp = await searchParams;
   const q = str(sp.q), type = str(sp.type), status = str(sp.status), origin = str(sp.origin);
   const page = Number(str(sp.page)) || 1;
@@ -50,7 +52,7 @@ export default async function TeamOrganizations({ searchParams }: PageProps<"/te
       <TeamHeader
         title="دليل الجهات"
         sub="مطورون عقاريون وبنوك وشركات تمويل حقيقية من مصادر رسمية، يختار منها الملاك والمشترون. لا يُحذف شيء: الجهة تُوقف فقط."
-        actions={<Link href="/team/organizations/new" className={buttonClasses({ variant: "primary" })}>إضافة جهة</Link>}
+        actions={manage ? <Link href="/team/organizations/new" className={buttonClasses({ variant: "primary" })}>إضافة جهة</Link> : null}
       />
       <QueueTabs
         current={type || "all"}

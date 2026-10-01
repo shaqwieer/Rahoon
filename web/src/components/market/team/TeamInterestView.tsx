@@ -27,6 +27,8 @@ export interface TeamInterest {
   fit: Fit | null;
   events: MarketEvent[];
   notice: string;
+  /** Server-computed: follow-up actions need market.follow for this interest (its own scope). */
+  actions: { follow: boolean; assignOthers: boolean };
 }
 
 /** Follow-up of one interest by the team. It never reserves the property or accepts an offer. */
@@ -45,9 +47,9 @@ export function TeamInterestView({ i }: { i: TeamInterest }) {
           <h1 className="m-0 flex items-center gap-2 text-24 font-bold"><bdi dir="ltr" className="font-mono">{i.reference}</bdi><StatusBadge status={i.status} label={i.statusLabel} /></h1>
         </div>
         <div className="flex flex-wrap gap-2">
-          {i.status === "received" ? <Button onClick={() => open("follow")}>بدء المتابعة</Button> : null}
-          {i.status === "received" || i.status === "inFollowUp" ? <Button variant="secondary" onClick={() => open("close")}>إغلاق مسبب</Button> : null}
-          <Button variant="secondary" onClick={() => void run("assign", "POST", `${base}/assign`, {})}>إسناد لي</Button>
+          {i.actions.follow && i.status === "received" ? <Button onClick={() => open("follow")}>بدء المتابعة</Button> : null}
+          {i.actions.follow && (i.status === "received" || i.status === "inFollowUp") ? <Button variant="secondary" onClick={() => open("close")}>إغلاق مسبب</Button> : null}
+          {i.actions.follow ? <Button variant="secondary" onClick={() => void run("assign", "POST", `${base}/assign`, {})}>إسناد لي</Button> : null}
         </div>
       </div>
       <Alert tone="info" compact>{i.notice}</Alert>
@@ -57,7 +59,7 @@ export function TeamInterestView({ i }: { i: TeamInterest }) {
           <dl className="m-0 flex flex-col gap-2 text-14">
             <div><dt className="text-muted">الاسم</dt><dd className="m-0 font-semibold">{i.buyerName ?? "—"}</dd></div>
             <div><dt className="text-muted">الجوال</dt><dd className="m-0 flex items-center gap-2"><bdi dir="ltr" className="font-mono">{phone ?? i.phoneMasked}</bdi>
-              {!phone ? <button type="button" className="text-13 text-rust" onClick={async () => { const r = await apiSend<{ phone: string }>("GET", `${base}/contact`).catch(() => null); if (r) setPhone(r.phone); }}>إظهار (يُسجل)</button> : null}</dd></div>
+              {!phone && i.actions.follow ? <button type="button" className="text-13 text-rust" onClick={async () => { const r = await apiSend<{ phone: string }>("GET", `${base}/contact`).catch(() => null); if (r) setPhone(r.phone); }}>إظهار (يُسجل)</button> : null}</dd></div>
             <div><dt className="text-muted">التواصل المفضل</dt><dd className="m-0">{i.contactPreference === "call" ? "اتصال" : i.contactPreference === "whatsapp" ? "واتساب" : "أيهما"}</dd></div>
             {i.message ? <div><dt className="text-muted">رسالته</dt><dd className="m-0">{i.message}</dd></div> : null}
             <div><dt className="text-muted">طلب الشراء</dt><dd className="m-0">{i.buyerRequest ? <Link href={`/team/buyers/${i.buyerRequest.reference}`}>{i.buyerRequest.reference} — {i.buyerRequest.statusLabel}</Link> : "لا يوجد طلب شراء"}</dd></div>
@@ -78,7 +80,7 @@ export function TeamInterestView({ i }: { i: TeamInterest }) {
           <p className="m-0 mt-3 text-13 text-muted">المسؤول: {i.assignedTo?.label ?? "بدون"}</p>
         </Card>
       </div>
-      <Card title="السجل" actions={<Button size="sm" variant="text" onClick={() => open("note")}>ملاحظة داخلية</Button>}><Timeline events={i.events} /></Card>
+      <Card title="السجل" actions={i.actions.follow ? <Button size="sm" variant="text" onClick={() => open("note")}>ملاحظة داخلية</Button> : null}><Timeline events={i.events} /></Card>
 
       <ActionDialog open={dlg === "follow"} onClose={() => setDlg(null)} title="بدء المتابعة" confirm="بدء" busy={busy === "dlg"} onConfirm={() => run("dlg", "POST", `${base}/follow-up`, { note: text })}>
         <ActionError error={error} /><Textarea label="رسالة للمشتري (اختياري)" value={text} onChange={(e) => setText(e.target.value)} rows={2} />

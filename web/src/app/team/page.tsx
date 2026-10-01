@@ -3,7 +3,8 @@ import Link from "next/link";
 import { TeamHeader } from "@/components/market/team/TeamBits";
 import { Badge, Card } from "@/components/market/ui";
 import { Icon } from "@/components/ui/Icon";
-import { apiGet } from "@/lib/api/server";
+import { redirect } from "next/navigation";
+import { apiGet, can, requireMe } from "@/lib/api/server";
 import { day } from "@/lib/market/format";
 
 export const metadata: Metadata = { title: "مساحة فريق رهون" };
@@ -13,10 +14,12 @@ interface Overview {
   buyer: Record<string, number>;
   opportunities: Record<string, number>;
   interests: Record<string, number>;
-  contactNew: number;
+  /** Null when the member doesn't follow all work (visitor messages belong to no case). */
+  contactNew: number | null;
   unassigned: { sale: number; interests: number };
   myTasks: { kind: string; reference: string; title: string; status: string; at: string }[];
   permissions: string[];
+  scopes: Record<string, "assigned" | "all">;
 }
 
 const KIND: Record<string, { label: string; href: (r: string) => string; icon: string }> = {
@@ -28,7 +31,11 @@ const KIND: Record<string, { label: string; href: (r: string) => string; icon: s
 
 /** Team overview: queues with counts and «مهامي» (what is assigned to me and waiting for the team). */
 export default async function TeamHome() {
+  const me = await requireMe();
+  // Members without the dashboard land on the first area their grants open (computed by the API).
+  if (!can(me, "dashboard.view") || !can(me, "market.view")) redirect(me.home === "/team" ? "/access-denied" : me.home);
   const o = await apiGet<Overview>("/team/market/overview");
+  const assignedOnly = o.scopes["market.view"] === "assigned";
   const tiles = [
     { label: "طلبات بيع جديدة", n: o.sale.Submitted ?? 0, href: "/team/sale?queue=new", icon: "inbox" },
     { label: "طلبات بيع قيد المراجعة", n: o.sale.UnderReview ?? 0, href: "/team/sale?queue=review", icon: "fact_check" },
@@ -38,11 +45,14 @@ export default async function TeamHome() {
     { label: "فرص قيد الإعداد", n: (o.opportunities.Preparing ?? 0) + (o.opportunities.ReadyToPublish ?? 0), href: "/team/opportunities?status=Preparing", icon: "home_work" },
     { label: "فرص منشورة", n: o.opportunities.Published ?? 0, href: "/team/opportunities?status=Published", icon: "public" },
     { label: "اهتمامات جديدة", n: o.interests.Received ?? 0, href: "/team/interests?status=Received", icon: "handshake" },
-    { label: "رسائل تواصل جديدة", n: o.contactNew, href: "/team/messages?status=new", icon: "mail" },
+    ...(o.contactNew === null ? [] : [{ label: "رسائل تواصل جديدة", n: o.contactNew, href: "/team/messages?status=new", icon: "mail" }]),
   ];
   return (
     <div>
-      <TeamHeader title="مهامي والملخص" sub="ما يحتاج الفريق: المراجعة، طلب الاستكمال، الاعتماد، تجهيز الفرص، ومتابعة الاهتمامات." />
+      <TeamHeader title="مهامي والملخص"
+        sub={assignedOnly
+          ? "تعرض الأرقام والقوائم الأعمال المسندة إليك فقط. يسند مدير العمليات الأعمال الجديدة."
+          : "ما يحتاج الفريق: المراجعة، طلب الاستكمال، الاعتماد، تجهيز الفرص، ومتابعة الاهتمامات."} />
       <ul className="m-0 mb-6 grid list-none grid-cols-2 gap-3 p-0 md:grid-cols-3 xl:grid-cols-5">
         {tiles.map((t) => (
           <li key={t.label}>

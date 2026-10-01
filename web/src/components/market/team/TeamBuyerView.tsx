@@ -18,7 +18,7 @@ export interface TeamBuyer {
   completionRequests: { id: string; note: string; requestedAt: string; requestedByLabel: string; answeredAt: string | null }[];
   interests: { reference: string; status: string; opportunity: string; title: string; createdAt: string }[];
   assignedTo: { id: string; label: string } | null;
-  actions: { assign: boolean; assignOthers: boolean; startReview: boolean; requestCompletion: boolean; approve: boolean; reject: boolean; capacity: boolean };
+  actions: { assign: boolean; assignOthers: boolean; startReview: boolean; requestCompletion: boolean; approve: boolean; reject: boolean; capacity: boolean; financeApproval: boolean; note: boolean };
 }
 
 /** Team review of a buyer request: completion, approval for matching, capacity proof review and recorded financing approval — kept apart. */
@@ -66,7 +66,7 @@ export function TeamBuyerView({ d, catalog }: { d: TeamBuyer; catalog: Catalog }
             <div className="rounded-md bg-subtle p-3">
               <span className="block text-13 font-semibold text-muted">موافقة جهة تمويل (تصدر من الجهة، لا من رهون)</span>
               <span className="text-14">{r.capacity.financeApproval.statusLabel}{r.capacity.financeApproval.source ? ` · ${r.capacity.financeApproval.source} · ${day(r.capacity.financeApproval.date)}` : ""}</span>
-              {d.actions.capacity ? <Button size="sm" variant="text" onClick={() => open("finance")}>تسجيل حالة الموافقة</Button> : null}
+              {d.actions.financeApproval ? <Button size="sm" variant="text" onClick={() => open("finance")}>تسجيل حالة الموافقة</Button> : null}
             </div>
           </div>
         </Card>
@@ -86,7 +86,7 @@ export function TeamBuyerView({ d, catalog }: { d: TeamBuyer; catalog: Catalog }
           )}
         </Card>
       </div>
-      <Card title="السجل" actions={<Button size="sm" variant="text" onClick={() => open("note")}>ملاحظة داخلية</Button>}><Timeline events={d.events} /></Card>
+      <Card title="السجل" actions={d.actions.note ? <Button size="sm" variant="text" onClick={() => open("note")}>ملاحظة داخلية</Button> : null}><Timeline events={d.events} /></Card>
 
       <ActionDialog open={dlg === "completion"} onClose={() => setDlg(null)} title="طلب استكمال" confirm="إرسال" busy={busy === "dlg"} onConfirm={() => run("dlg", "POST", `${base}/request-completion`, { items: [], note: text })}>
         <ActionError error={error} /><Textarea label="ما المطلوب من المشتري؟" value={text} onChange={(e) => setText(e.target.value)} rows={3} />
