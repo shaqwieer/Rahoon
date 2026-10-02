@@ -201,6 +201,24 @@ What changed:
 - **Uploader.** Photos and documents use one uploader (`components/ui/Uploader`, `lib/upload`): drag-and-drop, several files, progress per file, retry, and smart compression in the browser. Photos go to at most 2560 px (WebP where the browser supports it) and scans to 3200 px JPEG; PDFs are untouched, and a file is replaced only when the compressed version is smaller. The server still validates type and size and strips photo metadata.
 - **Tests.** API 124/124 (a new team-paging test). Playwright 22/22, after updating it for the new controls.
 
+## After the phase: map, Safari and phone pass (2026-10-02, deployed)
+
+Deployed to staging at `35f981b`, then `b030a16`. Backups were taken before each deploy: `before-map-fix-20261002-1333` and `before-map-strip-20261002-1352` (a `.dump` and a keys `.tgz` each).
+
+- **Map on iOS Safari / unfiltered search.** The map skipped its `/map` request when the query was empty, because `""` was used as "not loaded yet"; the sentinel is now `null`. The search map, `LocationMap` and `MapPicker` also redraw (`invalidateSize`) on every size change, because iOS sizes the page after the map starts.
+- **Map UX.**
+  - A swipeable card strip sits inside the map; picking a card highlights its marker and pans to it.
+  - There are buttons to fit all results and to go to my location (the position isn't sent anywhere).
+  - «ابحث في هذه المنطقة» appears only after the person moves the map.
+  - A notice shows when tiles fail to load.
+  - Every map wrapper is `isolate`, so Leaflet never draws over the sticky header.
+- **Forms.** The per-opportunity calculator is restyled, and number fields carry a segmented unit («ر.س», m², …) like the other inputs.
+- **Obligations.** «أكثر من جهة» is removed: the API accepts only `developer` or `financier`, and an old draft falls back to the first party.
+- **Phones.** No sideways scroll: grids are `grid-cols-1` at the base.
+- **Tests.**
+  - API 125/125.
+  - Playwright desktop 22/22, plus a new `iphone-webkit` project (`e2e/mobile-safari.spec.ts`, 7/7), which also passes against staging (`E2E_BASE_URL`).
+
 ## Next phase and its starting instruction
 
 **Phase 3A — offers, negotiation and provisional reservations.** Starting instruction:
