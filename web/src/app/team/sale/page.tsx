@@ -3,6 +3,7 @@ import { QueueTabs, TeamHeader, TeamTable } from "@/components/market/team/TeamB
 import { Badge, StatusBadge } from "@/components/market/ui";
 import { apiGet } from "@/lib/api/server";
 import { day } from "@/lib/market/format";
+import { Pagination } from "@/components/ui/Pagination";
 
 export const metadata: Metadata = { title: "طلبات البيع" };
 
@@ -21,6 +22,8 @@ interface Row {
   ownerMarkedComplete: boolean;
 }
 
+interface Paged<T> { items: T[]; total: number; page: number; pageSize: number; pages: number }
+
 const QUEUES = [
   { key: "new", label: "جديدة" },
   { key: "review", label: "قيد المراجعة" },
@@ -34,7 +37,10 @@ export default async function TeamSaleList({ searchParams }: PageProps<"/team/sa
   const sp = await searchParams;
   const queue = typeof sp.queue === "string" ? sp.queue : "all";
   const assigned = typeof sp.assigned === "string" ? sp.assigned : "";
-  const rows = await apiGet<Row[]>(`/team/market/sale-requests?queue=${encodeURIComponent(queue)}${assigned ? `&assigned=${encodeURIComponent(assigned)}` : ""}`);
+  const page = Number(typeof sp.page === "string" ? sp.page : "1") || 1;
+  const base = `/team/sale?queue=${encodeURIComponent(queue)}${assigned ? `&assigned=${encodeURIComponent(assigned)}` : ""}`;
+  const data = await apiGet<Paged<Row>>(`/team/market/sale-requests?queue=${encodeURIComponent(queue)}${assigned ? `&assigned=${encodeURIComponent(assigned)}` : ""}&page=${page}`);
+  const rows = data.items;
   return (
     <div>
       <TeamHeader title="طلبات البيع" sub="المسودات التي لم يرسلها أصحابها لا تظهر هنا." />
@@ -61,6 +67,7 @@ export default async function TeamSaleList({ searchParams }: PageProps<"/team/sa
           ],
         }))}
       />
+      <Pagination className="mt-4" page={data.page} pages={data.pages} total={data.total} pageSize={data.pageSize} hrefFor={(p) => `${base}${p > 1 ? `&page=${p}` : ""}`} />
     </div>
   );
 }

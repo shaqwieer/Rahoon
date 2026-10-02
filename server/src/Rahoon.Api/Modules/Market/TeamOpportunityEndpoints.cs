@@ -133,20 +133,20 @@ public static class TeamOpportunityEndpoints
 
     // ── Read ──
 
-    private static async Task<IResult> List(RahoonDbContext db, RequestContext rc, string? status)
+    private static async Task<IResult> List(RahoonDbContext db, RequestContext rc, string? status, int? page, int? pageSize)
     {
         var query = db.Opportunities.Scoped(db, rc);
         if (status is { Length: > 0 } && Enum.TryParse<OpportunityStatus>(status, true, out var st)) query = query.Where(o => o.Status == st);
-        var rows = await query.OrderByDescending(o => o.StatusChangedAt).Take(200).ToListAsync();
+        var (rows, total, p, size) = await Paging.PageAsync(query.OrderByDescending(o => o.StatusChangedAt).ThenBy(o => o.Id), page, pageSize);
         var ids = rows.Select(o => o.Id).ToList();
         var interestCounts = await db.Interests.Where(i => ids.Contains(i.OpportunityId) && i.Status != InterestStatus.Withdrawn)
             .GroupBy(i => i.OpportunityId).Select(g => new { g.Key, n = g.Count() }).ToDictionaryAsync(x => x.Key, x => x.n);
-        return Results.Ok(rows.Select(o => new
+        return Results.Ok(Paging.Result(rows.Select(o => new
         {
             o.Reference, o.Title, status = o.Status, statusLabel = OpportunityFlow.Labels[o.Status], cityLabel = FieldCatalog.City(o.City)?.Label, o.District,
             propertyTypeLabel = FieldCatalog.Label(FieldCatalog.PropertyTypes, o.PropertyType), o.PublishedAt, o.StatusChangedAt, assignedTo = o.AssignedToLabel,
             interests = interestCounts.GetValueOrDefault(o.Id),
-        }));
+        }), total, p, size));
     }
 
     /// <summary>An opportunity the caller may see (404 otherwise) and act on with <paramref name="permission"/> (403 otherwise).</summary>
@@ -499,21 +499,21 @@ public static class TeamOpportunityEndpoints
 
     // ── Interests ──
 
-    private static async Task<IResult> ListInterests(RahoonDbContext db, RequestContext rc, string? status, string? assigned)
+    private static async Task<IResult> ListInterests(RahoonDbContext db, RequestContext rc, string? status, string? assigned, int? page, int? pageSize)
     {
         var query = db.Interests.Scoped(db, rc);
         if (status is { Length: > 0 } && Enum.TryParse<InterestStatus>(status, true, out var st)) query = query.Where(i => i.Status == st);
         if (assigned == "me") query = query.Where(i => i.AssignedToUserId == rc.UserId);
         else if (assigned == "none") query = query.Where(i => i.AssignedToUserId == null);
-        var rows = await query.OrderByDescending(i => i.CreatedAt).Take(200)
+        var (rows, total, p, size) = await Paging.PageAsync(query
             .Join(db.Opportunities, i => i.OpportunityId, o => o.Id, (i, o) => new { i, o.Reference, o.Title, o.Status })
-            .ToListAsync();
-        return Results.Ok(rows.Select(x => new
+            .OrderByDescending(x => x.i.CreatedAt).ThenBy(x => x.i.Id), page, pageSize);
+        return Results.Ok(Paging.Result(rows.Select(x => new
         {
             x.i.Reference, status = x.i.Status, statusLabel = InterestFlow.Labels[x.i.Status], opportunity = x.Reference, opportunityTitle = x.Title,
             opportunityStatusLabel = OpportunityFlow.Labels[x.Status], buyerName = x.i.ContactName, x.i.CreatedAt, assignedTo = x.i.AssignedToLabel,
             hasBuyerRequest = x.i.BuyerRequestId is not null,
-        }));
+        }), total, p, size));
     }
 
     private static async Task<IResult> GetInterest(string reference, RahoonDbContext db, RequestContext rc)

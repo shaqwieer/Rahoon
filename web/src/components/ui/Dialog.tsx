@@ -19,6 +19,8 @@ interface ModalBaseProps {
   initialFocusRef?: RefObject<HTMLElement | null>;
   closeOnBackdrop?: boolean;
   className?: string;
+  /** Body padding (default on). Turn off for full-bleed content that brings its own sections. */
+  padded?: boolean;
 }
 
 /**
@@ -77,7 +79,7 @@ export interface DialogProps extends ModalBaseProps {
 
 const WIDTH = { sm: "w-[min(440px,calc(100vw-32px))]", md: "w-[min(560px,calc(100vw-32px))]", lg: "w-[min(720px,calc(100vw-32px))]" };
 
-export function Dialog({ open, onClose, title, hideTitle, description, children, footer, initialFocusRef, closeOnBackdrop = true, size = "md", top, className }: DialogProps) {
+export function Dialog({ open, onClose, title, hideTitle, description, children, footer, initialFocusRef, closeOnBackdrop = true, size = "md", top, className, padded = true }: DialogProps) {
   const ref = useModalDialog({ open, onClose, initialFocusRef });
   const titleId = useId();
   const descId = useId();
@@ -91,7 +93,7 @@ export function Dialog({ open, onClose, title, hideTitle, description, children,
         if (closeOnBackdrop && e.target === e.currentTarget) onClose();
       }}
       className={cn(
-        "m-auto max-h-[calc(100dvh-32px)] overflow-visible rounded-lg bg-white p-0 text-ink shadow-3 backdrop:bg-ink/40",
+        "m-auto max-h-[calc(100dvh-32px)] overflow-hidden rounded-lg bg-white p-0 text-ink shadow-3 backdrop:bg-ink/40",
         WIDTH[size],
         top !== undefined && "mt-[var(--dlg-top)]",
         className,
@@ -100,19 +102,19 @@ export function Dialog({ open, onClose, title, hideTitle, description, children,
     >
       {open ? (
         <div className="flex max-h-[calc(100dvh-32px)] flex-col">
-          <div className={cn("flex items-center gap-3 border-b border-divider px-5 py-4", hideTitle && "sr-only")}>
-            <h2 id={titleId} className="m-0 flex-1 text-19 font-bold">
+          <div className={cn("flex items-center gap-3 border-b border-divider py-3 ps-5 pe-3 md:ps-6", hideTitle && "sr-only")}>
+            <h2 id={titleId} className="m-0 flex-1 text-18 leading-7 font-bold">
               {title}
             </h2>
             <IconButton label={t.dialog.close} icon="close" size={40} onClick={onClose} />
           </div>
           {description ? (
-            <p id={descId} className="m-0 px-5 pt-4 text-14 leading-[22px] text-muted">
+            <p id={descId} className="m-0 px-5 pt-4 text-14 leading-[22px] text-muted md:px-6">
               {description}
             </p>
           ) : null}
-          <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
-          {footer ? <div className="flex flex-wrap gap-2.5 border-t border-divider px-5 py-3.5">{footer}</div> : null}
+          <div className={cn("min-h-0 flex-1 overflow-y-auto", padded && "flex flex-col gap-4 px-5 py-5 md:px-6")}>{children}</div>
+          {footer ? <div className="flex flex-wrap items-center gap-2.5 border-t border-divider bg-warm px-5 py-3.5 md:px-6">{footer}</div> : null}
         </div>
       ) : null}
     </dialog>

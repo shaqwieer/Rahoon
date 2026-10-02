@@ -364,11 +364,11 @@ public sealed class MarketTests(ApiFixture api)
         Assert.Equal(OpportunityStatus.Published, opp.Status);
 
         var team = await api.LoginAsync(OpsManager);
-        var (_, list) = await team.GetAsync("/api/team/market/interests");
-        Assert.Contains(list!.AsArray(), x => x!["reference"]!.GetValue<string>() == TestClient.Str(i1, "reference"));
+        var (_, list) = await team.GetAsync("/api/team/market/interests?pageSize=100");
+        Assert.Contains(list!["items"]!.AsArray(), x => x!["reference"]!.GetValue<string>() == TestClient.Str(i1, "reference"));
         // Unassigned interest on an opportunity nobody gave the case manager: outside their scope.
-        var (_, cmList) = await (await api.LoginAsync(Coordinator2)).GetAsync("/api/team/market/interests");
-        Assert.DoesNotContain(cmList!.AsArray(), x => x!["reference"]!.GetValue<string>() == TestClient.Str(i1, "reference"));
+        var (_, cmList) = await (await api.LoginAsync(Coordinator2)).GetAsync("/api/team/market/interests?pageSize=100");
+        Assert.DoesNotContain(cmList!["items"]!.AsArray(), x => x!["reference"]!.GetValue<string>() == TestClient.Str(i1, "reference"));
         var (_, mine) = await owner.PostAsync($"/api/market/opportunities/{op}/interest", new { message = "x" });
         Assert.Equal("own_opportunity", TestClient.Str(mine, "code"));
     }

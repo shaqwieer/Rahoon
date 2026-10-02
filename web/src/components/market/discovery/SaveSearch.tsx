@@ -64,7 +64,7 @@ export function SaveSearch({ query, suggestedName, signedIn }: { query: string; 
       <Button variant="secondary" icon="bookmark_add" onClick={() => setOpen(true)}>احفظ هذا البحث</Button>
       <Dialog open={open} onClose={close} title="حفظ البحث" size="md">
         {done ? (
-          <div className="flex flex-col gap-3 p-5" role="status">
+          <div className="flex flex-col gap-3" role="status">
             <Alert tone="ok">{done.created ? "حفظنا البحث في حسابك." : "هذا البحث محفوظ من قبل في حسابك بالفلاتر نفسها."}</Alert>
             <p className="m-0 text-14">«{done.search.name}» — يطابقه الآن {done.search.currentMatches} {done.search.currentMatches === 1 ? "فرصة" : "فرص"}.</p>
             {done.search.alertsEnabled ? <p className="m-0 text-13 text-muted">سننبهك بالفرص الجديدة فقط؛ ما يطابق الآن محسوب كمُشاهد.</p> : null}
@@ -74,7 +74,7 @@ export function SaveSearch({ query, suggestedName, signedIn }: { query: string; 
             </div>
           </div>
         ) : (
-          <form onSubmit={submit} className="flex flex-col gap-4 p-5" noValidate>
+          <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
             {error ? <Alert tone="err" compact>{error}</Alert> : null}
             <TextField label="اسم البحث" value={name} onChange={(e) => setName(e.target.value)} placeholder={suggestedName} maxLength={80} />
             <Checkbox label="نبّهني بالفرص الجديدة التي تطابق هذا البحث" checked={alerts} onChange={(e) => setAlerts(e.target.checked)} />

@@ -354,6 +354,30 @@ public sealed class DiscoveryTests(ApiFixture api)
     }
 
     [Fact]
+    public async Task Team_lists_are_paged_without_overlap_or_a_silent_cap()
+    {
+        var lead = await api.LoginAsync(Lead);
+        foreach (var path in new[] { "sale-requests", "opportunities", "interests", "buyer-requests" })
+        {
+            var (_, first) = await Ok(lead.GetAsync($"/api/team/market/{path}?pageSize=2"));
+            var total = first!["total"]!.GetValue<int>();
+            var pages = first["pages"]!.GetValue<int>();
+            Assert.Equal(Math.Max(1, (int)Math.Ceiling(total / 2.0)), pages);
+            var seen = new List<string>();
+            for (var p = 1; p <= pages; p++)
+            {
+                var (_, body) = await Ok(lead.GetAsync($"/api/team/market/{path}?pageSize=2&page={p}"));
+                seen.AddRange(body!["items"]!.AsArray().Select(x => x!["reference"]!.GetValue<string>()));
+            }
+            Assert.Equal(total, seen.Count);
+            Assert.Equal(total, seen.Distinct().Count());
+            // Asking past the end answers the last page, not an empty one.
+            var (_, past) = await Ok(lead.GetAsync($"/api/team/market/{path}?pageSize=2&page=9999"));
+            Assert.Equal(pages, past!["page"]!.GetValue<int>());
+        }
+    }
+
+    [Fact]
     public async Task Public_photos_are_revalidated_so_a_withdrawn_listing_stops_serving_them()
     {
         var (owner, reference) = await SubmittedAsync(api);

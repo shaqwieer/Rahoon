@@ -149,21 +149,21 @@ public static class TeamMarketEndpoints
         ["all"] = [SaleRequestStatus.Submitted, SaleRequestStatus.UnderReview, SaleRequestStatus.NeedsCompletion, SaleRequestStatus.ApprovedForListing, SaleRequestStatus.Rejected, SaleRequestStatus.Withdrawn],
     };
 
-    private static async Task<IResult> ListSale(RahoonDbContext db, RequestContext rc, string? queue, string? assigned, string? q)
+    private static async Task<IResult> ListSale(RahoonDbContext db, RequestContext rc, string? queue, string? assigned, string? q, int? page, int? pageSize)
     {
         var statuses = SaleQueues.GetValueOrDefault(queue ?? "all") ?? SaleQueues["all"];
         var query = db.SaleRequests.Scoped(rc).Include(r => r.Obligations).Where(r => statuses.Contains(r.Status));
         if (assigned == "me") query = query.Where(r => r.AssignedToUserId == rc.UserId);
         else if (assigned == "none") query = query.Where(r => r.AssignedToUserId == null);
         if (!string.IsNullOrWhiteSpace(q)) { var term = q.Trim(); query = query.Where(r => r.Reference.Contains(term) || (r.ContactName != null && r.ContactName.Contains(term))); }
-        var rows = await query.OrderByDescending(r => r.StatusChangedAt).Take(200).ToListAsync();
-        return Results.Ok(rows.Select(r => new
+        var (rows, total, p, size) = await Paging.PageAsync(query.OrderByDescending(r => r.StatusChangedAt).ThenBy(r => r.Id), page, pageSize);
+        return Results.Ok(Paging.Result(rows.Select(r => new
         {
             r.Reference, status = r.Status, statusLabel = SaleRequestFlow.Labels[r.Status],
             propertyTypeLabel = FieldCatalog.Label(FieldCatalog.PropertyTypes, r.PropertyType), cityLabel = FieldCatalog.City(r.City)?.Label, r.District,
             obligationLabel = FieldCatalog.Label(FieldCatalog.ObligationModes, r.ObligationMode), applicantName = r.ContactName,
             r.SubmittedAt, r.StatusChangedAt, assignedTo = r.AssignedToLabel, ownerMarkedComplete = r.OwnerMarkedCompleteAt is not null,
-        }));
+        }), total, p, size));
     }
 
     /// <summary>A sent sale request the caller may see (404 otherwise) and act on with <paramref name="permission"/> (403 otherwise).</summary>
@@ -554,19 +554,19 @@ public static class TeamMarketEndpoints
         ["all"] = [BuyerRequestStatus.Submitted, BuyerRequestStatus.UnderReview, BuyerRequestStatus.NeedsCompletion, BuyerRequestStatus.ApprovedForMatching, BuyerRequestStatus.Rejected, BuyerRequestStatus.Withdrawn],
     };
 
-    private static async Task<IResult> ListBuyer(RahoonDbContext db, RequestContext rc, string? queue, string? assigned)
+    private static async Task<IResult> ListBuyer(RahoonDbContext db, RequestContext rc, string? queue, string? assigned, int? page, int? pageSize)
     {
         var statuses = BuyerQueues.GetValueOrDefault(queue ?? "all") ?? BuyerQueues["all"];
         var query = db.BuyerRequests.Scoped(rc).Where(r => statuses.Contains(r.Status));
         if (assigned == "me") query = query.Where(r => r.AssignedToUserId == rc.UserId);
         else if (assigned == "none") query = query.Where(r => r.AssignedToUserId == null);
-        var rows = await query.OrderByDescending(r => r.StatusChangedAt).Take(200).ToListAsync();
-        return Results.Ok(rows.Select(r => new
+        var (rows, total, p, size) = await Paging.PageAsync(query.OrderByDescending(r => r.StatusChangedAt).ThenBy(r => r.Id), page, pageSize);
+        return Results.Ok(Paging.Result(rows.Select(r => new
         {
             r.Reference, status = r.Status, statusLabel = BuyerRequestFlow.Labels[r.Status], name = r.ContactName, r.AvailableNow, r.InstallmentComfort,
             r.InstallmentFrequency, cities = r.Cities.Select(c => FieldCatalog.City(c)?.Label ?? c), types = r.PropertyTypes.Select(t => FieldCatalog.Label(FieldCatalog.PropertyTypes, t)),
             r.PurchaseMode, r.SubmittedAt, r.StatusChangedAt, assignedTo = r.AssignedToLabel, r.FinanceApprovalStatus,
-        }));
+        }), total, p, size));
     }
 
     /// <summary>A sent buyer request the caller may see (404 otherwise) and act on with <paramref name="permission"/> (403 otherwise).</summary>

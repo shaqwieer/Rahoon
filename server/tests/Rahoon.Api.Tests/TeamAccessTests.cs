@@ -70,9 +70,9 @@ public sealed class TeamAccessTests(ApiFixture api)
         Assert.Equal(HttpStatusCode.OK, (await cm.GetBytesAsync(TestClient.Str(doc, "url"))).Status);
 
         // The other manager's request: list, detail, contact, mutation — none of it is reachable.
-        var (_, list) = await Ok(cm.GetAsync("/api/team/market/sale-requests"));
-        Assert.Contains(list!.AsArray(), r => TestClient.Str(r, "reference") == mine);
-        Assert.DoesNotContain(list.AsArray(), r => TestClient.Str(r, "reference") == other);
+        var (_, list) = await Ok(cm.GetAsync("/api/team/market/sale-requests?pageSize=100"));
+        Assert.Contains(list!["items"]!.AsArray(), r => TestClient.Str(r, "reference") == mine);
+        Assert.DoesNotContain(list["items"]!.AsArray(), r => TestClient.Str(r, "reference") == other);
         Assert.Equal(HttpStatusCode.NotFound, (await cm.GetAsync($"/api/team/market/sale-requests/{other}")).Status);
         Assert.Equal(HttpStatusCode.NotFound, (await cm.GetAsync($"/api/team/market/sale-requests/{other}/contact")).Status);
         Assert.Equal(HttpStatusCode.NotFound, (await cm.PostAsync($"/api/team/market/sale-requests/{other}/start-review")).Status);
@@ -526,7 +526,8 @@ public sealed class TeamAccessTests(ApiFixture api)
         var support = await api.LoginAsync(Support);
         await Ok(support.GetAsync("/api/team/market/contact-messages"));
         var (_, list) = await Ok(support.GetAsync("/api/team/market/sale-requests"));
-        Assert.Empty(list!.AsArray());
+        Assert.Empty(list!["items"]!.AsArray());
+        Assert.Equal(0, list["total"]!.GetValue<int>());
         // A case manager follows only assigned work, so the visitor inbox (no case) is not theirs.
         Assert.Equal(HttpStatusCode.Forbidden, (await (await api.LoginAsync(Coordinator)).GetAsync("/api/team/market/contact-messages")).Status);
     }

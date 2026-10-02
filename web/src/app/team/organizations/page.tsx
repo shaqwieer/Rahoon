@@ -7,6 +7,7 @@ import { apiGet, can, requireMe } from "@/lib/api/server";
 import { ORG_TYPE_LABELS } from "@/lib/market/orgTypes";
 import { day } from "@/lib/market/format";
 import { FormDropdown } from "@/components/ui/Dropdown";
+import { Pagination } from "@/components/ui/Pagination";
 
 export const metadata: Metadata = { title: "دليل الجهات" };
 
@@ -27,6 +28,7 @@ interface ListResult {
   total: number;
   page: number;
   pages: number;
+  pageSize: number;
   counts: { all: number; active: number; developer: number; bank: number; financeCompany: number };
 }
 
@@ -106,13 +108,7 @@ export default async function TeamOrganizations({ searchParams }: PageProps<"/te
           ],
         }))}
       />
-      {data.pages > 1 ? (
-        <nav aria-label="الصفحات" className="mt-4 flex items-center gap-3 text-14">
-          {data.page > 1 ? <Link href={`/team/organizations${qs({ page: data.page - 1 })}`}>السابق</Link> : null}
-          <span>صفحة {data.page} من {data.pages}</span>
-          {data.page < data.pages ? <Link href={`/team/organizations${qs({ page: data.page + 1 })}`}>التالي</Link> : null}
-        </nav>
-      ) : null}
+      <Pagination className="mt-4" page={data.page} pages={data.pages} total={data.total} pageSize={data.pageSize} hrefFor={(p) => `/team/organizations${qs({ page: p })}`} />
     </div>
   );
 }

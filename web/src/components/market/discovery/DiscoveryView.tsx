@@ -17,6 +17,7 @@ import { apiSend, isApiError } from "@/lib/api/client";
 import { cn } from "@/lib/cn";
 import { chips, EMPTY, fromParams, hasFilters, PAGE_SIZE, SORTS, toQuery, type SearchState } from "@/lib/market/search";
 import type { Catalog, MapResult, SearchResult } from "@/lib/market/types";
+import { Pagination } from "@/components/ui/Pagination";
 
 const ResultsMap = dynamic(() => import("./ResultsMap").then((m) => m.ResultsMap), {
   ssr: false,
@@ -183,13 +184,7 @@ export function DiscoveryView({ catalog, initial, initialQuery, signedIn }: { ca
                   </li>
                 ))}
               </ul>
-              {data.pages > 1 ? (
-                <nav aria-label="الصفحات" className="flex items-center justify-center gap-2">
-                  <Button variant="secondary" icon="chevron_right" disabled={data.page <= 1 || list.loading} onClick={() => goPage(data.page - 1)}>السابق</Button>
-                  <span className="px-2 text-14">صفحة {data.page} من {data.pages}</span>
-                  <Button variant="secondary" iconEnd="chevron_left" disabled={data.page >= data.pages || list.loading} onClick={() => goPage(data.page + 1)}>التالي</Button>
-                </nav>
-              ) : null}
+              <Pagination className="border-t border-divider pt-4" page={data.page} pages={data.pages} total={data.total} pageSize={data.pageSize} onPage={goPage} disabled={list.loading} />
             </>
           ) : (
             <div className="h-64 animate-rh-pulse rounded-lg bg-subtle" />
