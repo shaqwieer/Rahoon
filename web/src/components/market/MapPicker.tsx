@@ -167,7 +167,7 @@ export function MapPicker({ value, center, onChange, disabled }: { value: Point 
           ))}
         </ul>
       ) : null}
-      <div dir="ltr" className="relative h-[320px] overflow-hidden rounded-md border border-line md:h-[380px]">
+      <div dir="ltr" className="relative isolate h-[320px] overflow-hidden rounded-md border border-line md:h-[380px]">
         <div ref={box} className="absolute inset-0 z-0" role="application" aria-label="خريطة لتحديد موقع العقار: انقر لوضع العلامة أو اسحبها" />
       </div>
       <p className="m-0 text-13 text-muted">

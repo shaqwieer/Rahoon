@@ -10,7 +10,8 @@ test("search map on an iPhone: tiles, markers and the card strip", async ({ page
   await page.reload();
   await page.getByRole("group", { name: "طريقة العرض" }).getByRole("button", { name: "الخريطة" }).click();
   await expect(page.locator(".leaflet-tile-loaded").first()).toBeVisible({ timeout: 20_000 });
-  await expect(page.locator(".leaflet-marker-icon").first()).toBeVisible();
+  // Price markers are anchored on a zero-size point (the pill is drawn around it), so count them rather than test visibility.
+  await expect.poll(() => page.locator(".leaflet-marker-icon").count()).toBeGreaterThan(0);
   const cards = page.locator("[data-mref]");
   await expect(cards.first()).toBeVisible();
   // Choosing a card highlights its marker (the selected marker is drawn on its own, dark).

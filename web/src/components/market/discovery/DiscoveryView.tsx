@@ -25,7 +25,7 @@ const ResultsMap = dynamic(() => import("./ResultsMap").then((m) => m.ResultsMap
 });
 
 const NO_MARKERS: MapResult["markers"] = [];
-const STRIP_H = 132;
+const STRIP_H = 150;
 
 /**
  * The results as a swipeable strip over the map: choosing a card highlights (and brings into view) its marker; choosing a marker
@@ -39,22 +39,22 @@ function MapStrip({ markers, selected, onSelect }: { markers: MapMarker[]; selec
   }, [selected]);
   return (
     <ul ref={rail} aria-label="الفرص على الخريطة"
-      className="absolute inset-x-0 bottom-3 z-[600] m-0 flex list-none snap-x snap-mandatory gap-2.5 overflow-x-auto px-3 pb-1 [scrollbar-width:none]">
+      className="absolute inset-x-0 bottom-2 z-[600] m-0 flex list-none snap-x snap-mandatory gap-2.5 overflow-x-auto px-3 py-1 [scrollbar-width:none]">
       {markers.map((m) => {
         const on = m.reference === selected;
         return (
           <li key={m.reference} data-mref={m.reference} className="w-[17.5rem] max-w-[82vw] flex-none snap-center">
             <div onClick={() => onSelect(m.reference)}
-              className={cn("flex h-[116px] cursor-pointer overflow-hidden rounded-lg border bg-white shadow-2 transition-[border-color,box-shadow]", on ? "border-ink ring-2 ring-ink" : "border-line")}>
-              <div className="w-24 flex-none bg-subtle">
+              className={cn("flex min-h-[124px] cursor-pointer overflow-hidden rounded-lg border bg-white shadow-2 transition-[border-color,box-shadow]", on ? "border-ink ring-2 ring-ink" : "border-line")}>
+              <div className="w-[5.5rem] flex-none self-stretch bg-subtle">
                 {m.coverUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element -- API-served listing photo
                   <img src={m.coverUrl} alt="" className="size-full object-cover" loading="lazy" />
                 ) : <div className="flex size-full items-center justify-center text-muted"><Icon name="image_not_supported" size={24} /></div>}
               </div>
-              <div className="flex min-w-0 flex-1 flex-col justify-between p-2.5">
+              <div className="flex min-w-0 flex-1 flex-col justify-between gap-1.5 p-2.5">
                 <span className="flex min-w-0 flex-col">
-                  <strong className="line-clamp-2 text-13 leading-5">{m.title}</strong>
+                  <strong className="line-clamp-1 text-13 leading-5">{m.title}</strong>
                   <span className="truncate text-12 text-muted">{m.cityLabel}{m.district ? `، ${m.district}` : ""}{m.precision === "approximate" ? " · موقع تقريبي" : ""}</span>
                 </span>
                 <span className="flex items-end justify-between gap-2">
@@ -241,20 +241,20 @@ export function DiscoveryView({ catalog, initial, initialQuery, signedIn }: { ca
           )}
         </div>
       ) : (
-        <div className="relative">
-          <div className="h-[calc(100dvh-9rem)] max-h-[760px] min-h-[460px]">
+        <div>
+          <div className="relative isolate h-[calc(100dvh-9rem)] max-h-[760px] min-h-[480px]">
             {map.error ? (
               <div role="alert" className="flex size-full flex-col items-center justify-center gap-2 rounded-lg border border-err-line bg-err-bg p-4 text-14">{map.error}</div>
             ) : (
               <ResultsMap markers={map.data?.markers ?? NO_MARKERS} selected={selected} onSelect={selectFromMap} loading={map.loading} bottomInset={STRIP_H}
                 areaActive={Boolean(state.bbox)} onSearchArea={(bbox) => go({ ...state, bbox, page: "" })} onClearArea={() => go({ ...state, bbox: "", page: "" })} />
             )}
+            {map.data && map.data.markers.length ? (
+              <MapStrip markers={map.data.markers} selected={selected} onSelect={setSelected} />
+            ) : map.data ? (
+              <p className="absolute inset-x-3 bottom-3 z-[600] m-0 rounded-md bg-white p-3 text-center text-14 shadow-2">لا توجد فرص بموقع معروض ضمن هذا البحث.</p>
+            ) : null}
           </div>
-          {map.data && map.data.markers.length ? (
-            <MapStrip markers={map.data.markers} selected={selected} onSelect={setSelected} />
-          ) : map.data ? (
-            <p className="absolute inset-x-3 bottom-3 z-[600] m-0 rounded-md bg-white p-3 text-center text-14 shadow-2">لا توجد فرص بموقع معروض ضمن هذا البحث.</p>
-          ) : null}
           {map.data ? (
             <p className="m-0 mt-2 text-13 text-muted">
               {map.data.located} {map.data.located === 1 ? "فرصة" : "فرص"} على الخريطة

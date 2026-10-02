@@ -246,7 +246,7 @@ export function ResultsMap({ markers, selected, onSelect, onSearchArea, onClearA
   };
 
   return (
-    <div dir="ltr" className="relative overflow-hidden rounded-lg border border-line bg-[#e8e4dc]" style={{ height }}>
+    <div dir="ltr" className="relative isolate overflow-hidden rounded-lg border border-line bg-[#e8e4dc]" style={{ height }}>
       <div ref={box} className="absolute inset-0 z-0" role="region" aria-label="خريطة نتائج البحث" />
       {/* Below Leaflet's zoom buttons (top left): fit all results, my location. */}
       <div className="pointer-events-none absolute top-[86px] left-[10px] z-[500] flex flex-col gap-2">

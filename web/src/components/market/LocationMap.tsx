@@ -36,7 +36,7 @@ export function LocationMap({ lat, lng, precision, height = 300 }: { lat: number
     };
   }, [lat, lng, precision]);
   return (
-    <div dir="ltr" className="relative overflow-hidden rounded-md border border-line" style={{ height }}>
+    <div dir="ltr" className="relative isolate overflow-hidden rounded-md border border-line" style={{ height }}>
       <div ref={box} className="absolute inset-0 z-0" role="img" aria-label={precision === "exact" ? "موقع العقار على الخريطة" : "المنطقة التقريبية للعقار على الخريطة"} />
     </div>
   );
