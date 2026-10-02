@@ -186,6 +186,21 @@ See `../decisions.md` («Adopted in Phase 2»). The main ones:
 - Relevance tiers are deliberately simple: preferences met, then figure quality, then cash now, then newest.
 - No market reference data is stored per opportunity. The comparison with a market price exists only in the calculator, with a reference the person enters.
 
+## After the phase: UI pass (2026-10-02, deployed)
+
+Done at the owner's request after review, pushed and deployed to staging at `98c5a3c`. The database and key ring were backed up first: `/root/rahoon-backups/before-ui-20261002-1208.dump` and `rahoon-keys-before-ui-20261002-1208.tgz`.
+
+What changed:
+- **One dropdown** (`components/ui/Dropdown`, `MultiDropdown`) and **one calendar** (`DatePicker`, plus `DateField`/`MonthField`) replace every native select and date/month input, on the public, account and team screens.
+- **Popovers can't be clipped.** Dropdowns, calendars and tips use fixed positioning (`usePopover`), so no sheet, card or table can cut them off.
+- **Search page.** A compact filter bar, with the rest of the filters in a sheet. The list/map switch works on all screens.
+- **Cards** are compact, with the full figures and the fit reasons behind tips (`InfoTip`).
+- **Sign-in** is centred.
+- **Dialogs** have padding.
+- **Pagination.** One numbered pagination (`Pagination`) everywhere. The team sale, buyer, opportunity and interest lists are now paged on the server (`Infrastructure/Http/Paging.cs`, `{ items, total, page, pageSize, pages }`), which replaces a silent 200-row cap.
+- **Uploader.** Photos and documents use one uploader (`components/ui/Uploader`, `lib/upload`): drag-and-drop, several files, progress per file, retry, and smart compression in the browser. Photos go to at most 2560 px (WebP where the browser supports it) and scans to 3200 px JPEG; PDFs are untouched, and a file is replaced only when the compressed version is smaller. The server still validates type and size and strips photo metadata.
+- **Tests.** API 124/124 (a new team-paging test). Playwright 22/22, after updating it for the new controls.
+
 ## Next phase and its starting instruction
 
 **Phase 3A — offers, negotiation and provisional reservations.** Starting instruction:
