@@ -6,6 +6,8 @@ import { cn } from "@/lib/cn";
 import { optionsFor, UNKNOWN } from "@/lib/market/catalog";
 import { toLatinDigits } from "@/lib/market/numbers";
 import type { FieldDef } from "@/lib/market/types";
+import { DatePicker } from "@/components/ui/DatePicker";
+import { Dropdown } from "@/components/ui/Dropdown";
 
 const inputCls =
   "min-h-12 w-full rounded-sm border border-line-strong bg-white px-3 text-16 outline-none transition-colors focus-visible:border-ink focus-visible:ring-2 focus-visible:ring-ink/10 disabled:bg-subtle disabled:text-soft aria-[invalid=true]:border-err";
@@ -103,15 +105,8 @@ export function DynamicField({ def, value, onChange, propertyType, error, idPref
         opts.length <= 4 ? (
           <Chips name={id} labelledBy={`${id}-label`} options={opts} value={value} onChange={(v) => onChange(v === value ? undefined : v)} invalid={Boolean(error)} describedBy={described} />
         ) : (
-          <select id={id} className={inputCls} value={unknown ? "" : (value ?? "")} disabled={unknown} aria-invalid={Boolean(error) || undefined} aria-describedby={described}
-            onChange={(e) => onChange(e.target.value || undefined)}>
-            <option value="">اختر</option>
-            {opts.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+          <Dropdown id={id} value={unknown ? "" : (value ?? "")} disabled={unknown} invalid={Boolean(error)} describedBy={described} size="lg"
+            options={opts} placeholder="اختر" onChange={(v) => onChange(v || undefined)} />
         );
       break;
     case "boolean":
@@ -132,12 +127,12 @@ export function DynamicField({ def, value, onChange, propertyType, error, idPref
       break;
     }
     case "date":
-      control = <input id={id} type="date" dir="ltr" className={cn(inputCls, "text-end")} value={unknown ? "" : (value ?? "")} disabled={unknown}
-        aria-invalid={Boolean(error) || undefined} aria-describedby={described} onChange={(e) => onChange(e.target.value || undefined)} />;
+      control = <DatePicker id={id} size="lg" value={unknown ? "" : (value ?? "")} disabled={unknown} invalid={Boolean(error)} describedBy={described}
+        onChange={(v) => onChange(v || undefined)} />;
       break;
     case "month":
-      control = <input id={id} type="month" dir="ltr" className={cn(inputCls, "text-end")} value={unknown ? "" : (value ?? "")} disabled={unknown}
-        aria-invalid={Boolean(error) || undefined} aria-describedby={described} onChange={(e) => onChange(e.target.value || undefined)} />;
+      control = <DatePicker id={id} mode="month" size="lg" value={unknown ? "" : (value ?? "")} disabled={unknown} invalid={Boolean(error)} describedBy={described}
+        onChange={(v) => onChange(v || undefined)} />;
       break;
     case "longText":
       control = <textarea id={id} rows={4} maxLength={def.max ?? 2000} className={cn(inputCls, "py-2.5 leading-7")} value={value ?? ""}

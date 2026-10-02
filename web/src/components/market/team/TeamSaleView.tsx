@@ -8,12 +8,13 @@ import { ActionDialog, ActionError, useTeamAction } from "@/components/market/te
 import { TermsBreakdown } from "@/components/market/TermsBreakdown";
 import { Badge, Card, DemoBadge, StatusBadge, Timeline } from "@/components/market/ui";
 import { Button } from "@/components/ui/Button";
-import { Checkbox, Textarea, TextField } from "@/components/ui/Field";
+import { Checkbox, DateField, Select, Textarea, TextField } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { apiSend } from "@/lib/api/client";
 import { label, obligationFields, propertyFields, UNKNOWN } from "@/lib/market/catalog";
 import { day, dayTime } from "@/lib/market/format";
 import type { Catalog, MarketEvent, SaleFile } from "@/lib/market/types";
+import { Dropdown } from "@/components/ui/Dropdown";
 
 export interface TeamSaleDetail {
   file: SaleFile;
@@ -40,7 +41,6 @@ const APPROVAL = [
   { value: "NotRequested", label: "لم تُطلب" }, { value: "Requested", label: "قيد الطلب" }, { value: "Conditional", label: "مشروطة" },
   { value: "Approved", label: "موافق عليها" }, { value: "Rejected", label: "مرفوضة" }, { value: "Expired", label: "انتهت صلاحيتها" },
 ];
-const sel = "min-h-11 w-full rounded-sm border border-line-strong bg-white px-3 text-15";
 
 function show(v: string | undefined, f?: { type: string; options?: { value: string; label: string }[] | null }) {
   if (v === undefined || v === "") return "—";
@@ -238,10 +238,9 @@ export function TeamSaleView({ d, catalog, members }: { d: TeamSaleDetail; catal
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" variant="secondary" onClick={() => void run("assign", "POST", `${base}/assign`, {})}>إسناد لي</Button>
                 {d.actions.assignOthers ? (
-                  <select aria-label="إسناد إلى" className={`${sel} w-auto`} defaultValue="" onChange={(e) => e.target.value && void run("assign", "POST", `${base}/assign`, { userId: e.target.value })}>
-                    <option value="">إسناد إلى…</option>
-                    {members.map((m) => <option key={m.id} value={m.id}>{m.name}{m.role ? ` (${m.role})` : ""}</option>)}
-                  </select>
+                  <Dropdown ariaLabel="إسناد إلى" size="sm" className="w-56" value="" placeholder="إسناد إلى…" icon="person_add"
+                    options={members.map((m) => ({ value: m.id, label: m.name, hint: m.role ?? undefined }))}
+                    onChange={(v) => v && void run("assign", "POST", `${base}/assign`, { userId: v })} />
                 ) : null}
               </div>
             ) : null}
@@ -295,16 +294,10 @@ export function TeamSaleView({ d, catalog, members }: { d: TeamSaleDetail; catal
         <ActionError error={error} />
         <span className="text-14 font-semibold">{d.verifiableKeys.find((k) => k.key === vf.fieldKey)?.label}</span>
         <TextField label="القيمة كما في المستند" value={vf.value} onChange={(e) => setVf({ ...vf, value: e.target.value })} ltr />
-        <label className="flex flex-col gap-1 text-14 font-semibold">المصدر
-          <select className={sel} value={vf.source} onChange={(e) => setVf({ ...vf, source: e.target.value })}>{SOURCES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}</select>
-        </label>
-        <label className="flex flex-col gap-1 text-14 font-semibold">المستند
-          <select className={sel} value={vf.sourceDocumentId} onChange={(e) => setVf({ ...vf, sourceDocumentId: e.target.value })}>
-            <option value="">بدون مستند مرفق</option>
-            {f.documents.map((doc) => <option key={doc.id} value={doc.id}>{doc.kindLabel} — {doc.fileName}</option>)}
-          </select>
-        </label>
-        <TextField label="تاريخ المستند" type="date" ltr value={vf.sourceDate} onChange={(e) => setVf({ ...vf, sourceDate: e.target.value })} />
+        <Select label="المصدر" value={vf.source} onValueChange={(v) => setVf({ ...vf, source: v })} options={SOURCES} />
+        <Select label="المستند" value={vf.sourceDocumentId} onValueChange={(v) => setVf({ ...vf, sourceDocumentId: v })}
+          options={[{ value: "", label: "بدون مستند مرفق" }, ...f.documents.map((doc) => ({ value: doc.id, label: doc.kindLabel, hint: doc.fileName }))]} />
+        <DateField label="تاريخ المستند" value={vf.sourceDate} onValueChange={(v) => setVf({ ...vf, sourceDate: v })} />
         <TextField label="ملاحظة (اختياري)" value={vf.note} onChange={(e) => setVf({ ...vf, note: e.target.value })} />
       </ActionDialog>
       <ActionDialog open={dlg === "correct"} onClose={() => setDlg(null)} title="تصحيح معلومة" confirm="حفظ التصحيح" busy={busy === "dlg"}
@@ -316,19 +309,13 @@ export function TeamSaleView({ d, catalog, members }: { d: TeamSaleDetail; catal
       <ActionDialog open={dlg === "approval"} onClose={() => setDlg(null)} title="موافقة المطور أو جهة التمويل" confirm="تسجيل" busy={busy === "dlg"}
         onConfirm={() => run("dlg", "POST", `${base}/external-approvals`, { obligationId: ap.obligationId, status: ap.status, conditions: ap.conditions || null, documentId: ap.documentId || null, decisionDate: ap.decisionDate || null, expiresOn: ap.expiresOn || null, note: ap.note || null })}>
         <ActionError error={error} />
-        <label className="flex flex-col gap-1 text-14 font-semibold">الحالة
-          <select className={sel} value={ap.status} onChange={(e) => setAp({ ...ap, status: e.target.value })}>{APPROVAL.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}</select>
-        </label>
+        <Select label="الحالة" value={ap.status} onValueChange={(v) => setAp({ ...ap, status: v })} options={APPROVAL} />
         <Textarea label="الشروط كما في مستند الجهة" value={ap.conditions} onChange={(e) => setAp({ ...ap, conditions: e.target.value })} rows={2} />
-        <label className="flex flex-col gap-1 text-14 font-semibold">مستند الجهة
-          <select className={sel} value={ap.documentId} onChange={(e) => setAp({ ...ap, documentId: e.target.value })}>
-            <option value="">—</option>
-            {f.documents.map((doc) => <option key={doc.id} value={doc.id}>{doc.kindLabel} — {doc.fileName}</option>)}
-          </select>
-        </label>
+        <Select label="مستند الجهة" value={ap.documentId} onValueChange={(v) => setAp({ ...ap, documentId: v })}
+          options={[{ value: "", label: "بدون مستند" }, ...f.documents.map((doc) => ({ value: doc.id, label: doc.kindLabel, hint: doc.fileName }))]} />
         <div className="grid grid-cols-2 gap-3">
-          <TextField label="تاريخ القرار" type="date" ltr value={ap.decisionDate} onChange={(e) => setAp({ ...ap, decisionDate: e.target.value })} />
-          <TextField label="صالحة حتى" type="date" ltr value={ap.expiresOn} onChange={(e) => setAp({ ...ap, expiresOn: e.target.value })} />
+          <DateField label="تاريخ القرار" value={ap.decisionDate} onValueChange={(v) => setAp({ ...ap, decisionDate: v })} />
+          <DateField label="صالحة حتى" value={ap.expiresOn} onValueChange={(v) => setAp({ ...ap, expiresOn: v })} />
         </div>
       </ActionDialog>
       <ActionDialog open={dlg === "fileReject"} onClose={() => setDlg(null)} title={rejectFile?.kind === "photos" ? "عدم قبول الصورة" : "عدم قبول المستند"} confirm="حفظ القرار" tone="sensitive" busy={busy === "dlg"}

@@ -4,6 +4,9 @@ import { Chips } from "@/components/market/DynamicField";
 import { OrgPicker } from "@/components/market/OrgPicker";
 import { toLatinDigits } from "@/lib/market/numbers";
 import type { Catalog } from "@/lib/market/types";
+import { DatePicker } from "@/components/ui/DatePicker";
+import { Dropdown } from "@/components/ui/Dropdown";
+import { UnitInput } from "@/components/ui/UnitInput";
 
 export interface BuyerValues {
   availableNow: string;
@@ -69,11 +72,7 @@ function Money({ id, label, help, value, onChange, error, optional }: { id: stri
         {label}
         {optional ? <span className="ms-1 text-13 font-normal text-muted">(اختياري)</span> : null}
       </label>
-      <div className="relative">
-        <input id={id} inputMode="numeric" dir="ltr" className={`${inputCls} ps-12 text-end tabular-nums`} value={value} aria-invalid={Boolean(error) || undefined}
-          onChange={(e) => onChange(e.target.value)} />
-        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-14 text-muted">ر.س</span>
-      </div>
+      <UnitInput id={id} size="lg" value={value} onChange={onChange} invalid={Boolean(error)} />
       {help ? <span className="text-13 text-muted">{help}</span> : null}
       {error ? <span className="text-13 text-err">{error}</span> : null}
     </div>
@@ -90,9 +89,7 @@ export function CapacityFields({ v, set, errors, catalog }: { v: BuyerValues; se
           help="إذا كنت تقبل إكمال أقساط لدى المطور." />
         <div className="flex flex-col gap-1.5">
           <label htmlFor="b-freq" className="text-15 font-semibold">دوريته</label>
-          <select id="b-freq" className={inputCls} value={v.installmentFrequency} onChange={(e) => set({ installmentFrequency: e.target.value })}>
-            {catalog.frequencies.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
-          </select>
+          <Dropdown id="b-freq" size="lg" className="sm:w-40" value={v.installmentFrequency} options={catalog.frequencies} onChange={(x) => set({ installmentFrequency: x })} />
         </div>
       </div>
       <Money id="b-maxPrice" label="الحد الأقصى لإجمالي ما تدفعه" optional value={v.maxPrice} onChange={(x) => set({ maxPrice: x })} error={errors.maxPrice}
@@ -151,10 +148,8 @@ export function PreferenceFields({ v, set, errors, catalog }: { v: BuyerValues; 
         {residential ? (
           <div className="flex flex-col gap-1.5">
             <label htmlFor="b-beds" className="text-15 font-semibold">غرف النوم (على الأقل)</label>
-            <select id="b-beds" className={inputCls} value={v.bedroomsMin} onChange={(e) => set({ bedroomsMin: e.target.value })}>
-              <option value="">أي عدد</option>
-              {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}+</option>)}
-            </select>
+            <Dropdown id="b-beds" size="lg" value={v.bedroomsMin} onChange={(x) => set({ bedroomsMin: x })}
+              options={[{ value: "", label: "أي عدد" }, ...[1, 2, 3, 4, 5].map((n) => ({ value: String(n), label: `${n}+` }))]} />
           </div>
         ) : null}
       </div>
@@ -166,7 +161,7 @@ export function PreferenceFields({ v, set, errors, catalog }: { v: BuyerValues; 
       {v.readiness !== "ready" ? (
         <div className="flex flex-col gap-1.5 sm:max-w-[260px]">
           <label htmlFor="b-delivery" className="text-15 font-semibold">موعد الاستلام المفضل (قبل) <span className="text-13 font-normal text-muted">(اختياري)</span></label>
-          <input id="b-delivery" type="month" dir="ltr" className={`${inputCls} text-end`} value={v.deliveryBy} onChange={(e) => set({ deliveryBy: e.target.value })} />
+          <DatePicker id="b-delivery" mode="month" size="lg" value={v.deliveryBy} onChange={(x) => set({ deliveryBy: x })} />
         </div>
       ) : null}
     </div>

@@ -11,11 +11,11 @@ import { OpportunityCard } from "@/components/market/OpportunityCard";
 import { Amount } from "@/components/market/ui";
 import { Button } from "@/components/ui/Button";
 import { buttonClasses } from "@/components/ui/buttonStyles";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { Icon } from "@/components/ui/Icon";
 import { apiSend, isApiError } from "@/lib/api/client";
 import { cn } from "@/lib/cn";
-import { useMediaQuery } from "@/lib/hooks";
-import { chips, EMPTY, fromParams, hasFilters, PAGE_SIZE, toQuery, type SearchState } from "@/lib/market/search";
+import { chips, EMPTY, fromParams, hasFilters, PAGE_SIZE, SORTS, toQuery, type SearchState } from "@/lib/market/search";
 import type { Catalog, MapResult, SearchResult } from "@/lib/market/types";
 
 const ResultsMap = dynamic(() => import("./ResultsMap").then((m) => m.ResultsMap), {
@@ -38,9 +38,25 @@ export function DiscoveryView({ catalog, initial, initialQuery, signedIn }: { ca
   const state = useMemo(() => fromParams(sp), [sp]);
   const query = useMemo(() => toQuery(state), [state]);
   const mapQuery = useMemo(() => toQuery({ ...state, page: "" }, { page: false }), [state]);
-  const desktop = useMediaQuery("(min-width: 1024px)");
-  const [view, setView] = useState<"list" | "map">("list");
-  const mapVisible = desktop || view === "map";
+  const [view, setViewState] = useState<"list" | "map">("list");
+  const mapVisible = view === "map";
+  // The chosen view is a per-browser preference (not part of the shareable search).
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- restore a stored preference after hydration
+      if (window.localStorage.getItem("rahoon.discovery.view") === "map") setViewState("map");
+    } catch {
+      /* storage unavailable */
+    }
+  }, []);
+  const setView = (v: "list" | "map") => {
+    setViewState(v);
+    try {
+      window.localStorage.setItem("rahoon.discovery.view", v);
+    } catch {
+      /* storage unavailable */
+    }
+  };
   const [selected, setSelected] = useState<string | null>(null);
   const listTop = useRef<HTMLDivElement>(null);
 
@@ -97,26 +113,23 @@ export function DiscoveryView({ catalog, initial, initialQuery, signedIn }: { ca
     listTop.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  const selectFromMap = (ref: string) => {
-    setSelected(ref);
-    if (!desktop) return;
-    document.querySelector<HTMLElement>(`[data-ref="${CSS.escape(ref)}"]`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  };
+  const selectFromMap = (ref: string) => setSelected(ref);
 
   const data = list.data;
-  const shownRefs = new Set(data?.items.map((i) => i.card.reference) ?? []);
-  const selectedOffPage = selected && !shownRefs.has(selected) ? map.data?.markers.find((m) => m.reference === selected) : null;
-  const suggestedName = chips(state, catalog).slice(0, 3).map((c) => c.text).join(" · ") || "كل الفرص المنشورة";
+  const selectedItem = selected ? data?.items.find((i) => i.card.reference === selected) : null;
+  const selectedMarker = selected && !selectedItem ? map.data?.markers.find((m) => m.reference === selected) : null;
+  const suggestedName = chips(state, catalog).slice(0, 3).map((c) => c.text).join("، ") || "كل الفرص المنشورة";
   const saveQuery = toQuery({ ...state, page: "" }, { page: false });
+  const sortOptions = [{ value: "", label: state.maxNow || state.maxInstallment || state.maxTotal || state.match ? "الأنسب (افتراضي)" : "الأحدث (افتراضي)" }, ...SORTS];
 
   return (
-    <div className="flex flex-col gap-5 pb-16">
-      <SearchPanel value={state} onApply={go} catalog={catalog} total={data?.total ?? null} excluded={data?.excludedIncomplete ?? 0} loading={list.loading} signedIn={signedIn} />
+    <div className="flex flex-col gap-4 pb-16">
+      <SearchPanel value={state} onApply={go} catalog={catalog} signedIn={signedIn} />
 
       {data?.profile && state.match === "me" ? (
         data.profile.applied ? (
           <p className="m-0 flex items-center gap-2 rounded-md border border-info-line bg-info-bg p-3 text-14">
-            <Icon name="person_check" size={20} className="text-info" />
+            <Icon name="person_check" size={20} className="flex-none text-info" />
             نطبّق قدرتك الشرائية المسجلة (طلب <bdi dir="ltr" className="font-mono">{data.profile.reference}</bdi>، تحديث {data.profile.revision}) من حسابك؛ رابط هذه الصفحة لا يحمل أرقامك.
           </p>
         ) : (
@@ -126,29 +139,34 @@ export function DiscoveryView({ catalog, initial, initialQuery, signedIn }: { ca
         )
       ) : null}
 
-      <div ref={listTop} className="flex scroll-mt-24 flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-col gap-0.5">
-          {data ? <span className="text-13 text-muted">الترتيب: {data.sortExplanation}</span> : null}
-          {data && data.withoutLocation > 0 && mapVisible ? (
-            <span className="text-13 text-muted">{data.withoutLocation} من النتائج بلا موقع معروض، فلا تظهر على الخريطة.</span>
+      <div ref={listTop} className="flex scroll-mt-24 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <div role="status" aria-live="polite" className="flex min-w-0 flex-col">
+          <span className="text-16">
+            {data ? <><strong className="text-18">{data.total}</strong> {data.total === 1 ? "فرصة" : "فرص"}</> : "…"}
+            {list.loading ? <Icon name="progress_activity" size={16} className="ms-2 inline animate-rh-spin text-muted" /> : null}
+          </span>
+          {data && data.excludedIncomplete > 0 ? (
+            <span className="text-12 text-muted">استبعدنا {data.excludedIncomplete} {data.excludedIncomplete === 1 ? "فرصة أرقامها" : "فرص أرقامها"} غير مكتملة للمقارنة</span>
           ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <SaveSearch query={saveQuery} suggestedName={suggestedName} signedIn={signedIn} />
-          <div role="group" aria-label="طريقة العرض" className="flex rounded-sm border border-line-strong lg:hidden">
+          <Dropdown ariaLabel="الترتيب" icon="swap_vert" className="w-52" size="sm" value={state.sort} options={sortOptions} onChange={(v) => go({ ...state, sort: v, page: "" })} />
+          <div role="group" aria-label="طريقة العرض" className="inline-flex rounded-sm border border-line-strong bg-white p-0.5">
             {(["list", "map"] as const).map((v) => (
               <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)}
-                className={cn("inline-flex min-h-10 items-center gap-1 px-3 text-14 font-semibold", view === v ? "bg-ink text-white" : "bg-white text-charcoal")}>
-                <Icon name={v === "list" ? "view_list" : "map"} size={18} />
+                className={cn("inline-flex min-h-9 items-center gap-1 rounded-xs px-3 text-13 font-semibold transition-colors", view === v ? "bg-ink text-white" : "text-charcoal hover:bg-subtle")}>
+                <Icon name={v === "list" ? "grid_view" : "map"} size={18} />
                 {v === "list" ? "القائمة" : "الخريطة"}
               </button>
             ))}
           </div>
+          <SaveSearch query={saveQuery} suggestedName={suggestedName} signedIn={signedIn} />
         </div>
       </div>
+      {data ? <p className="-mt-2 m-0 text-12 text-muted">الترتيب: {data.sortExplanation}</p> : null}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.85fr)]">
-        <div className={cn("flex min-w-0 flex-col gap-5", !desktop && view === "map" && "hidden")} aria-busy={list.loading || undefined}>
+      {view === "list" ? (
+        <div className="flex min-w-0 flex-col gap-5" aria-busy={list.loading || undefined}>
           {list.error && !data ? (
             <div role="alert" className="flex flex-col items-start gap-3 rounded-lg border border-err-line bg-err-bg p-5">
               <strong>{list.error}</strong>
@@ -158,24 +176,18 @@ export function DiscoveryView({ catalog, initial, initialQuery, signedIn }: { ca
             <EmptyState state={state} onApply={go} />
           ) : data ? (
             <>
-              {selectedOffPage ? (
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-rust-200 bg-rust-50 p-3 text-14" role="status">
-                  <span>من الخريطة: <strong>{selectedOffPage.title}</strong> — المطلوب الآن <Amount value={selectedOffPage.dueNow} size="sm" strong unknown="غير مكتمل" /></span>
-                  <Link href={`/opportunities/${selectedOffPage.reference}`} className="font-semibold">عرض التفاصيل</Link>
-                </div>
-              ) : null}
-              <ul className={cn("m-0 grid list-none grid-cols-1 gap-5 p-0 sm:grid-cols-2 transition-opacity", list.loading && "opacity-60")}>
+              <ul className={cn("m-0 grid list-none grid-cols-1 gap-4 p-0 transition-opacity sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4", list.loading && "opacity-60")}>
                 {data.items.map((i) => (
-                  <li key={i.card.reference} onMouseEnter={() => setSelected(i.card.reference)} onFocus={() => setSelected(i.card.reference)}>
-                    <OpportunityCard card={i.card} fit={i.fit} match={i.match} signedIn={signedIn} highlighted={selected === i.card.reference} />
+                  <li key={i.card.reference}>
+                    <OpportunityCard card={i.card} fit={i.fit} match={i.match} signedIn={signedIn} />
                   </li>
                 ))}
               </ul>
               {data.pages > 1 ? (
                 <nav aria-label="الصفحات" className="flex items-center justify-center gap-2">
-                  <Button variant="secondary" disabled={data.page <= 1 || list.loading} onClick={() => goPage(data.page - 1)}>السابق</Button>
-                  <span className="text-14">صفحة {data.page} من {data.pages}</span>
-                  <Button variant="secondary" disabled={data.page >= data.pages || list.loading} onClick={() => goPage(data.page + 1)}>التالي</Button>
+                  <Button variant="secondary" icon="chevron_right" disabled={data.page <= 1 || list.loading} onClick={() => goPage(data.page - 1)}>السابق</Button>
+                  <span className="px-2 text-14">صفحة {data.page} من {data.pages}</span>
+                  <Button variant="secondary" iconEnd="chevron_left" disabled={data.page >= data.pages || list.loading} onClick={() => goPage(data.page + 1)}>التالي</Button>
                 </nav>
               ) : null}
             </>
@@ -183,24 +195,48 @@ export function DiscoveryView({ catalog, initial, initialQuery, signedIn }: { ca
             <div className="h-64 animate-rh-pulse rounded-lg bg-subtle" />
           )}
         </div>
-
-        {mapVisible ? (
-          <div className="lg:sticky lg:top-24 lg:self-start">
-            <div className="h-[70vh] lg:h-[calc(100vh-8rem)]">
-              {map.error ? (
-                <div role="alert" className="flex size-full flex-col items-center justify-center gap-2 rounded-lg border border-err-line bg-err-bg p-4 text-14">{map.error}</div>
-              ) : (
-                <ResultsMap markers={map.data?.markers ?? NO_MARKERS} selected={selected} onSelect={selectFromMap} loading={map.loading}
-                  areaActive={Boolean(state.bbox)} onSearchArea={(bbox) => go({ ...state, bbox, page: "" })} onClearArea={() => go({ ...state, bbox: "", page: "" })} />
-              )}
-            </div>
-            {map.data?.capped ? <p className="m-0 mt-2 text-13 text-muted">تعرض الخريطة أول {map.data.cap} نتيجة؛ قرّب الخريطة أو ضيّق البحث لرؤية البقية.</p> : null}
+      ) : (
+        <div className="relative">
+          <div className="h-[72vh] min-h-[420px]">
+            {map.error ? (
+              <div role="alert" className="flex size-full flex-col items-center justify-center gap-2 rounded-lg border border-err-line bg-err-bg p-4 text-14">{map.error}</div>
+            ) : (
+              <ResultsMap markers={map.data?.markers ?? NO_MARKERS} selected={selected} onSelect={selectFromMap} loading={map.loading}
+                areaActive={Boolean(state.bbox)} onSearchArea={(bbox) => go({ ...state, bbox, page: "" })} onClearArea={() => go({ ...state, bbox: "", page: "" })} />
+            )}
           </div>
-        ) : null}
-      </div>
+          {selectedItem ? (
+            <div className="absolute inset-x-3 bottom-10 z-[600] mx-auto max-w-sm">
+              <button type="button" onClick={() => setSelected(null)} aria-label="إغلاق المعاينة"
+                className="absolute -top-3 end-2 z-20 inline-flex size-8 items-center justify-center rounded-full border border-line bg-white shadow-2">
+                <Icon name="close" size={18} />
+              </button>
+              <OpportunityCard card={selectedItem.card} fit={selectedItem.fit} match={selectedItem.match} signedIn={signedIn} layout="row" />
+            </div>
+          ) : selectedMarker ? (
+            <div className="absolute inset-x-3 bottom-10 z-[600] mx-auto flex max-w-sm items-center gap-3 rounded-lg border border-line bg-white p-3 shadow-3">
+              <span className="flex min-w-0 flex-1 flex-col">
+                <strong className="truncate text-14">{selectedMarker.title}</strong>
+                <span className="text-13">المطلوب الآن <Amount value={selectedMarker.dueNow} size="sm" strong unknown="غير مكتمل" /></span>
+              </span>
+              <Link href={`/opportunities/${selectedMarker.reference}`} className={buttonClasses({ variant: "primary", size: "sm" })}>التفاصيل</Link>
+              <button type="button" onClick={() => setSelected(null)} aria-label="إغلاق المعاينة" className="inline-flex size-8 items-center justify-center rounded-full hover:bg-subtle">
+                <Icon name="close" size={18} />
+              </button>
+            </div>
+          ) : null}
+          {map.data ? (
+            <p className="m-0 mt-2 text-13 text-muted">
+              {map.data.located} {map.data.located === 1 ? "فرصة" : "فرص"} على الخريطة
+              {data && data.withoutLocation > 0 ? ` · ${data.withoutLocation} بلا موقع معروض` : ""}
+              {map.data.capped ? ` · تعرض الخريطة أول ${map.data.cap} نتيجة؛ قرّب الخريطة أو ضيّق البحث` : ""}
+            </p>
+          ) : null}
+        </div>
+      )}
 
-      <p className="m-0 text-13 leading-6 text-muted">
-        الأرقام في البطاقات تقديرية ما لم يذكر أنها راجعها الفريق، ولا تُعد عرضًا ملزمًا. القسط ربع السنوي يُقارن بمكافئه الشهري، وتُحسب الدفعة السنوية ضمن التزامك في السنة. «تناسب» تعني أرقامك المصرح بها فقط، وليست موافقة تمويل.
+      <p className="m-0 text-12 leading-6 text-muted">
+        الأرقام تقديرية ما لم يذكر أن الفريق راجعها، ولا تُعد عرضًا ملزمًا. «تناسب» تعني أرقامك المصرح بها فقط، وليست موافقة تمويل.
       </p>
       <CompareTray />
     </div>

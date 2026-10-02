@@ -13,6 +13,7 @@ import { Icon } from "@/components/ui/Icon";
 import { apiSend, isApiError } from "@/lib/api/client";
 import { toLatinDigits } from "@/lib/market/numbers";
 import type { Fit } from "@/lib/market/types";
+import { Dropdown } from "@/components/ui/Dropdown";
 
 /** «حاسبة الفرصة»: the visitor's own figures against this opportunity's published terms (server rules, nothing stored). */
 export function OpportunityCalculator({ reference, frequencies }: { reference: string; frequencies: { value: string; label: string }[] }) {
@@ -41,12 +42,10 @@ export function OpportunityCalculator({ reference, frequencies }: { reference: s
         <TextField label="المبلغ المتاح لك الآن" inputMode="numeric" ltr value={available} onChange={(e) => setAvailable(e.target.value)} endAdornment="ر.س" />
         <div className="flex gap-2">
           <TextField label="القسط المريح" inputMode="numeric" ltr value={inst} onChange={(e) => setInst(e.target.value)} containerClassName="flex-1" />
-          <label className="flex flex-col gap-1.5 text-14 font-semibold">
-            الدورية
-            <select value={freq} onChange={(e) => setFreq(e.target.value)} className="min-h-12 rounded-sm border border-line-strong bg-white px-2">
-              {frequencies.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
-            </select>
-          </label>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-14 font-semibold">الدورية</span>
+            <Dropdown ariaLabel="الدورية" size="lg" className="w-32" value={freq} onChange={setFreq} options={frequencies} />
+          </div>
         </div>
       </div>
       <Button type="submit" variant="secondary" loading={busy} className="self-start">احسب</Button>

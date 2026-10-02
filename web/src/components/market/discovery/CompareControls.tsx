@@ -6,14 +6,22 @@ import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/cn";
 import { COMPARE_MAX, useCompare } from "@/lib/market/compare";
 
-/** «قارن» on a card or a detail page: adds the opportunity to the comparison (four at most). */
-export function CompareToggle({ reference, className }: { reference: string; className?: string }) {
+/** «قارن» on a card or a detail page: adds the opportunity to the comparison (four at most). `compact` = icon only (over photos). */
+export function CompareToggle({ reference, className, compact }: { reference: string; className?: string; compact?: boolean }) {
   const c = useCompare();
   const on = c.has(reference);
   const disabled = !on && c.full;
+  const title = disabled ? `يمكن مقارنة ${COMPARE_MAX} فرص على الأكثر` : on ? "في المقارنة — اضغط للإزالة" : "أضف للمقارنة";
+  if (compact)
+    return (
+      <button type="button" onClick={() => c.toggle(reference)} aria-pressed={on} disabled={disabled} title={title} aria-label={on ? "في المقارنة" : "قارن"}
+        className={cn("relative z-10 inline-flex size-10 items-center justify-center rounded-full shadow-1 transition-colors",
+          on ? "bg-ink text-white" : "bg-white/95 text-charcoal hover:bg-white", disabled && "cursor-not-allowed opacity-50", className)}>
+        <Icon name={on ? "check" : "compare_arrows"} size={20} />
+      </button>
+    );
   return (
-    <button type="button" onClick={() => c.toggle(reference)} aria-pressed={on} disabled={disabled}
-      title={disabled ? `يمكن مقارنة ${COMPARE_MAX} فرص على الأكثر` : undefined}
+    <button type="button" onClick={() => c.toggle(reference)} aria-pressed={on} disabled={disabled} title={title}
       className={cn("relative z-10 inline-flex min-h-9 items-center gap-1 rounded-pill border px-3 text-13 font-semibold transition-colors",
         on ? "border-ink bg-ink text-white" : "border-line-strong bg-white text-charcoal hover:bg-subtle", disabled && "cursor-not-allowed opacity-50", className)}>
       <Icon name={on ? "check" : "compare_arrows"} size={16} />

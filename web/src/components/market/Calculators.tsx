@@ -12,6 +12,9 @@ import { apiSend, isApiError } from "@/lib/api/client";
 import { cn } from "@/lib/cn";
 import { toLatinDigits } from "@/lib/market/numbers";
 import type { TermsResult } from "@/lib/market/types";
+import { DatePicker } from "@/components/ui/DatePicker";
+import { Dropdown } from "@/components/ui/Dropdown";
+import { UnitInput } from "@/components/ui/UnitInput";
 
 const num = (v: string): number | null => (v.trim() === "" ? null : Number(toLatinDigits(v).replace(/[^\d.]/g, "")));
 
@@ -19,11 +22,7 @@ function MoneyIn({ id, label, value, onChange, help }: { id: string; label: stri
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={id} className="text-14 font-semibold">{label}</label>
-      <div className="relative">
-        <input id={id} inputMode="numeric" dir="ltr" value={value} onChange={(e) => onChange(e.target.value)} placeholder="فارغ = غير معروف"
-          className="min-h-12 w-full rounded-sm border border-line-strong bg-white ps-12 pe-3 text-end text-16 tabular-nums placeholder:text-13" />
-        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-13 text-muted">ر.س</span>
-      </div>
+      <UnitInput id={id} size="lg" value={value} onChange={onChange} placeholder="فارغ = غير معروف" />
       {help ? <span className="text-12 text-muted">{help}</span> : null}
     </div>
   );
@@ -219,11 +218,10 @@ function CapacityCalc() {
         <MoneyIn id="c-now" label="المبلغ المتاح لديك الآن" value={f.now} onChange={set("now")} />
         <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3">
           <MoneyIn id="c-inst" label="القسط المريح لك" value={f.inst} onChange={set("inst")} />
-          <label className="flex flex-col gap-1.5 text-14 font-semibold">الدورية
-            <select value={f.freq} onChange={(e) => set("freq")(e.target.value)} className="min-h-12 rounded-sm border border-line-strong bg-white px-2">
-              <option value="monthly">شهري</option><option value="quarterly">ربع سنوي</option><option value="semiannual">نصف سنوي</option><option value="annual">سنوي</option>
-            </select>
-          </label>
+          <div className="flex flex-col gap-1.5">
+            <span id="c-freq-l" className="text-14 font-semibold">الدورية</span>
+            <Dropdown ariaLabel="الدورية" size="lg" className="w-36" value={f.freq} onChange={set("freq")} options={[{ value: "monthly", label: "شهري" }, { value: "quarterly", label: "ربع سنوي" }, { value: "semiannual", label: "نصف سنوي" }, { value: "annual", label: "سنوي" }]} />
+          </div>
         </div>
         <MoneyIn id="c-max" label="الحد الأقصى للإجمالي (اختياري)" value={f.max} onChange={set("max")} />
         <div className="flex flex-col gap-1.5">
@@ -305,7 +303,7 @@ function ExtrasFields({ x, set, buyerSide }: { x: Extras; set: (x: Extras) => vo
       </fieldset>
       <div className="flex flex-col gap-1.5">
         <label htmlFor="asof" className="text-14 font-semibold">الأرقام كما في تاريخ (اختياري)</label>
-        <input id="asof" type="date" dir="ltr" value={x.asOf} onChange={(e) => set({ ...x, asOf: e.target.value })} className="min-h-12 rounded-sm border border-line-strong bg-white px-3" />
+        <DatePicker id="asof" size="lg" value={x.asOf} onChange={(v) => set({ ...x, asOf: v })} />
       </div>
       <details className="rounded-md border border-line p-3">
         <summary className="cursor-pointer text-14 font-semibold">قارن الإجمالي بمرجع سوقي مؤرخ (اختياري)</summary>
@@ -313,7 +311,7 @@ function ExtrasFields({ x, set, buyerSide }: { x: Extras; set: (x: Extras) => vo
           <MoneyIn id="ref-v" label="قيمة المرجع لعقار مماثل" value={x.refValue} onChange={(v) => set({ ...x, refValue: v })} />
           <div className="flex flex-col gap-1.5">
             <label htmlFor="ref-d" className="text-14 font-semibold">تاريخ المرجع</label>
-            <input id="ref-d" type="date" dir="ltr" value={x.refDate} onChange={(e) => set({ ...x, refDate: e.target.value })} className="min-h-12 rounded-sm border border-line-strong bg-white px-3" />
+            <DatePicker id="ref-d" size="lg" value={x.refDate} onChange={(v) => set({ ...x, refDate: v })} />
           </div>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="ref-s" className="text-14 font-semibold">مصدر المرجع</label>

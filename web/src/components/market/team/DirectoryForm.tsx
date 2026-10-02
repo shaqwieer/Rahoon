@@ -6,7 +6,7 @@ import { ActionDialog, ActionError } from "@/components/market/team/useTeamActio
 import { Badge, Card } from "@/components/market/ui";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
-import { Checkbox, Textarea, TextField } from "@/components/ui/Field";
+import { Checkbox, Textarea, DateField, TextField } from "@/components/ui/Field";
 import { apiSend, isApiError, useIdempotencyKey } from "@/lib/api/client";
 import { ORG_TYPE_LABELS } from "@/lib/market/directory";
 
@@ -118,7 +118,7 @@ export function DirectoryForm({ record }: { record?: DirectoryRecord }) {
         <TextField label="اسم المصدر" value={v.sourceName} onChange={(e) => set({ sourceName: e.target.value })} error={errors.sourceName} optionalMark
           placeholder="مثال: البنك المركزي السعودي — البنوك المرخصة" />
         <TextField label="رابط المصدر" value={v.sourceUrl} onChange={(e) => set({ sourceUrl: e.target.value })} error={errors.sourceUrl} optionalMark ltr placeholder="https://" />
-        <TextField label="تاريخ التحقق" type="date" value={v.verifiedOn} onChange={(e) => set({ verifiedOn: e.target.value })} error={errors.verifiedOn} optionalMark ltr />
+        <DateField label="تاريخ التحقق" value={v.verifiedOn} onValueChange={(x) => set({ verifiedOn: x })} error={errors.verifiedOn} optionalMark />
         <p className="m-0 text-13 text-muted">وجود الجهة في الدليل لا يعني شراكة مع رهون أو موافقتها على نقل العقود، ولا يُعد إثباتًا لترخيصها ما لم يُذكر المصدر الرسمي.</p>
         <div>
           <Button type="submit" loading={busy}>{record ? "حفظ التعديلات" : "إضافة الجهة"}</Button>

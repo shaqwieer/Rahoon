@@ -16,6 +16,7 @@ import { apiSend, isApiError } from "@/lib/api/client";
 import { cn } from "@/lib/cn";
 import { cityLabel, isAnswered, label, obligationFields, prune, UNKNOWN } from "@/lib/market/catalog";
 import type { Answers, Catalog, SaveResponse, TermsResult } from "@/lib/market/types";
+import { Dropdown } from "@/components/ui/Dropdown";
 
 type Kind = "developer" | "financier";
 interface ObDraft {
@@ -396,16 +397,8 @@ export function SaleWizard({ catalog, signedIn: signedInInitially, userName }: {
               <label htmlFor="sw-city" className="text-15 font-semibold">
                 المدينة
               </label>
-              <select id="sw-city" value={d.city ?? ""} aria-invalid={Boolean(errors.city) || undefined}
-                onChange={(e) => update({ city: e.target.value || undefined })}
-                className="min-h-12 rounded-sm border border-line-strong bg-white px-3 text-16 aria-[invalid=true]:border-err">
-                <option value="">اختر المدينة</option>
-                {catalog.cities.map((c) => (
-                  <option key={c.key} value={c.key}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
+              <Dropdown id="sw-city" size="lg" value={d.city ?? ""} invalid={Boolean(errors.city)} placeholder="اختر المدينة" icon="location_on"
+                options={catalog.cities.map((c) => ({ value: c.key, label: c.label }))} onChange={(v) => update({ city: v || undefined })} />
               {errors.city ? <span className="text-13 text-err">{errors.city}</span> : null}
             </div>
             <div className="flex flex-col gap-1.5">

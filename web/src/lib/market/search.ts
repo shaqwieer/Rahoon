@@ -18,8 +18,8 @@ export const PAGE_SIZE = 12;
 
 export const EMPTY: SearchState = Object.fromEntries(SEARCH_KEYS.map((k) => [k, ""])) as SearchState;
 
-/** Filters kept in the «more» panel (the primary ones stay visible). */
-export const ADVANCED: SearchKey[] = ["district", "project", "minArea", "maxArea", "bathrooms", "deliveryFrom", "deliveryTo", "maxTotal", "maxTerm", "features", "track"];
+/** Filters in the «فلاتر إضافية» sheet (the bar keeps cash now, installment, city and type). */
+export const ADVANCED: SearchKey[] = ["bedrooms", "bathrooms", "readiness", "district", "project", "minArea", "maxArea", "deliveryFrom", "deliveryTo", "maxTotal", "maxTerm", "features", "track"];
 
 export function fromParams(sp: URLSearchParams | { get(k: string): string | null }): SearchState {
   const s = { ...EMPTY };

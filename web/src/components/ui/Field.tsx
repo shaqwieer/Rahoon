@@ -6,12 +6,13 @@ import {
   useState,
   type InputHTMLAttributes,
   type ReactNode,
-  type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from "react";
 import { cn } from "@/lib/cn";
 import { formatHijri, formatNumber } from "@/lib/format";
 import { useI18n } from "@/lib/i18n/client";
+import { DatePicker } from "./DatePicker";
+import { Dropdown } from "./Dropdown";
 import { Icon } from "./Icon";
 import { IconButton } from "./IconButton";
 
@@ -367,105 +368,98 @@ export function MaskedValue({ label, masked, onReveal, help, error, size = "md",
   );
 }
 
-/* ───────────────────────── DateField (native, Hijri caption) ───────────────────────── */
+/* ───────────────────────── DateField / MonthField (system calendar) ───────────────────────── */
 
-export interface DateFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "size" | "type" | "value" | "onChange"> {
+export interface DateFieldProps {
   label: ReactNode;
   help?: ReactNode;
   error?: ReactNode;
   requiredMark?: boolean;
+  optionalMark?: boolean;
   size?: FieldSize;
-  /** ISO `YYYY-MM-DD` (Gregorian is the system record). */
+  /** ISO "YYYY-MM-DD", or "" when empty. */
   value: string;
   onValueChange: (iso: string) => void;
   containerClassName?: string;
+  id?: string;
+  disabled?: boolean;
+  min?: string;
+  max?: string;
+  /** Show the Hijri equivalent under the field (default on). */
+  hijri?: boolean;
 }
 
-export function DateField({ label, help, error, requiredMark, size = "md", value, onValueChange, containerClassName, id: idProp, disabled, ...rest }: DateFieldProps) {
+const PICKER_SIZE: Record<FieldSize, "md" | "lg"> = { md: "md", lg: "lg", xl: "lg" };
+
+/** Date with the system calendar (Gregorian, «15 يناير 2027») and its Hijri equivalent under it. */
+export function DateField({ label, help, error, requiredMark, optionalMark, size = "md", value, onValueChange, containerClassName, id: idProp, disabled, min, max, hijri = true }: DateFieldProps) {
   const autoId = useId();
   const id = idProp ?? autoId;
-  const { t, locale, numerals } = useI18n();
-  const align = useLtrAlign();
-  const hijri = value ? formatHijri(value, { locale, numerals }) : null;
+  const { locale, numerals } = useI18n();
+  const caption = hijri && value ? formatHijri(value, { locale, numerals }) : null;
   return (
-    <FieldShell id={id} label={label} help={help ?? t.fields.hijriCaption} error={error} disabled={disabled} required={requiredMark} size={size} className={containerClassName}>
-      <input
-        id={id}
-        type="date"
-        dir="ltr"
-        disabled={disabled}
-        value={value}
-        onChange={(e) => onValueChange(e.target.value)}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy(id, { help: help ?? t.fields.hijriCaption, error }, `${id}-hijri`)}
-        className={cn(controlClasses({ error: Boolean(error), disabled, size }), "px-3 font-latin font-medium focus:px-[11px]", align)}
-        {...rest}
-      />
-      <span id={`${id}-hijri`} aria-live="polite" className="flex min-h-5 items-center gap-1.5 text-13 text-muted">
-        {hijri ? (
-          <>
-            <Icon name="calendar_month" size={16} />
-            {hijri}
-          </>
-        ) : null}
-      </span>
+    <FieldShell id={id} label={label} help={help} error={error} disabled={disabled} required={requiredMark} optional={optionalMark} size={size} className={containerClassName}>
+      <DatePicker id={id} value={value} onChange={onValueChange} disabled={disabled} invalid={Boolean(error)} min={min} max={max} size={PICKER_SIZE[size]}
+        describedBy={describedBy(id, { help, error })} />
+      {caption ? (
+        <span aria-live="polite" className="flex items-center gap-1.5 text-13 text-muted">
+          <Icon name="calendar_month" size={16} />
+          {caption}
+        </span>
+      ) : null}
     </FieldShell>
   );
 }
 
-/* ───────────────────────── Select (native) ───────────────────────── */
+/** Month and year («يناير 2027»), value "YYYY-MM". */
+export function MonthField({ label, help, error, requiredMark, optionalMark, size = "md", value, onValueChange, containerClassName, id: idProp, disabled, min, max }: Omit<DateFieldProps, "hijri">) {
+  const autoId = useId();
+  const id = idProp ?? autoId;
+  return (
+    <FieldShell id={id} label={label} help={help} error={error} disabled={disabled} required={requiredMark} optional={optionalMark} size={size} className={containerClassName}>
+      <DatePicker id={id} mode="month" value={value} onChange={onValueChange} disabled={disabled} invalid={Boolean(error)} min={min} max={max} size={PICKER_SIZE[size]}
+        describedBy={describedBy(id, { help, error })} />
+    </FieldShell>
+  );
+}
+
+/* ───────────────────────── Select (system dropdown) ───────────────────────── */
 
 export interface SelectOption {
   value: string;
   label: string;
+  hint?: string;
   disabled?: boolean;
 }
 
-export interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, "size"> {
+export interface SelectProps {
   label: ReactNode;
   options: SelectOption[];
+  value: string;
+  onValueChange: (value: string) => void;
   placeholder?: string;
   help?: ReactNode;
   error?: ReactNode;
   requiredMark?: boolean;
+  optionalMark?: boolean;
   size?: FieldSize;
   containerClassName?: string;
+  id?: string;
+  disabled?: boolean;
+  searchable?: boolean;
 }
 
-export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
-  { label, options, placeholder, help, error, requiredMark, size = "md", containerClassName, id: idProp, disabled, className, ...rest },
-  ref,
-) {
+/** Labelled field around the system dropdown (no native <select>). */
+export function Select({ label, options, value, onValueChange, placeholder, help, error, requiredMark, optionalMark, size = "md", containerClassName, id: idProp, disabled, searchable }: SelectProps) {
   const autoId = useId();
   const id = idProp ?? autoId;
   return (
-    <FieldShell id={id} label={label} help={help} error={error} disabled={disabled} required={requiredMark} size={size} className={containerClassName}>
-      <div className="relative">
-        <select
-          ref={ref}
-          id={id}
-          disabled={disabled}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={describedBy(id, { help, error })}
-          className={cn(controlClasses({ error: Boolean(error), disabled, size }), "appearance-none ps-3 pe-10 focus:ps-[11px]", className)}
-          {...rest}
-        >
-          {placeholder ? (
-            <option value="" disabled>
-              {placeholder}
-            </option>
-          ) : null}
-          {options.map((o) => (
-            <option key={o.value} value={o.value} disabled={o.disabled}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-        <Icon name="expand_more" size={20} className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-muted" />
-      </div>
+    <FieldShell id={id} label={label} help={help} error={error} disabled={disabled} required={requiredMark} optional={optionalMark} size={size} className={containerClassName}>
+      <Dropdown id={id} value={value} onChange={onValueChange} options={options} placeholder={placeholder} disabled={disabled} invalid={Boolean(error)}
+        size={PICKER_SIZE[size]} searchable={searchable} describedBy={describedBy(id, { help, error })} />
     </FieldShell>
   );
-});
+}
 
 /* ───────────────────────── Checkbox ───────────────────────── */
 

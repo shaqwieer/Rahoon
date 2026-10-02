@@ -6,6 +6,7 @@ import { buttonClasses } from "@/components/ui/buttonStyles";
 import { apiGet, can, requireMe } from "@/lib/api/server";
 import { ORG_TYPE_LABELS } from "@/lib/market/orgTypes";
 import { day } from "@/lib/market/format";
+import { FormDropdown } from "@/components/ui/Dropdown";
 
 export const metadata: Metadata = { title: "دليل الجهات" };
 
@@ -69,22 +70,16 @@ export default async function TeamOrganizations({ searchParams }: PageProps<"/te
           بحث بالاسم أو الموقع أو الرقم
           <input name="q" defaultValue={q} className="min-h-11 rounded-sm border border-line-strong bg-white px-3 text-15" />
         </label>
-        <label className="flex flex-col gap-1 text-14">
-          الحالة
-          <select name="status" defaultValue={status} className="min-h-11 rounded-sm border border-line-strong bg-white px-3 text-15">
-            <option value="">الكل</option>
-            <option value="active">مفعّلة</option>
-            <option value="inactive">موقوفة</option>
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-14">
-          المصدر
-          <select name="origin" defaultValue={origin} className="min-h-11 rounded-sm border border-line-strong bg-white px-3 text-15">
-            <option value="">الكل</option>
-            <option value="import">استيراد من مصدر</option>
-            <option value="manual">إضافة يدوية</option>
-          </select>
-        </label>
+        <div className="flex w-44 flex-col gap-1 text-14">
+          <span id="org-status-l">الحالة</span>
+          <FormDropdown name="status" ariaLabel="الحالة" defaultValue={status}
+            options={[{ value: "", label: "الكل" }, { value: "active", label: "مفعّلة" }, { value: "inactive", label: "موقوفة" }]} />
+        </div>
+        <div className="flex w-52 flex-col gap-1 text-14">
+          <span id="org-origin-l">المصدر</span>
+          <FormDropdown name="origin" ariaLabel="المصدر" defaultValue={origin}
+            options={[{ value: "", label: "الكل" }, { value: "import", label: "استيراد من مصدر" }, { value: "manual", label: "إضافة يدوية" }]} />
+        </div>
         <button type="submit" className={buttonClasses({ variant: "secondary" })}>تطبيق</button>
       </form>
       <p className="mb-3 text-14 text-muted">

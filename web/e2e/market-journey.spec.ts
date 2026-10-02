@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
-import { apiLogin } from "./helpers";
+import { apiLogin, pick } from "./helpers";
 
 /**
  * Phase M1 definition of done (docs/phases/phase-m-exit-marketplace.md), through the real UI:
@@ -54,7 +54,7 @@ test("sale request → completion → approval → opportunity → owner confirm
   // ── Owner: first request in three steps (signs in at step 3) ──
   await page.goto("/sell/new");
   await page.getByRole("radio", { name: "شقة" }).click();
-  await page.getByLabel("المدينة").selectOption("riyadh");
+  await pick(page, "المدينة", "الرياض");
   await page.getByLabel("الحي").fill("الملقا");
   await page.getByRole("radio", { name: "مطور عقاري" }).click();
   await pickFirstOrg(page, "اسم المطور", "شركة");

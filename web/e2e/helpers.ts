@@ -26,3 +26,9 @@ export async function apiLogin(page: Page, email: string) {
   const mfa = await api<{ next: string }>(page, "POST", "/auth/mfa/verify", { code: login.json.sandboxCode });
   expect(mfa.status, "mfa").toBe(200);
 }
+
+/** Chooses an option in the system dropdown (components/ui/Dropdown) labelled `label`. */
+export async function pick(page: Page, label: string, option: string) {
+  await page.getByLabel(label, { exact: true }).click();
+  await page.getByRole("option", { name: option, exact: true }).click();
+}

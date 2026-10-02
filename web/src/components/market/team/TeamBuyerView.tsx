@@ -5,7 +5,7 @@ import { useState } from "react";
 import { ActionDialog, ActionError, useTeamAction } from "@/components/market/team/useTeamAction";
 import { Amount, Badge, Card, DemoBadge, StatusBadge, Timeline } from "@/components/market/ui";
 import { Button } from "@/components/ui/Button";
-import { Textarea, TextField } from "@/components/ui/Field";
+import { DateField, Select, Textarea, TextField } from "@/components/ui/Field";
 import { label } from "@/lib/market/catalog";
 import { day } from "@/lib/market/format";
 import { toLatinDigits } from "@/lib/market/numbers";
@@ -105,13 +105,10 @@ export function TeamBuyerView({ d, catalog }: { d: TeamBuyer; catalog: Catalog }
       <ActionDialog open={dlg === "finance"} onClose={() => setDlg(null)} title="موافقة جهة التمويل" confirm="حفظ" busy={busy === "dlg"}
         onConfirm={() => run("dlg", "POST", `${base}/finance-approval`, { status: fin.status, source: fin.source || null, date: fin.date || null, amount: num(fin.amount) })}>
         <ActionError error={error} />
-        <label className="flex flex-col gap-1 text-14 font-semibold">الحالة
-          <select className="min-h-11 rounded-sm border border-line-strong bg-white px-3" value={fin.status} onChange={(e) => setFin({ ...fin, status: e.target.value })}>
-            <option value="none">لا توجد</option><option value="pre_approval">موافقة مبدئية</option><option value="approved">موافقة تمويل</option>
-          </select>
-        </label>
+        <Select label="الحالة" value={fin.status} onValueChange={(v) => setFin({ ...fin, status: v })}
+          options={[{ value: "none", label: "لا توجد" }, { value: "pre_approval", label: "موافقة مبدئية" }, { value: "approved", label: "موافقة تمويل" }]} />
         <TextField label="جهة التمويل" value={fin.source} onChange={(e) => setFin({ ...fin, source: e.target.value })} />
-        <TextField label="التاريخ" type="date" ltr value={fin.date} onChange={(e) => setFin({ ...fin, date: e.target.value })} />
+        <DateField label="التاريخ" value={fin.date} onValueChange={(v) => setFin({ ...fin, date: v })} />
         <TextField label="المبلغ (اختياري)" ltr inputMode="numeric" value={fin.amount} onChange={(e) => setFin({ ...fin, amount: e.target.value })} />
       </ActionDialog>
       <ActionDialog open={dlg === "note"} onClose={() => setDlg(null)} title="ملاحظة داخلية" confirm="حفظ" busy={busy === "dlg"} onConfirm={() => run("dlg", "POST", `${base}/note`, { note: text })}>

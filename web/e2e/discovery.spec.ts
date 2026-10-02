@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { pick } from "./helpers";
 
 /**
  * Phase 2 (docs/rahoon/roadmap/phase-2-discovery-matching.md) through the real UI: the URL is the search state (reload and
@@ -25,24 +26,31 @@ async function mapRefs(page: Page, query: string) {
 
 test("the URL restores the same list and map set, and back/forward follow it", async ({ page }) => {
   await page.goto("/opportunities?maxNow=400000&city=riyadh");
-  await expect(page.locator(".leaflet-container")).toBeVisible();
+  await page.evaluate(() => localStorage.removeItem("rahoon.discovery.view"));
+  await page.reload();
   const first = await cardRefs(page);
   expect(first.length).toBeGreaterThan(0);
-  // Every listed card with a public point is on the map, and the map holds nothing the list's filters exclude.
+  // The list/map switch works on desktop too; the map shows the same filtered set.
+  await page.getByRole("button", { name: "الخريطة" }).click();
+  await expect(page.locator(".leaflet-container")).toBeVisible();
   const markers = await mapRefs(page, "city=riyadh&maxNow=400000");
   for (const ref of first) expect(markers).toContain(ref);
+  await page.getByRole("button", { name: "القائمة" }).click();
 
   await page.reload();
   expect(await cardRefs(page)).toEqual(first);
-  await expect(page.locator(".leaflet-container")).toBeVisible(); // the map mounts only once the page is hydrated
+  // Wait for hydration before using the controls (the view switch answers only once React is attached).
+  await page.getByRole("button", { name: "الخريطة" }).click();
+  await expect(page.locator(".leaflet-container")).toBeVisible();
+  await page.getByRole("button", { name: "القائمة" }).click();
 
   // A filter change goes into the URL (page 1), and Back restores the earlier search.
-  await page.getByLabel("المدينة").selectOption("jeddah");
+  await pick(page, "المدينة", "جدة");
   await expect(page).toHaveURL(/city=jeddah/);
   await expect.poll(async () => (await cardRefs(page)).join(",")).not.toBe(first.join(","));
   await page.goBack();
   await expect(page).toHaveURL(/city=riyadh/);
-  await expect(page.getByLabel("المدينة")).toHaveValue("riyadh");
+  await expect(page.getByLabel("المدينة", { exact: true })).toContainText("الرياض");
   await expect.poll(async () => (await cardRefs(page)).join(",")).toBe(first.join(","));
 });
 
@@ -54,10 +62,12 @@ test("a slow earlier response never overwrites a newer search", async ({ page })
     await new Promise((r) => setTimeout(r, 3500));
     await route.continue().catch(() => undefined);
   });
-  await page.getByRole("radio", { name: "فيلا" }).or(page.getByRole("checkbox", { name: "فيلا" })).first().click();
+  await page.getByLabel("نوع العقار", { exact: true }).click();
+  await page.getByRole("option", { name: "فيلا" }).click();
   await expect(page).toHaveURL(/types=villa/);
-  await page.getByRole("radio", { name: "فيلا" }).or(page.getByRole("checkbox", { name: "فيلا" })).first().click();
-  await page.getByRole("radio", { name: "شقة" }).or(page.getByRole("checkbox", { name: "شقة" })).first().click();
+  await page.getByRole("option", { name: "فيلا" }).click();
+  await page.getByRole("option", { name: "شقة" }).click();
+  await page.keyboard.press("Escape");
   await expect(page).toHaveURL(/types=apartment(?!,)/);
   await page.waitForTimeout(4500); // the late villa answer has arrived (or was aborted) by now
   const cards = page.locator("article[data-ref]");

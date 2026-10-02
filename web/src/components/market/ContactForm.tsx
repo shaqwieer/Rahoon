@@ -94,7 +94,7 @@ export function ContactForm() {
         ltr
         requiredMark
       />
-      <Select id="contact-topic" label={C.topic} options={[...C.topics]} placeholder="اختر" value={form.topic} onChange={(e) => set("topic", e.target.value)} error={errors.topic} requiredMark />
+      <Select id="contact-topic" label={C.topic} options={[...C.topics]} placeholder="اختر" value={form.topic} onValueChange={(v) => set("topic", v)} error={errors.topic} requiredMark />
       <Textarea id="contact-message" label={C.message} value={form.message} onChange={(e) => set("message", e.target.value)} error={errors.message} maxLength={2000} rows={5} requiredMark />
       <Checkbox id="contact-consent" label={C.consent} checked={form.consent} onChange={(e) => set("consent", e.target.checked)} error={errors.consent} />
       <Button type="submit" size="lg" loading={busy} className="self-start">

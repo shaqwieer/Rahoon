@@ -1,46 +1,73 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Chips } from "@/components/market/DynamicField";
+import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
+import { DatePicker } from "@/components/ui/DatePicker";
+import { Drawer } from "@/components/ui/Dialog";
+import { Dropdown, MultiDropdown } from "@/components/ui/Dropdown";
 import { Icon } from "@/components/ui/Icon";
-import { toLatinDigits } from "@/lib/market/numbers";
-import { ADVANCED, chips, EMPTY, filtersKey, SORTS, type SearchKey, type SearchState } from "@/lib/market/search";
+import { UnitInput } from "@/components/ui/UnitInput";
+import { cn } from "@/lib/cn";
+import { useMediaQuery } from "@/lib/hooks";
+import { ADVANCED, chips, EMPTY, filtersKey, type SearchKey, type SearchState } from "@/lib/market/search";
 import type { Catalog } from "@/lib/market/types";
 
-const inputCls = "min-h-11 w-full rounded-sm border border-line-strong bg-white px-3 text-15";
-const amount = (v: string) => toLatinDigits(v).replace(/[^\d.]/g, "");
 const DEBOUNCE_MS = 600;
 
-function Money({ id, label, value, onChange }: { id: string; label: string; value: string; onChange: (v: string) => void }) {
+function Field({ label, htmlFor, children, className }: { label: string; htmlFor?: string; children: ReactNode; className?: string }) {
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-14 font-semibold">{label}</label>
-      <div className="relative">
-        <input id={id} inputMode="numeric" dir="ltr" className={`${inputCls} ps-12 text-end`} value={value} onChange={(e) => onChange(amount(e.target.value))} />
-        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-13 text-muted">ر.س</span>
-      </div>
+    <div className={cn("flex min-w-0 flex-col gap-1", className)}>
+      <label htmlFor={htmlFor} className="text-13 font-semibold text-charcoal">{label}</label>
+      {children}
     </div>
   );
 }
 
+/** Small toggles for short option sets (readiness, amenities). */
+function MiniChips({ options, values, onToggle, label }: { options: { value: string; label: string }[]; values: string[]; onToggle: (v: string) => void; label: string }) {
+  return (
+    <div role="group" aria-label={label} className="flex flex-wrap gap-1.5">
+      {options.map((o) => {
+        const on = values.includes(o.value);
+        return (
+          <button key={o.value} type="button" aria-pressed={on} onClick={() => onToggle(o.value)}
+            className={cn("inline-flex min-h-9 items-center gap-1 rounded-pill border px-3 text-13 transition-colors",
+              on ? "border-rust bg-rust-50 font-semibold text-rust-700" : "border-line-strong bg-white text-charcoal hover:border-ink")}>
+            {on ? <Icon name="check" size={14} /> : null}
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="flex flex-col gap-3 border-b border-divider px-5 py-4 last:border-b-0">
+      <h3 className="m-0 text-14 font-bold">{title}</h3>
+      {children}
+    </section>
+  );
+}
+
 /**
- * Filters for «what can I pay now, and what can I commit to later». The URL is the state: edits are applied after a short pause
- * (or at once with «عرض النتائج»), always back to page 1. Primary filters stay visible; the rest open in a panel that suits
- * phones. Active filters are removable chips; nothing is widened silently.
+ * Filters for «what can I pay now, and what can I commit to later». A compact bar keeps the four questions that decide most
+ * searches (cash now, installment, city, property type); everything else opens in «فلاتر إضافية» (a side sheet, a bottom sheet
+ * on phones). The URL is the state: bar edits apply after a short pause; sheet edits apply with «عرض النتائج». Active filters
+ * stay visible as removable chips; nothing is widened silently.
  */
-export function SearchPanel({ value, onApply, catalog, total, excluded, loading, signedIn }: {
+export function SearchPanel({ value, onApply, catalog, signedIn }: {
   value: SearchState;
   onApply: (next: SearchState) => void;
   catalog: Catalog;
-  total: number | null;
-  excluded: number;
-  loading: boolean;
   signedIn: boolean;
 }) {
+  const ids = useId();
   const [draft, setDraft] = useState<SearchState>(value);
-  const [more, setMore] = useState(() => ADVANCED.some((k) => value[k]));
+  const [sheet, setSheet] = useState(false);
+  const desktop = useMediaQuery("(min-width: 640px)");
   const applied = useRef(filtersKey(value));
   const onApplyRef = useRef(onApply);
   useEffect(() => {
@@ -54,175 +81,173 @@ export function SearchPanel({ value, onApply, catalog, total, excluded, loading,
     setDraft(value);
   }, [value]);
 
-  // Debounced apply of edits (typing an amount doesn't fire a request per key).
+  // Debounced apply of bar edits (typing an amount doesn't fire a request per key). The sheet applies on its own button.
   useEffect(() => {
+    if (sheet) return;
     const key = filtersKey(draft);
-    if (key === applied.current && draft.sort === value.sort) return;
+    if (key === applied.current) return;
     const t = window.setTimeout(() => {
       applied.current = key;
       onApplyRef.current({ ...draft, page: "" });
     }, DEBOUNCE_MS);
     return () => window.clearTimeout(t);
-  }, [draft, value.sort]);
+  }, [draft, sheet]);
 
   const set = (k: SearchKey, v: string) => setDraft((x) => ({ ...x, [k]: v }));
-  const toggleCsv = (k: SearchKey, v: string) => {
-    const cur = draft[k].split(",").filter(Boolean);
-    set(k, (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]).join(","));
+  const csv = (k: SearchKey) => draft[k].split(",").filter(Boolean);
+  const toggleCsv = (k: SearchKey, v: string) => set(k, (csv(k).includes(v) ? csv(k).filter((x) => x !== v) : [...csv(k), v]).join(","));
+  const apply = (next = draft) => {
+    applied.current = filtersKey(next);
+    onApply({ ...next, page: "" });
   };
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    applied.current = filtersKey(draft);
-    onApply({ ...draft, page: "" });
+    apply();
   };
-  const types = draft.types.split(",").filter(Boolean);
   const features = (catalog.fields.find((f) => f.key === "features")?.options ?? [])
-    .filter((o) => !o.propertyTypes || types.length === 0 || o.propertyTypes.some((t) => types.includes(t)));
+    .filter((o) => !o.propertyTypes || csv("types").length === 0 || o.propertyTypes.some((t) => csv("types").includes(t)));
+  const advancedCount = ADVANCED.filter((k) => value[k]).length + (desktop ? 0 : (["maxInstallment", "city", "types"] as const).filter((k) => value[k]).length);
   const active = chips(value, catalog);
-  const cityOptions = catalog.cities;
-  const singleCity = draft.city.includes(",") ? "" : draft.city;
+  const cityOptions = [{ value: "", label: "كل المدن" }, ...catalog.cities.map((c) => ({ value: c.key, label: c.label }))];
 
   return (
-    <form onSubmit={submit} role="search" aria-label="البحث عن فرصة" className="flex flex-col gap-4 rounded-lg border border-line bg-white p-4 shadow-1 md:p-5">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Money id="sf-maxNow" label="ما تستطيع دفعه الآن" value={draft.maxNow} onChange={(v) => set("maxNow", v)} />
-        <div className="flex flex-col gap-1">
-          <label htmlFor="sf-inst" className="text-14 font-semibold">القسط المريح لك</label>
-          <div className="flex gap-2">
-            <div className="relative min-w-0 flex-1">
-              <input id="sf-inst" inputMode="numeric" dir="ltr" className={`${inputCls} ps-12 text-end`} value={draft.maxInstallment} onChange={(e) => set("maxInstallment", amount(e.target.value))} />
-              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-13 text-muted">ر.س</span>
+    <>
+      <form onSubmit={submit} role="search" aria-label="البحث عن فرصة" className="flex flex-col gap-3 rounded-lg border border-line bg-white p-3 shadow-1 md:p-4">
+        <div className="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+          <Field label="ما تستطيع دفعه الآن" htmlFor={`${ids}-now`}>
+            <UnitInput id={`${ids}-now`} value={draft.maxNow} onChange={(v) => set("maxNow", v)} placeholder="مثال 400000" />
+          </Field>
+          <Field label="القسط المريح لك" htmlFor={`${ids}-inst`} className="max-sm:hidden">
+            <div className="flex gap-2">
+              <UnitInput id={`${ids}-inst`} className="flex-1" value={draft.maxInstallment} onChange={(v) => set("maxInstallment", v)} placeholder="اختياري" />
+              <Dropdown ariaLabel="دورية القسط" className="w-[7.25rem] flex-none" value={draft.freq || "monthly"} onChange={(v) => set("freq", v)} options={catalog.frequencies} />
             </div>
-            <select aria-label="دورية القسط" className={`${inputCls} w-[7.5rem] flex-none`} value={draft.freq || "monthly"} onChange={(e) => set("freq", e.target.value)}>
-              {catalog.frequencies.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
-            </select>
+          </Field>
+          <Field label="المدينة" htmlFor={`${ids}-city`} className="max-sm:hidden">
+            <Dropdown id={`${ids}-city`} icon="location_on" value={draft.city.includes(",") ? "" : draft.city} onChange={(v) => set("city", v)} options={cityOptions}
+              placeholder={draft.city.includes(",") ? "عدة مدن" : "كل المدن"} searchable />
+          </Field>
+          <Field label="نوع العقار" htmlFor={`${ids}-types`} className="max-sm:hidden">
+            <MultiDropdown id={`${ids}-types`} icon="home_work" values={csv("types")} onChange={(v) => set("types", v.join(","))} options={catalog.propertyTypes} placeholder="كل الأنواع" />
+          </Field>
+          <div className="flex gap-2 sm:col-span-2 lg:col-span-1">
+            <Button type="button" variant="secondary" icon="tune" className="min-h-11 flex-1 lg:flex-none" onClick={() => setSheet(true)} aria-haspopup="dialog">
+              فلاتر{advancedCount ? ` (${advancedCount})` : ""}
+            </Button>
+            <Button type="submit" icon="search" className="min-h-11 flex-1 lg:flex-none">بحث</Button>
           </div>
         </div>
-        <div className="flex flex-col gap-1">
-          <label htmlFor="sf-city" className="text-14 font-semibold">المدينة</label>
-          <select id="sf-city" className={inputCls} value={singleCity} onChange={(e) => set("city", e.target.value)}>
-            <option value="">{draft.city.includes(",") ? "عدة مدن" : "كل المدن"}</option>
-            {cityOptions.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
-          </select>
-        </div>
-        <div className="flex flex-col gap-1">
-          <label htmlFor="sf-sort" className="text-14 font-semibold">الترتيب</label>
-          <select id="sf-sort" className={inputCls} value={draft.sort} onChange={(e) => set("sort", e.target.value)}>
-            <option value="">{draft.maxNow || draft.maxInstallment || draft.maxTotal || draft.match ? "الأنسب (افتراضي)" : "الأحدث (افتراضي)"}</option>
-            {SORTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select>
-        </div>
-      </div>
 
-      <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
-        <legend className="mb-1 text-14 font-semibold">نوع العقار</legend>
-        <Chips name="types" multiple options={catalog.propertyTypes} value={types} onChange={(v) => toggleCsv("types", v)} />
-      </fieldset>
-
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-        <label className="inline-flex min-h-10 items-center gap-2 text-14">
-          <select aria-label="غرف النوم" className="min-h-10 rounded-sm border border-line-strong bg-white px-2 text-14" value={draft.bedrooms} onChange={(e) => set("bedrooms", e.target.value)}>
-            <option value="">غرف النوم: أي عدد</option>
-            {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}+ غرف</option>)}
-          </select>
-        </label>
-        <label className="inline-flex min-h-10 items-center gap-2 text-14">
-          <select aria-label="حالة العقار" className="min-h-10 rounded-sm border border-line-strong bg-white px-2 text-14" value={draft.readiness} onChange={(e) => set("readiness", e.target.value)}>
-            <option value="">جاهز وتحت الإنشاء</option>
-            <option value="ready">جاهز</option>
-            <option value="under_construction">تحت الإنشاء</option>
-          </select>
-        </label>
-        {signedIn ? (
-          <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 text-14">
-            <input type="checkbox" className="size-5 accent-[var(--color-rust)]" checked={draft.match === "me"} onChange={(e) => set("match", e.target.checked ? "me" : "")} />
-            طابق مع قدرتي الشرائية المسجلة
-          </label>
+        {signedIn || active.length ? (
+          <div className="flex flex-wrap items-center gap-2 border-t border-divider pt-3">
+            {signedIn ? (
+              <label className="me-1 inline-flex min-h-9 cursor-pointer items-center gap-2 text-13 font-semibold">
+                <span className="relative inline-flex">
+                  <input type="checkbox" className="peer sr-only" checked={draft.match === "me"} onChange={(e) => apply({ ...draft, match: e.target.checked ? "me" : "" })} />
+                  <span aria-hidden="true" className="h-5 w-9 rounded-pill bg-track transition-colors peer-checked:bg-rust peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink" />
+                  <span aria-hidden="true" className="absolute top-0.5 start-0.5 size-4 rounded-full bg-white shadow-1 transition-transform peer-checked:-translate-x-4" />
+                </span>
+                طابق مع قدرتي الشرائية المسجلة
+              </label>
+            ) : null}
+            {active.filter((a) => a.key !== "match").map((a) => (
+              <button key={a.key} type="button" onClick={() => apply({ ...value, ...a.clear })}
+                className="inline-flex min-h-8 items-center gap-1 rounded-pill border border-rust-200 bg-rust-50 px-2.5 text-12 text-rust-700 hover:border-rust" aria-label={`إزالة: ${a.text}`}>
+                {a.text}
+                <Icon name="close" size={14} />
+              </button>
+            ))}
+            {active.length ? (
+              <button type="button" onClick={() => apply({ ...EMPTY })} className="min-h-8 px-1 text-12 font-semibold text-muted underline">مسح الكل</button>
+            ) : null}
+          </div>
         ) : (
-          <Link href={`/signin?next=${encodeURIComponent("/opportunities?match=me")}`} className="text-14">ادخل لمطابقة الفرص مع قدرتك الشرائية</Link>
+          <Link href={`/signin?next=${encodeURIComponent("/opportunities?match=me")}`} className="w-fit text-13">ادخل لمطابقة الفرص مع قدرتك الشرائية</Link>
         )}
-      </div>
+      </form>
 
-      <button type="button" aria-expanded={more} aria-controls="sf-more" onClick={() => setMore((m) => !m)} className="inline-flex w-fit items-center gap-1 text-14 font-semibold text-rust">
-        <Icon name={more ? "expand_less" : "tune"} size={18} />
-        {more ? "إخفاء الفلاتر الإضافية" : "المزيد من الفلاتر"}
-      </button>
-      {more ? (
-        <div id="sf-more" className="grid gap-3 border-t border-divider pt-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="flex flex-col gap-1">
-            <label htmlFor="sf-district" className="text-14 font-semibold">الحي</label>
-            <input id="sf-district" className={inputCls} value={draft.district} onChange={(e) => set("district", e.target.value)} placeholder="مثال: النرجس" />
+      <Drawer open={sheet} onClose={() => { setSheet(false); setDraft(value); }} title="فلاتر إضافية" placement={desktop ? "end" : "bottom"}
+        footer={
+          <>
+            <Button className="flex-1" onClick={() => { apply(); setSheet(false); }}>عرض النتائج</Button>
+            <Button variant="secondary" onClick={() => setDraft((x) => ({ ...x, ...Object.fromEntries(ADVANCED.map((k) => [k, ""])) }))}>مسح هذه الفلاتر</Button>
+          </>
+        }>
+        {!desktop ? (
+          <Section title="الأساسية">
+            <Field label="القسط المريح لك" htmlFor={`${ids}-m-inst`}>
+              <div className="flex gap-2">
+                <UnitInput id={`${ids}-m-inst`} className="flex-1" value={draft.maxInstallment} onChange={(v) => set("maxInstallment", v)} placeholder="اختياري" />
+                <Dropdown ariaLabel="دورية القسط" className="w-[7.25rem] flex-none" value={draft.freq || "monthly"} onChange={(v) => set("freq", v)} options={catalog.frequencies} />
+              </div>
+            </Field>
+            <Field label="المدينة" htmlFor={`${ids}-m-city`}>
+              <Dropdown id={`${ids}-m-city`} icon="location_on" value={draft.city.includes(",") ? "" : draft.city} onChange={(v) => set("city", v)} options={cityOptions} searchable />
+            </Field>
+            <Field label="نوع العقار" htmlFor={`${ids}-m-types`}>
+              <MultiDropdown id={`${ids}-m-types`} icon="home_work" values={csv("types")} onChange={(v) => set("types", v.join(","))} options={catalog.propertyTypes} placeholder="كل الأنواع" />
+            </Field>
+          </Section>
+        ) : null}
+        <Section title="العقار">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="غرف النوم" htmlFor={`${ids}-beds`}>
+              <Dropdown id={`${ids}-beds`} value={draft.bedrooms} onChange={(v) => set("bedrooms", v)}
+                options={[{ value: "", label: "أي عدد" }, ...[1, 2, 3, 4, 5].map((n) => ({ value: String(n), label: `${n}+ غرف` }))]} />
+            </Field>
+            <Field label="دورات المياه" htmlFor={`${ids}-baths`}>
+              <Dropdown id={`${ids}-baths`} value={draft.bathrooms} onChange={(v) => set("bathrooms", v)}
+                options={[{ value: "", label: "أي عدد" }, ...[1, 2, 3, 4].map((n) => ({ value: String(n), label: `${n}+` }))]} />
+            </Field>
           </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="sf-project" className="text-14 font-semibold">المشروع أو المطور</label>
-            <input id="sf-project" className={inputCls} value={draft.project} onChange={(e) => set("project", e.target.value)} />
-          </div>
-          <Money id="sf-total" label="الحد الأقصى للإجمالي" value={draft.maxTotal} onChange={(v) => set("maxTotal", v)} />
-          <div className="flex flex-col gap-1">
-            <label htmlFor="sf-term" className="text-14 font-semibold">أقصى مدة متبقية للأقساط (شهر)</label>
-            <input id="sf-term" inputMode="numeric" dir="ltr" className={`${inputCls} text-end`} value={draft.maxTerm} onChange={(e) => set("maxTerm", amount(e.target.value))} />
-          </div>
-          <div className="flex flex-col gap-1">
-            <span className="text-14 font-semibold">المساحة (م²)</span>
-            <div className="flex gap-2">
-              <input aria-label="أقل مساحة" inputMode="numeric" dir="ltr" placeholder="من" className={`${inputCls} text-end`} value={draft.minArea} onChange={(e) => set("minArea", amount(e.target.value))} />
-              <input aria-label="أكبر مساحة" inputMode="numeric" dir="ltr" placeholder="إلى" className={`${inputCls} text-end`} value={draft.maxArea} onChange={(e) => set("maxArea", amount(e.target.value))} />
+          <Field label="المساحة (م²)">
+            <div className="flex items-center gap-2">
+              <UnitInput ariaLabel="أقل مساحة" unit="م²" value={draft.minArea} onChange={(v) => set("minArea", v)} placeholder="من" className="flex-1" />
+              <span className="text-muted">–</span>
+              <UnitInput ariaLabel="أكبر مساحة" unit="م²" value={draft.maxArea} onChange={(v) => set("maxArea", v)} placeholder="إلى" className="flex-1" />
             </div>
+          </Field>
+          <Field label="الحالة">
+            <MiniChips label="الحالة" values={[draft.readiness || "any"]} onToggle={(v) => set("readiness", v === "any" ? "" : v)}
+              options={[{ value: "any", label: "الكل" }, { value: "ready", label: "جاهز" }, { value: "under_construction", label: "تحت الإنشاء" }]} />
+          </Field>
+        </Section>
+        <Section title="التسليم المتوقع">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="من" htmlFor={`${ids}-dfrom`}><DatePicker id={`${ids}-dfrom`} mode="month" value={draft.deliveryFrom} onChange={(v) => set("deliveryFrom", v)} max={draft.deliveryTo || undefined} placeholder="أي وقت" /></Field>
+            <Field label="حتى" htmlFor={`${ids}-dto`}><DatePicker id={`${ids}-dto`} mode="month" value={draft.deliveryTo} onChange={(v) => set("deliveryTo", v)} min={draft.deliveryFrom || undefined} placeholder="أي وقت" /></Field>
           </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="sf-baths" className="text-14 font-semibold">دورات المياه (على الأقل)</label>
-            <select id="sf-baths" className={inputCls} value={draft.bathrooms} onChange={(e) => set("bathrooms", e.target.value)}>
-              <option value="">أي عدد</option>
-              {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}+</option>)}
-            </select>
+        </Section>
+        <Section title="الموقع">
+          <Field label="الحي" htmlFor={`${ids}-district`}>
+            <input id={`${ids}-district`} className="min-h-11 rounded-sm border border-line-strong bg-white px-3 text-15 outline-none focus:border-rust" value={draft.district}
+              onChange={(e) => set("district", e.target.value)} placeholder="مثال: النرجس" />
+          </Field>
+          <Field label="المشروع أو المطور" htmlFor={`${ids}-project`}>
+            <input id={`${ids}-project`} className="min-h-11 rounded-sm border border-line-strong bg-white px-3 text-15 outline-none focus:border-rust" value={draft.project}
+              onChange={(e) => set("project", e.target.value)} />
+          </Field>
+        </Section>
+        <Section title="الالتزام والأقساط">
+          <Field label="الحد الأقصى لإجمالي الالتزام" htmlFor={`${ids}-total`}>
+            <UnitInput id={`${ids}-total`} value={draft.maxTotal} onChange={(v) => set("maxTotal", v)} />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="أقصى مدة متبقية" htmlFor={`${ids}-term`}>
+              <UnitInput id={`${ids}-term`} unit="شهر" value={draft.maxTerm} onChange={(v) => set("maxTerm", v)} />
+            </Field>
+            <Field label="نوع الالتزام" htmlFor={`${ids}-track`}>
+              <Dropdown id={`${ids}-track`} value={draft.track} onChange={(v) => set("track", v)}
+                options={[{ value: "", label: "الكل" }, { value: "developer", label: "التزام لدى مطور" }, { value: "financier", label: "عقار مموّل" }, { value: "mixed", label: "مطور وجهة تمويل" }]} />
+            </Field>
           </div>
-          <div className="flex flex-col gap-1">
-            <span className="text-14 font-semibold">التسليم المتوقع</span>
-            <div className="flex gap-2">
-              <input aria-label="التسليم من" type="month" dir="ltr" className={inputCls} value={draft.deliveryFrom} onChange={(e) => set("deliveryFrom", e.target.value)} />
-              <input aria-label="التسليم حتى" type="month" dir="ltr" className={inputCls} value={draft.deliveryTo} onChange={(e) => set("deliveryTo", e.target.value)} />
-            </div>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="sf-track" className="text-14 font-semibold">نوع الالتزام</label>
-            <select id="sf-track" className={inputCls} value={draft.track} onChange={(e) => set("track", e.target.value)}>
-              <option value="">الكل</option>
-              <option value="developer">التزام لدى مطور</option>
-              <option value="financier">عقار مموّل</option>
-              <option value="mixed">مطور وجهة تمويل</option>
-            </select>
-          </div>
-          {features.length ? (
-            <fieldset className="m-0 flex flex-col gap-2 border-0 p-0 sm:col-span-2 xl:col-span-4">
-              <legend className="mb-1 text-14 font-semibold">المميزات (كلها)</legend>
-              <Chips name="features" multiple options={features} value={draft.features.split(",").filter(Boolean)} onChange={(v) => toggleCsv("features", v)} />
-            </fieldset>
-          ) : null}
-        </div>
-      ) : null}
-
-      <div className="flex flex-wrap items-center gap-3">
-        <Button type="submit" loading={loading}>
-          <Icon name="search" size={18} />
-          عرض النتائج
-        </Button>
-        <span role="status" aria-live="polite" className="text-14 text-charcoal">
-          {total === null ? "…" : <><strong>{total}</strong> {total === 1 ? "فرصة" : "فرص"}</>}
-          {excluded > 0 ? <span className="text-muted"> · استبعدنا {excluded} {excluded === 1 ? "فرصة أرقامها" : "فرص أرقامها"} غير مكتملة للمقارنة</span> : null}
-        </span>
-      </div>
-      {active.length ? (
-        <div className="flex flex-wrap items-center gap-2 border-t border-divider pt-3">
-          {active.map((a) => (
-            <button key={a.key} type="button" onClick={() => onApply({ ...value, ...a.clear, page: "" })}
-              className="inline-flex min-h-9 items-center gap-1 rounded-pill border border-rust-200 bg-rust-50 px-3 text-13 text-rust-700" aria-label={`إزالة: ${a.text}`}>
-              {a.text}
-              <Icon name="close" size={16} />
-            </button>
-          ))}
-          <button type="button" onClick={() => onApply({ ...EMPTY })} className="min-h-9 text-13 font-semibold text-muted underline">مسح كل الفلاتر</button>
-        </div>
-      ) : null}
-    </form>
+        </Section>
+        {features.length ? (
+          <Section title="المميزات (يجب أن تتوفر كلها)">
+            <MiniChips label="المميزات" options={features} values={csv("features")} onToggle={(v) => toggleCsv("features", v)} />
+          </Section>
+        ) : null}
+      </Drawer>
+    </>
   );
 }

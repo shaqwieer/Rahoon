@@ -86,7 +86,7 @@ export function MemberAdmin({ member: m, others }: { member: MemberDetail; other
             <label className="flex items-center gap-2 text-14"><input type="radio" name="reassign" checked={reassign === "unassigned"} onChange={() => setReassign("unassigned")} /> إلى قائمة غير المسندة</label>
             <label className="flex items-center gap-2 text-14"><input type="radio" name="reassign" checked={reassign === "member"} onChange={() => setReassign("member")} /> إلى عضو آخر</label>
             {reassign === "member" ? (
-              <Select label="العضو" value={to} onChange={(e) => setTo(e.target.value)} error={error?.fields.reassignToUserId}
+              <Select label="العضو" value={to} onValueChange={setTo} error={error?.fields.reassignToUserId}
                 options={[{ value: "", label: "اختر…" }, ...others.map((o) => ({ value: o.userId, label: o.name }))]} />
             ) : null}
             {error?.fields.reassign ? <p role="alert" className="m-0 text-13 text-err">{error.fields.reassign}</p> : null}

@@ -9,12 +9,13 @@ import { TermsBreakdown } from "@/components/market/TermsBreakdown";
 import { Badge, Card, StatusBadge, Timeline } from "@/components/market/ui";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
-import { Checkbox, Textarea, TextField } from "@/components/ui/Field";
+import { Checkbox, DateField, MonthField, Select, Textarea, TextField } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/cn";
 import { day } from "@/lib/market/format";
 import { toLatinDigits } from "@/lib/market/numbers";
 import type { MarketEvent, Photo, TermsView } from "@/lib/market/types";
+import { Dropdown } from "@/components/ui/Dropdown";
 
 interface DevIn { paidApproved: number | null; remainingBalance: number | null; arrearsState: string; arrears: number | null; arrearsInBalance: string | null; arrearsPayer: string; reduction: number; installment: number | null; installmentFrequency: string | null; remainingInstallments: number | null; extraPayment: number | null; extraPaymentRecurrence: string | null; extraPaymentDate: string | null }
 interface FinIn { salePrice: number | null; payoffAmount: number | null; payoffValidUntil: string | null; arrearsState: string; arrears: number | null; payoffIncludesArrears: string | null }
@@ -45,16 +46,14 @@ export interface TeamOpportunity {
 const TERMS_STATUS: Record<string, string> = { draft: "مسودة", sentToOwner: "عند المالك", ownerConfirmed: "أكده المالك", ownerRequestedChanges: "طلب المالك تعديله", superseded: "استُبدل" };
 const nz = (v: string): number | null => (v.trim() === "" ? null : Number(toLatinDigits(v).replace(/[^\d.]/g, "")));
 const s = (n: number | null | undefined) => (n === null || n === undefined ? "" : String(n));
-const sel = "min-h-11 w-full rounded-sm border border-line-strong bg-white px-3 text-15";
 
 function Num({ label, value, onChange, help }: { label: string; value: string; onChange: (v: string) => void; help?: string }) {
   return <TextField label={label} value={value} onChange={(e) => onChange(e.target.value)} inputMode="numeric" ltr help={help ?? "فارغ = غير معروف"} />;
 }
 function StateSel({ value, onChange }: { value: string | undefined; onChange: (v: string) => void }) {
   return (
-    <select aria-label="حالة الرقم" className="min-h-9 rounded-sm border border-line bg-white px-2 text-13" value={value ?? "declared"} onChange={(e) => onChange(e.target.value)}>
-      <option value="verified">موثّق</option><option value="declared">حسب المالك</option><option value="estimated">تقدير</option>
-    </select>
+    <Dropdown ariaLabel="حالة الرقم" size="sm" className="w-full" value={value ?? "declared"} onChange={onChange}
+      options={[{ value: "verified", label: "موثّق" }, { value: "declared", label: "حسب المالك" }, { value: "estimated", label: "تقدير" }]} />
   );
 }
 
@@ -145,9 +144,9 @@ export function TeamOpportunityView({ o }: { o: TeamOpportunity }) {
             {o.content.propertyType !== "land" ? (
               <div className="grid grid-cols-2 gap-3">
                 <label className="flex flex-col gap-1 text-14 font-semibold">الحالة
-                  <select className={sel} value={c.readiness} onChange={(ev) => setC({ ...c, readiness: ev.target.value })}><option value="ready">جاهز</option><option value="under_construction">تحت الإنشاء</option></select>
+                  <Dropdown ariaLabel="الحالة" value={c.readiness} onChange={(v) => setC({ ...c, readiness: v })} options={[{ value: "ready", label: "جاهز" }, { value: "under_construction", label: "تحت الإنشاء" }]} />
                 </label>
-                {c.readiness === "under_construction" ? <TextField label="شهر التسليم" type="month" ltr value={c.deliveryMonth} onChange={(ev) => setC({ ...c, deliveryMonth: ev.target.value })} /> : null}
+                {c.readiness === "under_construction" ? <MonthField label="شهر التسليم" value={c.deliveryMonth} onValueChange={(v) => setC({ ...c, deliveryMonth: v })} /> : null}
               </div>
             ) : null}
             <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
@@ -187,27 +186,27 @@ export function TeamOpportunityView({ o }: { o: TeamOpportunity }) {
               <fieldset className="m-0 flex flex-col gap-3 rounded-md border border-line p-3">
                 <legend className="px-1 text-14 font-bold">جزء المطور</legend>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="flex items-end gap-2"><Num label="المدفوع المعتمد P" value={t.paid} onChange={set("paid")} />{stateFor("paid_approved")}</div>
-                  <div className="flex items-end gap-2"><Num label="الرصيد المتبقي D" value={t.balance} onChange={set("balance")} />{stateFor("remaining_balance")}</div>
+                  <div className="flex min-w-0 flex-col gap-1.5"><Num label="المدفوع المعتمد P" value={t.paid} onChange={set("paid")} />{stateFor("paid_approved")}</div>
+                  <div className="flex min-w-0 flex-col gap-1.5"><Num label="الرصيد المتبقي D" value={t.balance} onChange={set("balance")} />{stateFor("remaining_balance")}</div>
                 </div>
                 <Chips name="devarr" value={t.devArrState} onChange={set("devArrState")} options={[{ value: "none", label: "لا متأخرات" }, { value: "has", label: "متأخرات" }, { value: "unknown", label: "غير معروف" }]} />
                 {t.devArrState === "has" ? (
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="flex items-end gap-2"><Num label="المتأخرات A" value={t.devArr} onChange={set("devArr")} />{stateFor("arrears")}</div>
-                    <label className="flex flex-col gap-1 text-14 font-semibold">ضمن D؟<select className={sel} value={t.inBalance} onChange={(ev) => set("inBalance")(ev.target.value)}><option value="yes">نعم</option><option value="no">لا</option><option value="unknown">غير معروف</option></select></label>
-                    <label className="flex flex-col gap-1 text-14 font-semibold">يتحملها<select className={sel} value={t.payer} onChange={(ev) => set("payer")(ev.target.value)}><option value="buyer">المشتري</option><option value="seller">صاحب العقار</option></select></label>
+                    <div className="flex min-w-0 flex-col gap-1.5"><Num label="المتأخرات A" value={t.devArr} onChange={set("devArr")} />{stateFor("arrears")}</div>
+                    <Select label="ضمن D؟" value={t.inBalance} onValueChange={set("inBalance")} options={[{ value: "yes", label: "نعم" }, { value: "no", label: "لا" }, { value: "unknown", label: "غير معروف" }]} />
+                    <Select label="يتحملها" value={t.payer} onValueChange={set("payer")} options={[{ value: "buyer", label: "المشتري" }, { value: "seller", label: "صاحب العقار" }]} />
                   </div>
                 ) : null}
                 <Num label="تخفيض يقبله المالك V" value={t.reduction} onChange={set("reduction")} help="0 إذا لا يوجد" />
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="col-span-2 flex items-end gap-2"><Num label="القسط" value={t.inst} onChange={set("inst")} />{stateFor("installment_amount")}</div>
-                  <label className="flex flex-col gap-1 text-14 font-semibold">الدورية<select className={sel} value={t.freq} onChange={(ev) => set("freq")(ev.target.value)}><option value="monthly">شهري</option><option value="quarterly">ربع سنوي</option><option value="semiannual">نصف سنوي</option><option value="annual">سنوي</option></select></label>
+                  <div className="col-span-2 flex min-w-0 flex-col gap-1.5"><Num label="القسط" value={t.inst} onChange={set("inst")} />{stateFor("installment_amount")}</div>
+                  <Select label="الدورية" value={t.freq} onValueChange={set("freq")} options={[{ value: "monthly", label: "شهري" }, { value: "quarterly", label: "ربع سنوي" }, { value: "semiannual", label: "نصف سنوي" }, { value: "annual", label: "سنوي" }]} />
                 </div>
                 <Num label="عدد الأقساط المتبقية" value={t.remaining} onChange={set("remaining")} />
                 <div className="grid grid-cols-3 gap-3">
                   <Num label="دفعة إضافية" value={t.extra} onChange={set("extra")} help="ضمن D، ليست من القسط" />
-                  <label className="flex flex-col gap-1 text-14 font-semibold">التكرار<select className={sel} value={t.extraRec} onChange={(ev) => set("extraRec")(ev.target.value)}><option value="annual">سنويًا</option><option value="once">مرة واحدة</option></select></label>
-                  <TextField label="القادمة" type="date" ltr value={t.extraDate} onChange={(ev) => set("extraDate")(ev.target.value)} />
+                  <Select label="التكرار" value={t.extraRec} onValueChange={set("extraRec")} options={[{ value: "annual", label: "سنويًا" }, { value: "once", label: "مرة واحدة" }]} />
+                  <DateField label="القادمة" hijri={false} value={t.extraDate} onValueChange={set("extraDate")} />
                 </div>
               </fieldset>
             ) : null}
@@ -215,14 +214,14 @@ export function TeamOpportunityView({ o }: { o: TeamOpportunity }) {
               <fieldset className="m-0 flex flex-col gap-3 rounded-md border border-line p-3">
                 <legend className="px-1 text-14 font-bold">جزء جهة التمويل</legend>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="flex items-end gap-2"><Num label="سعر البيع" value={t.price} onChange={set("price")} />{stateFor("sale_price")}</div>
-                  <div className="flex items-end gap-2"><Num label="مبلغ السداد (من الخطاب)" value={t.payoff} onChange={set("payoff")} />{stateFor("payoff_amount")}</div>
+                  <div className="flex min-w-0 flex-col gap-1.5"><Num label="سعر البيع" value={t.price} onChange={set("price")} />{stateFor("sale_price")}</div>
+                  <div className="flex min-w-0 flex-col gap-1.5"><Num label="مبلغ السداد (من الخطاب)" value={t.payoff} onChange={set("payoff")} />{stateFor("payoff_amount")}</div>
                 </div>
-                <TextField label="صلاحية مبلغ السداد" type="date" ltr value={t.payoffUntil} onChange={(ev) => set("payoffUntil")(ev.target.value)} />
+                <DateField label="صلاحية مبلغ السداد" value={t.payoffUntil} onValueChange={set("payoffUntil")} />
                 <Chips name="finarr" value={t.finArrState} onChange={set("finArrState")} options={[{ value: "none", label: "لا متأخرات" }, { value: "has", label: "متأخرات" }, { value: "unknown", label: "غير معروف" }]} />
                 {t.finArrState === "has" ? (
                   <div className="grid grid-cols-2 gap-3">
-                    <label className="flex flex-col gap-1 text-14 font-semibold">يشملها مبلغ السداد؟<select className={sel} value={t.includes} onChange={(ev) => set("includes")(ev.target.value)}><option value="yes">نعم</option><option value="no">لا</option><option value="unknown">غير معروف</option></select></label>
+                    <Select label="يشملها مبلغ السداد؟" value={t.includes} onValueChange={set("includes")} options={[{ value: "yes", label: "نعم" }, { value: "no", label: "لا" }, { value: "unknown", label: "غير معروف" }]} />
                     {t.includes === "no" ? <Num label="المتأخرات" value={t.finArr} onChange={set("finArr")} /> : null}
                   </div>
                 ) : null}
@@ -230,13 +229,13 @@ export function TeamOpportunityView({ o }: { o: TeamOpportunity }) {
               </fieldset>
             ) : null}
             <div className="grid grid-cols-3 gap-3">
-              <div className="flex items-end gap-1"><Num label="تكاليف المشتري الآن" value={t.buyerNow} onChange={set("buyerNow")} />{stateFor("buyer_costs_now")}</div>
+              <div className="flex min-w-0 flex-col gap-1.5"><Num label="تكاليف المشتري الآن" value={t.buyerNow} onChange={set("buyerNow")} />{stateFor("buyer_costs_now")}</div>
               <Num label="تكاليف المشتري لاحقًا" value={t.buyerLater} onChange={set("buyerLater")} />
-              <div className="flex items-end gap-1"><Num label="تكاليف المالك" value={t.sellerCosts} onChange={set("sellerCosts")} />{stateFor("seller_costs")}</div>
+              <div className="flex min-w-0 flex-col gap-1.5"><Num label="تكاليف المالك" value={t.sellerCosts} onChange={set("sellerCosts")} />{stateFor("seller_costs")}</div>
             </div>
             <Textarea label="شروط النقل (تُنشر)" value={t.transfer} onChange={(ev) => set("transfer")(ev.target.value)} rows={2} />
             <Textarea label="نطاق ما راجعه الفريق (يُنشر مع الشارة)" value={t.scope} onChange={(ev) => set("scope")(ev.target.value)} rows={2} />
-            <TextField label="تاريخ المراجعة" type="date" ltr value={t.verifiedOn} onChange={(ev) => set("verifiedOn")(ev.target.value)} />
+            <DateField label="تاريخ المراجعة" value={t.verifiedOn} onValueChange={set("verifiedOn")} />
             {o.draftTerms ? <div className="rounded-md bg-warm p-3"><TermsBreakdown result={o.draftTerms} audience="team" /></div> : null}
           </div>
         </Card>
