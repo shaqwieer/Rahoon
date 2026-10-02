@@ -40,7 +40,7 @@ interface SellDraft {
   city?: string;
   district?: string;
   project?: string;
-  obligationMode?: "developer" | "financier" | "multiple";
+  obligationMode?: "developer" | "financier";
   obligations: ObDraft[];
   name: string;
   email: string;
@@ -56,7 +56,10 @@ function readDraft(): SellDraft | null {
     const raw = window.localStorage.getItem(STORE);
     if (!raw) return null;
     const d = JSON.parse(raw) as SellDraft;
-    return d?.v === 1 && d.clientDraftId ? d : null;
+    if (!(d?.v === 1 && d.clientDraftId)) return null;
+    // «أكثر من جهة» is no longer offered: a draft saved with it asks for the party again (first obligation kept).
+    if ((d.obligationMode as string) === "multiple") return { ...d, obligationMode: undefined, obligations: d.obligations.slice(0, 1) };
+    return d;
   } catch {
     return null;
   }
@@ -209,9 +212,6 @@ export function SaleWizard({ catalog, signedIn: signedInInitially, userName }: {
       if (mode === "developer" || mode === "financier") {
         const keep = obs[0];
         obs = [keep ? { ...keep, kind: mode, partyId: keep.kind === mode ? keep.partyId : null, partyName: keep.kind === mode ? keep.partyName : undefined, answers: prune(catalog, "obligation", keep.answers, null, mode) } : newOb(mode)];
-      } else if (mode === "multiple") {
-        obs = obs.length >= 2 ? obs : [...obs, ...[newOb("developer"), newOb("financier")].slice(obs.length)];
-        if (obs.length === 1) obs = [...obs, newOb(obs[0].kind === "developer" ? "financier" : "developer")];
       }
       return { ...x, obligationMode: mode, obligations: obs };
     });
@@ -392,7 +392,7 @@ export function SaleWizard({ catalog, signedIn: signedInInitially, userName }: {
             <Chips name="propertyType" options={catalog.propertyTypes} value={d.propertyType} invalid={Boolean(errors.propertyType)} onChange={(v) => update({ propertyType: v })} />
             {errors.propertyType ? <span className="text-13 text-err">{errors.propertyType}</span> : null}
           </fieldset>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <label htmlFor="sw-city" className="text-15 font-semibold">
                 المدينة
@@ -421,12 +421,6 @@ export function SaleWizard({ catalog, signedIn: signedInInitially, userName }: {
 
           {d.obligations.map((o, i) => (
             <div key={o.key} className="flex flex-col gap-3 rounded-md border border-line bg-warm p-4">
-              {d.obligationMode === "multiple" ? (
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <strong className="text-15">الالتزام {i + 1}</strong>
-                  <Chips name={`kind-${o.key}`} options={catalog.obligationKinds} value={o.kind} onChange={(v) => setOb(o.key, { kind: v as Kind, partyId: null, partyName: undefined })} />
-                </div>
-              ) : null}
               <div id={`sw-o${i}-party`}>
                 <OrgPicker
                   kind={o.kind}
@@ -439,23 +433,8 @@ export function SaleWizard({ catalog, signedIn: signedInInitially, userName }: {
                   error={errors[`o${i}.party`]}
                 />
               </div>
-              {d.obligationMode === "multiple" ? (
-                <TextField label="علاقة هذا الالتزام بالآخر (اختياري)" help="مثال: البنك موّل جزءًا من ثمن الوحدة لدى المطور." value={o.relationNote}
-                  onChange={(e) => setOb(o.key, { relationNote: e.target.value })} />
-              ) : null}
             </div>
           ))}
-          {d.obligationMode === "multiple" && d.obligations.length < 4 ? (
-            <Button variant="secondary" onClick={() => update((x) => ({ ...x, obligations: [...x.obligations, newOb("developer")] }))} className="self-start">
-              <Icon name="add" size={18} />
-              إضافة جهة أخرى
-            </Button>
-          ) : null}
-          {d.obligationMode === "multiple" && d.obligations.length > 2 ? (
-            <Button variant="text" onClick={() => update((x) => ({ ...x, obligations: x.obligations.slice(0, -1) }))} className="self-start">
-              حذف آخر جهة
-            </Button>
-          ) : null}
           {d.propertyType && d.obligationMode === "developer" ? (
             <TextField label="المشروع (اختياري)" value={d.project ?? ""} onChange={(e) => update({ project: e.target.value })} />
           ) : null}
@@ -478,7 +457,7 @@ export function SaleWizard({ catalog, signedIn: signedInInitially, userName }: {
                   لا نحسب مبلغ السداد من الأقساط المتبقية، ولا نفترض أن المشتري سيكمل قسطك الحالي. المبلغ الرسمي يأتي من خطاب الجهة.
                 </Alert>
               ) : null}
-              <div className="grid gap-5 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 {obligationFields(catalog, o.kind, o.answers)
                   .filter((f) => f.initial)
                   .map((f) => (

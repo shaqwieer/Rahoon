@@ -217,15 +217,11 @@ public static class SaleRequestEndpoints
         var r = f.Request;
         var list = incoming ?? f.Obligations.Select(o => new ObligationInput(o.Id, o.Kind, o.PartyId, o.PartyOtherName, o.RelationNote,
             o.Answers.ToDictionary(kv => kv.Key, kv => (string?)kv.Value))).ToList();
-        // The mode decides the shape: one developer, one financier, or 2–4 obligations of either kind.
+        // The mode decides the shape: exactly one obligation, with the developer or with the bank/finance company.
         switch (r.ObligationMode)
         {
             case "developer": list = [.. list.Take(1).Select(o => o with { Kind = "developer" })]; if (list.Count == 0) list.Add(new(null, "developer", null, null, null, null)); break;
             case "financier": list = [.. list.Take(1).Select(o => o with { Kind = "financier" })]; if (list.Count == 0) list.Add(new(null, "financier", null, null, null, null)); break;
-            case "multiple":
-                list = [.. list.Take(4)];
-                while (list.Count < 2) list.Add(new(null, list.Count == 0 ? "developer" : "financier", null, null, null, null));
-                break;
             default: return;
         }
 

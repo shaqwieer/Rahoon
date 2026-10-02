@@ -54,7 +54,7 @@ export function TeamInterestView({ i }: { i: TeamInterest }) {
       </div>
       <Alert tone="info" compact>{i.notice}</Alert>
       <ActionError error={dlg ? null : error} />
-      <div className="grid gap-5 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <Card title="المشتري">
           <dl className="m-0 flex flex-col gap-2 text-14">
             <div><dt className="text-muted">الاسم</dt><dd className="m-0 font-semibold">{i.buyerName ?? "—"}</dd></div>

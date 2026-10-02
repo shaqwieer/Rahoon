@@ -78,6 +78,24 @@ public sealed class MarketTests(ApiFixture api)
     }
 
     [Fact]
+    public async Task More_than_one_obligation_party_is_no_longer_accepted()
+    {
+        // «أكثر من جهة» was removed (2026-10-02): the catalog doesn't offer it and the API refuses it; one party per request.
+        var (_, catalog) = await api.Client().GetAsync("/api/market/catalog");
+        Assert.DoesNotContain(catalog!["obligationModes"]!.AsArray(), m => m!["value"]!.GetValue<string>() == "multiple");
+        var owner = await SellerAsync(api);
+        var (_, created) = await owner.PostAsync("/api/market/sale-requests", new
+        {
+            clientDraftId = Guid.NewGuid(), propertyType = "apartment", city = "riyadh", district = "النرجس", obligationMode = "multiple",
+            obligations = new[] { new { kind = "developer", partyOtherName = "مطور" }, new { kind = "financier", partyOtherName = "بنك" } },
+        });
+        Assert.NotNull(created!["invalid"]!["obligationMode"]);
+        var file = created["file"]!;
+        Assert.NotEqual("multiple", file["obligationMode"]?.GetValue<string>());
+        Assert.True(file["obligations"]!.AsArray().Count <= 1);
+    }
+
+    [Fact]
     public async Task Land_request_with_room_fields_is_stripped_and_still_submits()
     {
         var owner = await SellerAsync(api);

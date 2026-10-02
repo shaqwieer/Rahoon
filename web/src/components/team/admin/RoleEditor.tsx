@@ -85,7 +85,7 @@ export function RoleEditor({ catalog, role, grantable, blocked, canArchive }: {
       ) : null}
       {saved ? <Alert tone="ok" compact>حُفظ الدور. يسري على أعضائه من طلبهم التالي.</Alert> : null}
       <Card>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <TextField label="اسم الدور" requiredMark value={nameAr} disabled={readOnly} onChange={(e) => { setSaved(false); setNameAr(e.target.value); }} error={errors.nameAr} />
           <TextField label="الاسم بالإنجليزية" optionalMark ltr value={nameEn} disabled={readOnly} onChange={(e) => setNameEn(e.target.value)} error={errors.nameEn} />
           <Textarea label="الوصف" optionalMark containerClassName="md:col-span-2" rows={2} value={description} disabled={readOnly} onChange={(e) => setDescription(e.target.value)} />

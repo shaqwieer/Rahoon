@@ -109,7 +109,7 @@ export function DirectoryForm({ record }: { record?: DirectoryRecord }) {
           {errors.types ? <span id="types-error" className="text-13 text-err">{errors.types}</span> : null}
         </fieldset>
         <TextField label="الموقع الرسمي" value={v.website} onChange={(e) => set({ website: e.target.value })} error={errors.website} optionalMark ltr placeholder="https://" />
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <TextField label="رقم الترخيص" value={v.licenseNumber} onChange={(e) => set({ licenseNumber: e.target.value })} error={errors.licenseNumber} optionalMark ltr
             help="فقط إن نشره مصدر رسمي (اذكره أدناه)." />
           <TextField label="رقم السجل / الرقم الموحد" value={v.registrationNumber} onChange={(e) => set({ registrationNumber: e.target.value })} error={errors.registrationNumber} optionalMark ltr

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { buttonClasses } from "@/components/ui/buttonStyles";
 import { Textarea, TextField } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
+import { UnitInput } from "@/components/ui/UnitInput";
 import { apiSend, isApiError } from "@/lib/api/client";
 import { toLatinDigits } from "@/lib/market/numbers";
 import type { Fit } from "@/lib/market/types";
@@ -37,18 +38,20 @@ export function OpportunityCalculator({ reference, frequencies }: { reference: s
     }
   };
   return (
-    <form onSubmit={run} className="flex flex-col gap-3">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <TextField label="المبلغ المتاح لك الآن" inputMode="numeric" ltr value={available} onChange={(e) => setAvailable(e.target.value)} endAdornment="ر.س" />
+    <form onSubmit={run} className="flex flex-col gap-4">
+      <p className="m-0 text-13 leading-6 text-muted">أدخل ما لديك لنقارنه بأرقام هذه الفرصة. لا نحفظ ما تدخله.</p>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor={`${reference}-calc-now`} className="text-14 font-semibold">المبلغ المتاح لك الآن</label>
+        <UnitInput id={`${reference}-calc-now`} size="lg" value={available} onChange={setAvailable} placeholder="مثال 400000" />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor={`${reference}-calc-inst`} className="text-14 font-semibold">القسط المريح لك <span className="font-normal text-muted">(اختياري)</span></label>
         <div className="flex gap-2">
-          <TextField label="القسط المريح" inputMode="numeric" ltr value={inst} onChange={(e) => setInst(e.target.value)} containerClassName="flex-1" />
-          <div className="flex flex-col gap-1.5">
-            <span className="text-14 font-semibold">الدورية</span>
-            <Dropdown ariaLabel="الدورية" size="lg" className="w-32" value={freq} onChange={setFreq} options={frequencies} />
-          </div>
+          <UnitInput id={`${reference}-calc-inst`} size="lg" className="min-w-0 flex-1" value={inst} onChange={setInst} />
+          <Dropdown ariaLabel="دورية القسط" size="lg" className="w-[7.5rem] flex-none" value={freq} onChange={setFreq} options={frequencies} />
         </div>
       </div>
-      <Button type="submit" variant="secondary" loading={busy} className="self-start">احسب</Button>
+      <Button type="submit" variant="strong" icon="calculate" loading={busy} fullWidth>احسب مع أرقامي</Button>
       {error ? <Alert tone="err" compact>{error}</Alert> : null}
       {res ? (
         <div className="flex flex-col gap-2" role="status">

@@ -238,7 +238,7 @@ export function SearchPanel({ value, onApply, catalog, signedIn }: {
             </Field>
             <Field label="نوع الالتزام" htmlFor={`${ids}-track`}>
               <Dropdown id={`${ids}-track`} value={draft.track} onChange={(v) => set("track", v)}
-                options={[{ value: "", label: "الكل" }, { value: "developer", label: "التزام لدى مطور" }, { value: "financier", label: "عقار مموّل" }, { value: "mixed", label: "مطور وجهة تمويل" }]} />
+                options={[{ value: "", label: "الكل" }, { value: "developer", label: "التزام لدى مطور" }, { value: "financier", label: "عقار مموّل" }]} />
             </Field>
           </div>
         </Section>

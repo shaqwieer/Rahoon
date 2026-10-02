@@ -234,7 +234,7 @@ export function SaleFileView({ initial, catalog }: { initial: SaleFile; catalog:
         <>
           {editable ? (
             <>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="sf-district" className="text-15 font-semibold">الحي</label>
                   <input id="sf-district" list="sf-districts" value={district} onChange={(e) => { touch(); setDistrict(e.target.value); }}
@@ -246,7 +246,7 @@ export function SaleFileView({ initial, catalog }: { initial: SaleFile; catalog:
                   <input id="sf-project" value={project} onChange={(e) => { touch(); setProject(e.target.value); }} className="min-h-12 rounded-sm border border-line-strong bg-white px-3 text-16" />
                 </div>
               </div>
-              <div className="grid gap-5 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 {propertyFields(catalog, file.propertyType, answers).map((f) => (
                   <div key={f.key} className={f.type === "longText" || f.type === "multiSelect" || f.type === "select" ? "md:col-span-2" : undefined}>
                     <DynamicField def={f} value={answers[f.key]} propertyType={file.propertyType} error={invalid[f.key]} idPrefix="p" onChange={(v) => setAnswer(f.key, v)} />
@@ -291,7 +291,7 @@ export function SaleFileView({ initial, catalog }: { initial: SaleFile; catalog:
                 </div>
               ) : null}
               {editable ? (
-                <div className="grid gap-5 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                   {obligationFields(catalog, o.kind, o.answers).map((f) => (
                     <div key={f.key} className={f.type === "select" ? "md:col-span-2" : undefined}>
                       <DynamicField def={f} value={o.answers[f.key]} error={invalid[`o${i}.${f.key}`]} idPrefix={`o${i}`} onChange={(v) => setObAnswer(o.id, f.key, v)} />

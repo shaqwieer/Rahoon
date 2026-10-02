@@ -82,7 +82,7 @@ export function BuyerAccount({ request: r, events, catalog }: { request: BuyerRe
       {r.decisionReason && r.status === "rejected" ? <Alert tone="err" title="سبب عدم القبول">{r.decisionReason}</Alert> : null}
 
       <Card title="قدرتك الشرائية — ثلاثة مستويات منفصلة">
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <div className="flex flex-col gap-1 rounded-md bg-subtle p-3">
             <span className="text-13 font-semibold text-muted">ما صرّحت به</span>
             <span>المتاح الآن: <Amount value={c.declared.availableNow} strong /></span>

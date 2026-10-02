@@ -13,7 +13,7 @@ export default async function AccountPage() {
   return (
     <div className="flex flex-col gap-6">
       <AccountClient needsName={!account.name} unread={s.unread} smsVerified={account.phoneVerification === "sms_code"} />
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <div className="flex flex-col gap-6">
           <Card title="طلبات البيع" actions={<Link href="/sell/new" className={buttonClasses({ variant: "primary", size: "md" })}>طلب بيع جديد</Link>}>
             {s.saleRequests.length === 0 ? (

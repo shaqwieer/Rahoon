@@ -16,7 +16,7 @@ import { Icon } from "@/components/ui/Icon";
 import { apiSend, isApiError } from "@/lib/api/client";
 import { cn } from "@/lib/cn";
 import { chips, EMPTY, fromParams, hasFilters, PAGE_SIZE, SORTS, toQuery, type SearchState } from "@/lib/market/search";
-import type { Catalog, MapResult, SearchResult } from "@/lib/market/types";
+import type { Catalog, MapMarker, MapResult, SearchResult } from "@/lib/market/types";
 import { Pagination } from "@/components/ui/Pagination";
 
 const ResultsMap = dynamic(() => import("./ResultsMap").then((m) => m.ResultsMap), {
@@ -25,8 +25,60 @@ const ResultsMap = dynamic(() => import("./ResultsMap").then((m) => m.ResultsMap
 });
 
 const NO_MARKERS: MapResult["markers"] = [];
+const STRIP_H = 132;
 
-type Load<T> = { query: string; data: T | null; error: string | null; loading: boolean };
+/**
+ * The results as a swipeable strip over the map: choosing a card highlights (and brings into view) its marker; choosing a marker
+ * scrolls its card into the middle. Each card opens the opportunity.
+ */
+function MapStrip({ markers, selected, onSelect }: { markers: MapMarker[]; selected: string | null; onSelect: (ref: string) => void }) {
+  const rail = useRef<HTMLUListElement>(null);
+  useEffect(() => {
+    if (!selected) return;
+    rail.current?.querySelector<HTMLElement>(`[data-mref="${CSS.escape(selected)}"]`)?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [selected]);
+  return (
+    <ul ref={rail} aria-label="الفرص على الخريطة"
+      className="absolute inset-x-0 bottom-3 z-[600] m-0 flex list-none snap-x snap-mandatory gap-2.5 overflow-x-auto px-3 pb-1 [scrollbar-width:none]">
+      {markers.map((m) => {
+        const on = m.reference === selected;
+        return (
+          <li key={m.reference} data-mref={m.reference} className="w-[17.5rem] max-w-[82vw] flex-none snap-center">
+            <div onClick={() => onSelect(m.reference)}
+              className={cn("flex h-[116px] cursor-pointer overflow-hidden rounded-lg border bg-white shadow-2 transition-[border-color,box-shadow]", on ? "border-ink ring-2 ring-ink" : "border-line")}>
+              <div className="w-24 flex-none bg-subtle">
+                {m.coverUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- API-served listing photo
+                  <img src={m.coverUrl} alt="" className="size-full object-cover" loading="lazy" />
+                ) : <div className="flex size-full items-center justify-center text-muted"><Icon name="image_not_supported" size={24} /></div>}
+              </div>
+              <div className="flex min-w-0 flex-1 flex-col justify-between p-2.5">
+                <span className="flex min-w-0 flex-col">
+                  <strong className="line-clamp-2 text-13 leading-5">{m.title}</strong>
+                  <span className="truncate text-12 text-muted">{m.cityLabel}{m.district ? `، ${m.district}` : ""}{m.precision === "approximate" ? " · موقع تقريبي" : ""}</span>
+                </span>
+                <span className="flex items-end justify-between gap-2">
+                  <span className="flex flex-col">
+                    <span className="text-11 text-muted">المطلوب الآن</span>
+                    <Amount value={m.dueNow} size="sm" strong unknown="غير مكتمل" />
+                  </span>
+                  <Link href={`/opportunities/${m.reference}`} onClick={(e) => e.stopPropagation()}
+                    className="inline-flex min-h-8 items-center gap-0.5 rounded-sm bg-rust px-2.5 text-12 font-semibold text-white no-underline hover:bg-rust-700">
+                    التفاصيل
+                    <Icon name="chevron_left" size={16} />
+                  </Link>
+                </span>
+              </div>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/** `query: null` = nothing requested yet (an empty string is a real query: the unfiltered search). */
+type Load<T> = { query: string | null; data: T | null; error: string | null; loading: boolean };
 
 /**
  * /opportunities after the first server render: the URL is the state (shareable, reload-safe, back/forward through the native
@@ -62,7 +114,7 @@ export function DiscoveryView({ catalog, initial, initialQuery, signedIn }: { ca
   const listTop = useRef<HTMLDivElement>(null);
 
   const [list, setList] = useState<Load<SearchResult>>({ query: initialQuery, data: initial, error: initial ? null : "تعذّر تحميل الفرص الآن.", loading: false });
-  const [map, setMap] = useState<Load<MapResult>>({ query: "", data: null, error: null, loading: false });
+  const [map, setMap] = useState<Load<MapResult>>({ query: null, data: null, error: null, loading: false });
   const listSeq = useRef(0);
   const mapSeq = useRef(0);
   const [retry, setRetry] = useState(0);
@@ -117,8 +169,6 @@ export function DiscoveryView({ catalog, initial, initialQuery, signedIn }: { ca
   const selectFromMap = (ref: string) => setSelected(ref);
 
   const data = list.data;
-  const selectedItem = selected ? data?.items.find((i) => i.card.reference === selected) : null;
-  const selectedMarker = selected && !selectedItem ? map.data?.markers.find((m) => m.reference === selected) : null;
   const suggestedName = chips(state, catalog).slice(0, 3).map((c) => c.text).join("، ") || "كل الفرص المنشورة";
   const saveQuery = toQuery({ ...state, page: "" }, { page: false });
   const sortOptions = [{ value: "", label: state.maxNow || state.maxInstallment || state.maxTotal || state.match ? "الأنسب (افتراضي)" : "الأحدث (افتراضي)" }, ...SORTS];
@@ -192,38 +242,23 @@ export function DiscoveryView({ catalog, initial, initialQuery, signedIn }: { ca
         </div>
       ) : (
         <div className="relative">
-          <div className="h-[72vh] min-h-[420px]">
+          <div className="h-[calc(100dvh-9rem)] max-h-[760px] min-h-[460px]">
             {map.error ? (
               <div role="alert" className="flex size-full flex-col items-center justify-center gap-2 rounded-lg border border-err-line bg-err-bg p-4 text-14">{map.error}</div>
             ) : (
-              <ResultsMap markers={map.data?.markers ?? NO_MARKERS} selected={selected} onSelect={selectFromMap} loading={map.loading}
+              <ResultsMap markers={map.data?.markers ?? NO_MARKERS} selected={selected} onSelect={selectFromMap} loading={map.loading} bottomInset={STRIP_H}
                 areaActive={Boolean(state.bbox)} onSearchArea={(bbox) => go({ ...state, bbox, page: "" })} onClearArea={() => go({ ...state, bbox: "", page: "" })} />
             )}
           </div>
-          {selectedItem ? (
-            <div className="absolute inset-x-3 bottom-10 z-[600] mx-auto max-w-sm">
-              <button type="button" onClick={() => setSelected(null)} aria-label="إغلاق المعاينة"
-                className="absolute -top-3 end-2 z-20 inline-flex size-8 items-center justify-center rounded-full border border-line bg-white shadow-2">
-                <Icon name="close" size={18} />
-              </button>
-              <OpportunityCard card={selectedItem.card} fit={selectedItem.fit} match={selectedItem.match} signedIn={signedIn} layout="row" />
-            </div>
-          ) : selectedMarker ? (
-            <div className="absolute inset-x-3 bottom-10 z-[600] mx-auto flex max-w-sm items-center gap-3 rounded-lg border border-line bg-white p-3 shadow-3">
-              <span className="flex min-w-0 flex-1 flex-col">
-                <strong className="truncate text-14">{selectedMarker.title}</strong>
-                <span className="text-13">المطلوب الآن <Amount value={selectedMarker.dueNow} size="sm" strong unknown="غير مكتمل" /></span>
-              </span>
-              <Link href={`/opportunities/${selectedMarker.reference}`} className={buttonClasses({ variant: "primary", size: "sm" })}>التفاصيل</Link>
-              <button type="button" onClick={() => setSelected(null)} aria-label="إغلاق المعاينة" className="inline-flex size-8 items-center justify-center rounded-full hover:bg-subtle">
-                <Icon name="close" size={18} />
-              </button>
-            </div>
+          {map.data && map.data.markers.length ? (
+            <MapStrip markers={map.data.markers} selected={selected} onSelect={setSelected} />
+          ) : map.data ? (
+            <p className="absolute inset-x-3 bottom-3 z-[600] m-0 rounded-md bg-white p-3 text-center text-14 shadow-2">لا توجد فرص بموقع معروض ضمن هذا البحث.</p>
           ) : null}
           {map.data ? (
             <p className="m-0 mt-2 text-13 text-muted">
               {map.data.located} {map.data.located === 1 ? "فرصة" : "فرص"} على الخريطة
-              {data && data.withoutLocation > 0 ? ` · ${data.withoutLocation} بلا موقع معروض` : ""}
+              {data && data.withoutLocation > 0 ? ` · ${data.withoutLocation} بلا موقع معروض (في القائمة فقط)` : ""}
               {map.data.capped ? ` · تعرض الخريطة أول ${map.data.cap} نتيجة؛ قرّب الخريطة أو ضيّق البحث` : ""}
             </p>
           ) : null}

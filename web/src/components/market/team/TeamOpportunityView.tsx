@@ -131,7 +131,7 @@ export function TeamOpportunityView({ o }: { o: TeamOpportunity }) {
         </Alert>
       ) : o.status !== "published" ? <Alert tone="ok">كل شروط النشر مكتملة.</Alert> : null}
 
-      <div className="grid gap-5 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <Card title="المحتوى والصور والموقع" actions={o.actions.edit ? <Button size="sm" onClick={() => void saveContent()} loading={busy === "content"}>حفظ المحتوى</Button> : null}>
           <div className="flex flex-col gap-4">
             <TextField label="العنوان" value={c.title} onChange={(ev) => setC({ ...c, title: ev.target.value })} />
@@ -241,7 +241,7 @@ export function TeamOpportunityView({ o }: { o: TeamOpportunity }) {
         </Card>
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
         <Card title="قائمة التحقق قبل النشر" actions={o.actions.checklist ? <Button size="sm" variant="secondary" onClick={() => void run("check", "POST", `${base}/checklist`, { items: checks })} loading={busy === "check"}>حفظ</Button> : null}>
           <div className="flex flex-col gap-2">
             {o.checklist.map((x) => (

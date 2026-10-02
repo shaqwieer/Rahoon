@@ -42,7 +42,7 @@ public static class FieldCatalog
 
     public static readonly FieldOption[] ObligationModes =
     [
-        new("developer", "مطور عقاري"), new("financier", "بنك أو جهة تمويل"), new("multiple", "أكثر من جهة"),
+        new("developer", "مطور عقاري"), new("financier", "بنك أو جهة تمويل"),
     ];
 
     public static readonly FieldOption[] ObligationKinds = [new("developer", "مطور عقاري"), new("financier", "بنك أو جهة تمويل")];

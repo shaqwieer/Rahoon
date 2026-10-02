@@ -49,7 +49,7 @@ export default async function OwnerOpportunityPage({ params }: PageProps<"/accou
       ) : (
         <p className="m-0 text-15 text-muted">لا يوجد ملخص بانتظار تأكيدك الآن.</p>
       )}
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
         <div className="flex flex-col gap-5">
           <Card title="ما سيظهر للمشترين">
             {o.photos.length ? (

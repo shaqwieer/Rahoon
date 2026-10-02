@@ -49,7 +49,7 @@ export function TeamBuyerView({ d, catalog }: { d: TeamBuyer; catalog: Catalog }
         </div>
       </div>
       <ActionError error={dlg ? null : error} />
-      <div className="grid gap-5 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <Card title="القدرة الشرائية">
           <div className="flex flex-col gap-3">
             <div className="rounded-md bg-subtle p-3">

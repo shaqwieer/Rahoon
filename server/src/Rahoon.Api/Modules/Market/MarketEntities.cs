@@ -28,7 +28,7 @@ public sealed class SaleRequest : OrgEntity, IApplicantOwned, IConcurrencyVersio
     public string? City { get; set; }
     public string? District { get; set; }
     public string? Project { get; set; }
-    /// <summary>developer | financier | multiple</summary>
+    /// <summary>developer | financier (one obligation party per request; «أكثر من جهة» was removed on 2026-10-02).</summary>
     public string? ObligationMode { get; set; }
 
     /// <summary>Property-scope answers (FieldCatalog, scope Property), only the keys that apply.</summary>

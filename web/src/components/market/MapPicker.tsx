@@ -66,12 +66,16 @@ export function MapPicker({ value, center, onChange, disabled }: { value: Point 
 
   useEffect(() => {
     let cancelled = false;
+    let observer: ResizeObserver | null = null;
     void import("leaflet").then((L) => {
       if (cancelled || !box.current || map.current) return;
       lib.current = L;
       const m = L.map(box.current, { center: value ? [value.lat, value.lng] : [center.lat, center.lng], zoom: value ? 15 : 12, scrollWheelZoom: false });
       L.tileLayer(TILE_URL, TILE_OPTIONS).addTo(m);
       map.current = m;
+      // iOS Safari can size the box after the map starts: redraw on every size change (otherwise a grey map).
+      observer = new ResizeObserver(() => m.invalidateSize({ animate: false }));
+      observer.observe(box.current);
       if (value) {
         marker.current = L.marker([value.lat, value.lng], { draggable: !disabled, icon: pinIcon(L), keyboard: true, title: "موقع العقار" }).addTo(m);
         marker.current.on("dragend", () => {
@@ -83,6 +87,7 @@ export function MapPicker({ value, center, onChange, disabled }: { value: Point 
     });
     return () => {
       cancelled = true;
+      observer?.disconnect();
       map.current?.remove();
       map.current = null;
       marker.current = null;

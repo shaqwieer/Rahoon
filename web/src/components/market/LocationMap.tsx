@@ -13,6 +13,7 @@ export function LocationMap({ lat, lng, precision, height = 300 }: { lat: number
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     let map: Leaflet.Map | null = null;
+    let observer: ResizeObserver | null = null;
     let cancelled = false;
     void import("leaflet").then((L) => {
       if (cancelled || !box.current) return;
@@ -20,9 +21,17 @@ export function LocationMap({ lat, lng, precision, height = 300 }: { lat: number
       L.tileLayer(TILE_URL, TILE_OPTIONS).addTo(map);
       if (precision === "exact") L.marker([lat, lng], { icon: pinIcon(L), keyboard: false, title: "موقع العقار" }).addTo(map);
       else L.circle([lat, lng], { radius: 650, color: "#aa4528", weight: 2, fillColor: "#f4633a", fillOpacity: 0.15 }).addTo(map);
+      // iOS Safari can size the box after the map starts: redraw on every size change (otherwise a grey map).
+      const m = map;
+      observer = new ResizeObserver(() => {
+        m.invalidateSize({ animate: false });
+        m.setView([lat, lng], m.getZoom(), { animate: false });
+      });
+      observer.observe(box.current);
     });
     return () => {
       cancelled = true;
+      observer?.disconnect();
       map?.remove();
     };
   }, [lat, lng, precision]);

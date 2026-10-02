@@ -24,6 +24,8 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },
+    { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } }, testIgnore: /mobile-safari\.spec\.ts/ },
+    // iOS Safari engine (npx playwright install webkit).
+    { name: "iphone-webkit", use: { ...devices["iPhone 14"] }, testMatch: /mobile-safari\.spec\.ts/ },
   ],
 });

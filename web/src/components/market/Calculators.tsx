@@ -104,7 +104,7 @@ function DeveloperCalc() {
     });
   };
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       <form onSubmit={submit} className="flex flex-col gap-4 rounded-lg border border-line bg-white p-5">
         <MoneyIn id="d-paid" label="المدفوع المعتمد من ثمن الوحدة (P)" value={f.paid} onChange={set("paid")} help="كما في كشف المطور، دون الرسوم والغرامات." />
         <MoneyIn id="d-bal" label="الرصيد المتبقي للمطور (D)" value={f.balance} onChange={set("balance")} />
@@ -157,7 +157,7 @@ function FinancierCalc() {
     });
   };
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       <form onSubmit={submit} className="flex flex-col gap-4 rounded-lg border border-line bg-white p-5">
         <MoneyIn id="f-price" label="سعر البيع المقترح" value={f.price} onChange={set("price")} />
         <MoneyIn id="f-payoff" label="مبلغ السداد المطلوب من الجهة" value={f.payoff} onChange={set("payoff")} help="من خطاب الجهة. لا تحسبه من الأقساط المتبقية؛ اتركه فارغًا إن لم يتوفر." />
@@ -213,7 +213,7 @@ function CapacityCalc() {
   if (num(f.inst)) { q.set("maxInstallment", String(num(f.inst))); if (f.freq !== "monthly") q.set("freq", f.freq); }
   if (num(f.max)) q.set("maxTotal", String(num(f.max)));
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       <form onSubmit={submit} className="flex flex-col gap-4 rounded-lg border border-line bg-white p-5">
         <MoneyIn id="c-now" label="المبلغ المتاح لديك الآن" value={f.now} onChange={set("now")} />
         <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3">

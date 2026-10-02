@@ -72,19 +72,21 @@ export function DynamicField({ def, value, onChange, propertyType, error, idPref
   const described = [def.help ? helpId : null, error ? errId : null].filter(Boolean).join(" ") || undefined;
   const opts = optionsFor(def, propertyType);
 
+  const unit = def.type === "money" ? "ر.س" : def.unit;
   let control: React.ReactNode;
   switch (def.type) {
     case "money":
     case "decimal":
     case "integer":
       control = (
-        <div className="relative">
+        <div className={cn("flex min-h-12 items-stretch overflow-hidden rounded-sm border bg-white transition-colors focus-within:border-rust focus-within:ring-2 focus-within:ring-rust-50",
+          error ? "border-err" : "border-line-strong", unknown && "bg-subtle")}>
           <input
             id={id}
             inputMode={def.type === "integer" ? "numeric" : "decimal"}
             dir="ltr"
             autoComplete="off"
-            className={cn(inputCls, "text-end tabular-nums", def.unit || def.type === "money" ? "ps-14" : null)}
+            className="min-w-0 flex-1 bg-transparent px-3 text-end text-16 tabular-nums outline-none disabled:text-soft"
             value={unknown ? "" : (value ?? "")}
             disabled={unknown}
             aria-invalid={Boolean(error) || undefined}
@@ -96,7 +98,7 @@ export function DynamicField({ def, value, onChange, propertyType, error, idPref
             }}
             placeholder={unknown ? "لا أعرف" : undefined}
           />
-          <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-14 text-muted">{def.type === "money" ? "ر.س" : (def.unit ?? "")}</span>
+          {unit ? <span className="flex flex-none items-center border-s border-line bg-warm px-3 text-13 text-muted">{unit}</span> : null}
         </div>
       );
       break;

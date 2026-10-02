@@ -42,7 +42,7 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
           <Icon name="chevron_left" size={18} mirror className="text-muted" />
           <span className="text-muted">{c.cityLabel}</span>
         </nav>
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(340px,1fr)]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(340px,1fr)]">
           <div className="flex min-w-0 flex-col gap-6">
             <Gallery photos={d.photos} title={c.title} />
             <header className="flex flex-col gap-2">
